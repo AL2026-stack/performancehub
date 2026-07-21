@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Performance Tier Matrix</title>
+    <style>
+        :root { 
+            --primary: #e6007e; 
+            --dark: #0f172a; 
+            --light: #f8fafc; 
+            --card-bg: #ffffff; 
+            --border: #e2e8f0; 
+            --success: #10b981; 
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #0f172a; 
+        }
+        body.dark-mode {
+            --light: #0f172a; 
+            --dark: #f4f7fa; 
+            --card-bg: #1e293b; 
+            --text-main: #f1f5f9; 
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--light); color: var(--text-main); padding: 2rem; transition: background 0.3s, color 0.3s; }
+        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
+        .header-actions { display: flex; align-items: center; gap: 0.75rem; }
+
+        .btn-back { background: #0f172a; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        body.dark-mode .btn-back { background: #1e293b; border: 1px solid var(--border); }
+
+        .btn-reset-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: none;
+        }
+        .btn-reset-danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Filter Controls Card */
+        .filter-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .filter-group { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .filter-label { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .filter-select, .calendar-input { padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
+
+        /* Tier Section List Structure */
+        .tier-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+        }
+
+        .tier-header-banner {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .banner-top { background: rgba(16, 185, 129, 0.08); color: var(--success); border-left: 6px solid var(--success); }
+        .banner-mid { background: rgba(245, 158, 11, 0.08); color: var(--warning); border-left: 6px solid var(--warning); }
+        .banner-low { background: rgba(239, 68, 68, 0.08); color: var(--danger); border-left: 6px solid var(--danger); }
+
+        .agent-list { display: flex; flex-direction: column; padding: 1rem 1.5rem; gap: 1rem; }
+
+        .agent-row-card {
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .agent-top-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .metrics-pill-grid {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: #64748b;
+            flex-wrap: wrap;
+        }
+
+        .metrics-pill-grid span {
+            background: var(--card-bg);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .reason-box {
+            background: rgba(0, 0, 0, 0.02);
+            border-left: 4px solid var(--primary);
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+        body.dark-mode .reason-box { background: rgba(255, 255, 255, 0.04); }
+
+        .user-lock-banner {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: #64748b;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-bar">
+        <div>
+            <h1>Team Performance Tier Matrix</h1>
+            <p style="color:#64748b;" id="accessStatusTag">Loading tier analytics...</p>
+        </div>
+        <div class="header-actions">
+            <button id="btnResetMatrix" class="btn-reset-danger" onclick="resetTierMatrix()">🗑️ Reset Matrix Data</button>
+            <a href="index.html" class="btn-back">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div id="userNotice" class="user-lock-banner" style="display: none;">
+        🔒 <span>Showing <strong>Personal Performance Tier & Insights</strong>. Management credentials required for full team roster.</span>
+    </div>
+
+    <div class="filter-card">
+        <div class="filter-group">
+            <span class="filter-label">Timescale Scope:</span>
+            <select id="tierScopeType" class="filter-select" onchange="handleTimescaleScopeChange()">
+                <option value="Overall">Overall (All Time)</option>
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+            </select>
+        </div>
+
+        <div class="filter-group" id="targetPeriodGroup" style="display: none;">
+            <span class="filter-label" id="periodLabel">Target Period:</span>
+            <div id="periodSelectorContainer"></div>
+        </div>
+    </div>
+
+    <div class="tier-section">
+        <div class="tier-header-banner banner-top">
+            <span>🏆 Top Performers (Top 5)</span>
+            <span id="topCountBadge">0 Agents</span>
+        </div>
+        <div id="topListContainer" class="agent-list"></div>
+    </div>
+
+    <div class="tier-section">
+        <div class="tier-header-banner banner-mid">
+            <span>⚡ Mid-Tier Performers</span>
+            <span id="midCountBadge">0 Agents</span>
+        </div>
+        <div id="midListContainer" class="agent-list"></div>
+    </div>
+
+    <div class="tier-section">
+        <div class="tier-header-banner banner-low">
+            <span>🎯 Development Focus (Bottom 3)</span>
+            <span id="lowCountBadge">0 Agents</span>
+        </div>
+        <div id="lowListContainer" class="agent-list"></div>
+    </div>
+</div>
+
+<script>
+    const currentUser = sessionStorage.getItem("activeUser");
+    const currentRole = sessionStorage.getItem("activeRole");
+
+    if (!currentUser) { window.location.href = "login.html"; }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const activeTheme = localStorage.getItem('themePreference') || 'light';
+        if (activeTheme === 'dark') { document.body.classList.add('dark-mode'); }
+
+        const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
+        document.getElementById("accessStatusTag").innerText = isManagement 
+            ? `Full Roster Analytics (Logged as: ${currentUser})`
+            : `Individual Tier Breakdown (Logged as: ${currentUser})`;
+
+        if (!isManagement) {
+            document.getElementById("userNotice").style.display = "flex";
+        }
+
+        if (currentRole === "Superuser") {
+            document.getElementById("btnResetMatrix").style.display = "inline-block";
+        }
+
+        handleTimescaleScopeChange();
+    });
+
+    function resetTierMatrix() {
+        if (currentRole !== "Superuser") return;
+
+        if (confirm("⚠️ Superuser Action Required:\n\nAre you sure you want to reset the Team Performance Matrix? This will wipe all saved agent stats from local storage. Quality forms will remain safe.")) {
+            localStorage.removeItem('agentStatsDB');
+            alert("Performance stats wiped successfully.");
+            handleTimescaleScopeChange();
+
+            if (window.opener && !window.opener.closed && typeof window.opener.renderDashboard === 'function') {
+                window.opener.renderDashboard();
+            }
+        }
+    }
+
+    function timeToSeconds(timeStr) {
+        if (!timeStr || timeStr === "N/A" || typeof timeStr !== 'string' || timeStr.includes("#")) return 0;
+        const cleaned = timeStr.trim();
+        if (!isNaN(cleaned)) return parseInt(cleaned);
+        const parts = cleaned.split(':');
+        if (parts.length === 3) return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+        if (parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        return 0;
+    }
+
+    function secondsToTimeStr(totalSeconds) {
+        if (isNaN(totalSeconds) || totalSeconds <= 0) return "00:00:00";
+        const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+        const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    function handleTimescaleScopeChange() {
+        const scope = document.getElementById("tierScopeType").value;
+        const periodGroup = document.getElementById("targetPeriodGroup");
+        const container = document.getElementById("periodSelectorContainer");
+        const label = document.getElementById("periodLabel");
+        
+        const db = JSON.parse(localStorage.getItem('agentStatsDB')) || {};
+
+        if (scope === "Overall") {
+            periodGroup.style.display = "none";
+            buildPerformanceTiers();
+            return;
+        }
+
+        periodGroup.style.display = "flex";
+        let optionsSet = new Set();
+        Object.values(db).forEach(o => { if (o && o[scope]) Object.keys(o[scope]).forEach(k => optionsSet.add(k)); });
+
+        if (scope === "Daily") {
+            label.innerText = "Select Day:";
+            const todayStr = new Date().toISOString().split('T')[0];
+            container.innerHTML = `<input type="date" id="tierPeriodValue" class="calendar-input" value="${todayStr}" onchange="buildPerformanceTiers()">`;
+        } else {
+            label.innerText = scope === "Weekly" ? "Select Week:" : "Select Month:";
+            let html = `<select id="tierPeriodValue" class="filter-select" onchange="buildPerformanceTiers()">`;
+            if (optionsSet.size === 0) html += `<option value="">No Data Uploaded</option>`;
+            else {
+                Array.from(optionsSet).sort().forEach(v => html += `<option value="${v}">${v}</option>`);
+            }
+            html += `</select>`;
+            container.innerHTML = html;
+        }
+
+        buildPerformanceTiers();
+    }
+
+    function calculateAgentCompositeForPeriod(agentName, statsDb, docs, scope, periodValue) {
+        const profile = statsDb[agentName] || {};
+        let totalCalls = 0;
+        let totalAhtSec = 0;
+        let totalWrapSec = 0;
+        let totalTransfer = 0;
+        let count = 0;
+
+        if (scope === "Overall") {
+            if (profile["Daily"]) {
+                Object.values(profile["Daily"]).forEach(day => {
+                    totalCalls += parseInt(day.calls) || 0;
+                    totalAhtSec += timeToSeconds(day.aht);
+                    totalWrapSec += timeToSeconds(day.wrap);
+                    totalTransfer += parseFloat(day.transfer) || 0;
+                    count++;
+                });
+            }
+        } else if (profile[scope] && profile[scope][periodValue]) {
+            const periodData = profile[scope][periodValue];
+            totalCalls = parseInt(periodData.calls) || 0;
+            totalAhtSec = timeToSeconds(periodData.aht);
+            totalWrapSec = timeToSeconds(periodData.wrap);
+            totalTransfer = parseFloat(periodData.transfer) || 0;
+            count = 1;
+        }
+
+        // Aggregate QA Score
+        const agentDocs = docs.filter(d => d.agent === agentName);
+        let avgQaScore = null;
+        let hasAudits = agentDocs.length > 0;
+
+        if (hasAudits) {
+            const sumScore = agentDocs.reduce((acc, curr) => acc + (parseInt(curr.score) || 0), 0);
+            avgQaScore = Math.round(sumScore / agentDocs.length);
+        }
+
+        const avgAhtSec = count > 0 ? Math.round(totalAhtSec / count) : 0;
+        const avgWrapSec = count > 0 ? Math.round(totalWrapSec / count) : 0;
+        const avgTransfer = count > 0 ? (totalTransfer / count).toFixed(1) : 0;
+
+        // Composite performance rank score for sorting
+        const effectiveQa = hasAudits ? avgQaScore : 80;
+        const compositeRank = (effectiveQa * 1.5) + (totalCalls * 0.1) - (avgAhtSec * 0.05) - (parseFloat(avgTransfer) * 0.5);
+
+        return {
+            name: agentName,
+            calls: totalCalls,
+            avgAht: secondsToTimeStr(avgAhtSec),
+            avgAhtSec: avgAhtSec,
+            avgWrap: secondsToTimeStr(avgWrapSec),
+            avgWrapSec: avgWrapSec,
+            transferPct: `${avgTransfer}%`,
+            transferVal: parseFloat(avgTransfer),
+            qaScore: avgQaScore,
+            hasAudits: hasAudits,
+            auditCount: agentDocs.length,
+            compositeRank: compositeRank
+        };
+    }
+
+    function generateDetailedReason(stats, assignedTier) {
+        let positiveReasons = [];
+        let concerns = [];
+
+        // Quality Evaluation Analysis
+        if (stats.hasAudits) {
+            if (stats.qaScore >= 92) {
+                positiveReasons.push(`Outstanding QA score of <strong>${stats.qaScore}%</strong>`);
+            } else if (stats.qaScore >= 80) {
+                positiveReasons.push(`Solid quality compliance at <strong>${stats.qaScore}%</strong>`);
+            } else {
+                concerns.push(`QA score at <strong>${stats.qaScore}%</strong> falls below operational targets`);
+            }
+        } else {
+            concerns.push(`No QA evaluation forms logged yet for this period`);
+        }
+
+        // Handling Time Analysis
+        if (stats.avgAhtSec > 0 && stats.avgAhtSec <= 270) {
+            positiveReasons.push(`Efficient resolution speed (AHT: ${stats.avgAht})`);
+        } else if (stats.avgAhtSec > 380) {
+            concerns.push(`Elevated Handling Time (${stats.avgAht})`);
+        }
+
+        // Call Volume Analysis
+        if (stats.calls >= 80) {
+            positiveReasons.push(`High call acceptance volume (${stats.calls} calls)`);
+        } else if (stats.calls > 0 && stats.calls < 25) {
+            concerns.push(`Lower call volume output (${stats.calls} calls)`);
+        }
+
+        // Transfer Rate Analysis
+        if (stats.transferVal > 15) {
+            concerns.push(`High transfer rate at ${stats.transferPct}`);
+        }
+
+        let summaryText = "";
+        if (assignedTier === "TOP") {
+            summaryText = `<strong>Top 5 Performance Ranking:</strong> ${positiveReasons.length > 0 ? positiveReasons.join("; ") : "Consistent overall benchmark output"}.`;
+        } else if (assignedTier === "LOW") {
+            summaryText = `<strong>Focus Areas Identified:</strong> ${concerns.length > 0 ? concerns.join("; ") : "Positioned in lower tier based on overall output metrics"}.`;
+        } else {
+            summaryText = `<strong>Mid-Tier Performance:</strong> Balanced performance output across core handling metrics and quality standards.`;
+        }
+
+        return summaryText;
+    }
+
+    function buildPerformanceTiers() {
+        const statsDb = JSON.parse(localStorage.getItem('agentStatsDB')) || {};
+        const docs = JSON.parse(localStorage.getItem('feedbackDocs')) || [];
+        const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
+
+        const scope = document.getElementById("tierScopeType").value;
+        const periodValEl = document.getElementById("tierPeriodValue");
+        const periodValue = periodValEl ? periodValEl.value : "";
+
+        let agentNames = Object.keys(statsDb);
+        if (!isManagement) {
+            agentNames = [currentUser];
+        }
+
+        // Calculate metrics for all agents
+        let agentProfiles = agentNames.map(name => calculateAgentCompositeForPeriod(name, statsDb, docs, scope, periodValue));
+
+        // Sort descending by composite rank score
+        agentProfiles.sort((a, b) => b.compositeRank - a.compositeRank);
+
+        const topContainer = document.getElementById("topListContainer");
+        const midContainer = document.getElementById("midListContainer");
+        const lowContainer = document.getElementById("lowListContainer");
+
+        topContainer.innerHTML = ""; midContainer.innerHTML = ""; lowContainer.innerHTML = "";
+
+        let countTop = 0, countMid = 0, countLow = 0;
+        const totalAgents = agentProfiles.length;
+
+        agentProfiles.forEach((agent, index) => {
+            let tier = "MID";
+
+            // TIER CATEGORIZATION: TOP 5 -> MID BATCH -> LAST 3
+            if (index < 5 && totalAgents > 0) {
+                tier = "TOP";
+            } else if (index >= totalAgents - 3 && totalAgents > 5) {
+                tier = "LOW";
+            } else {
+                tier = "MID";
+            }
+
+            const displayQaStr = agent.hasAudits ? `${agent.qaScore}%` : `-`;
+            const reasonHTML = generateDetailedReason(agent, tier);
+
+            const rowCard = document.createElement("div");
+            rowCard.className = "agent-row-card";
+            rowCard.innerHTML = `
+                <div class="agent-top-line">
+                    <span>${index + 1}. ${agent.name}</span>
+                    <span style="color: var(--primary);">QA: ${displayQaStr}</span>
+                </div>
+                <div class="metrics-pill-grid">
+                    <span>📞 Volume: <strong>${agent.calls}</strong></span>
+                    <span>⏱️ Avg AHT: <strong>${agent.avgAht}</strong></span>
+                    <span>⏱️ Avg Wrap: <strong>${agent.avgWrap}</strong></span>
+                    <span>🔄 Transfer: <strong>${agent.transferPct}</strong></span>
+                    <span>📑 Audits: <strong>${agent.auditCount}</strong></span>
+                </div>
+                <div class="reason-box">
+                    💡 ${reasonHTML}
+                </div>
+            `;
+
+            if (tier === "TOP") {
+                topContainer.appendChild(rowCard);
+                countTop++;
+            } else if (tier === "MID") {
+                midContainer.appendChild(rowCard);
+                countMid++;
+            } else {
+                lowContainer.appendChild(rowCard);
+                countLow++;
+            }
+        });
+
+        document.getElementById("topCountBadge").innerText = `${countTop} Agent${countTop !== 1 ? 's' : ''}`;
+        document.getElementById("midCountBadge").innerText = `${countMid} Agent${countMid !== 1 ? 's' : ''}`;
+        document.getElementById("lowCountBadge").innerText = `${countLow} Agent${countLow !== 1 ? 's' : ''}`;
+
+        if (countTop === 0) topContainer.innerHTML = "<p style='color:#64748b; font-size:0.85rem;'>No agents currently indexed in Top Performers.</p>";
+        if (countMid === 0) midContainer.innerHTML = "<p style='color:#64748b; font-size:0.85rem;'>No agents currently categorized in Mid-Tier.</p>";
+        if (countLow === 0) lowContainer.innerHTML = "<p style='color:#64748b; font-size:0.85rem;'>No agents currently categorized in Development Focus.</p>";
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quality Evaluation Form</title>
+    <style>
+        :root { 
+            --primary: #e6007e; 
+            --primary-hover: #b80064; 
+            --dark: #0f172a; 
+            --light: #f4f7fa; 
+            --border: #e2e8f0; 
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+        }
+
+        body.dark-mode {
+            --light: #0f172a;
+            --dark: #f4f7fa;
+            --card-bg: #1e293b;
+            --text-main: #f1f5f9;
+            --border: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--light); color: var(--text-main); padding: 2rem 1rem; transition: background 0.3s, color 0.3s; }
+        
+        .form-container { 
+            max-width: 800px; 
+            background: var(--card-bg); 
+            padding: 2.5rem; 
+            margin: 0 auto; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05); 
+            border: 1px solid var(--border); 
+        }
+
+        .header-wrap { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+        h1 { font-size: 1.6rem; font-weight: 700; color: var(--text-main); }
+        
+        .meta-group { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+        label { font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.5rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        input[type="text"], input[type="date"], select, textarea { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; background: var(--card-bg); color: var(--text-main); }
+        input[type="text"]:focus, input[type="date"]:focus, select:focus, textarea:focus { border-color: var(--primary); }
+        
+        .score-bar { position: sticky; top: 10px; background: var(--dark); color: white; padding: 1.25rem 1.5rem; border-radius: 10px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.2); }
+        .score-display { font-size: 2rem; font-weight: 800; color: #ffeb3b; }
+        
+        .section-title { font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 2rem 0 1rem 0; padding-bottom: 0.35rem; border-bottom: 2px solid var(--border); border-left: 4px solid var(--primary); padding-left: 0.5rem; }
+        
+        .question-row { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border); gap: 1rem; }
+        .question-text { flex: 1; font-size: 0.92rem; line-height: 1.4; color: var(--text-main); }
+        
+        .radio-group { display: flex; gap: 1rem; flex-shrink: 0; }
+        .radio-label { display: flex; flex-direction: column; align-items: center; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: #64748b; }
+        .radio-label input { margin-bottom: 0.35rem; width: 18px; height: 18px; accent-color: var(--primary); }
+        
+        .form-field-block { margin-bottom: 1.25rem; }
+
+        button[type="submit"] { background: var(--primary); color: white; border: none; padding: 1.1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 1.1rem; width: 100%; margin-top: 2rem; transition: background 0.2s; }
+        button[type="submit"]:hover { background: var(--primary-hover); }
+
+        /* CONFIRMATION MODAL OVERLAY */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
+        .modal-body { font-size: 0.95rem; color: #64748b; line-height: 1.5; }
+        .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem; }
+        
+        .btn-confirm { background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 700; cursor: pointer; }
+        .btn-confirm:hover { background: var(--primary-hover); }
+        .btn-cancel { background: transparent; color: #64748b; border: 1px solid var(--border); padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-cancel:hover { background: var(--light); }
+    </style>
+</head>
+<body>
+<div class="form-container">
+    <div class="header-wrap">
+        <h1 id="formHeaderTitle">Quality Evaluation Audit</h1>
+    </div>
+    
+    <div class="score-bar" id="scoreBarWrapper">
+        <span style="font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: #94a3b8;">Running Quality Score</span>
+        <div class="score-display" id="liveScore">100%</div>
+    </div>
+
+    <form id="qaForm" onsubmit="promptSubmissionConfirmation(event)">
+        <div class="meta-group">
+            <div>
+                <label for="agentSelect">Agent:</label>
+                <input type="text" id="agentSelect" placeholder="e.g. Agent Alex" required>
+            </div>
+            <div>
+                <label for="evaluatorName">Evaluator:</label>
+                <input type="text" id="evaluatorName" value="Supervisor" required>
+            </div>
+        </div>
+
+        <div class="meta-group">
+            <div>
+                <label for="qaDate">Date:</label>
+                <input type="date" id="qaDate" required>
+            </div>
+            <div id="callRefGroup">
+                <label for="callRefInput">8x8 Call Reference:</label>
+                <input type="text" id="callRefInput" placeholder="e.g. CALL-982341">
+            </div>
+            <div id="ticketRefGroup" style="display:none;">
+                <label for="ticketRefInput">Ticket Reference:</label>
+                <input type="text" id="ticketRefInput" placeholder="e.g. #104928">
+            </div>
+        </div>
+
+        <input type="hidden" id="qaStyleInput" value="Call Listening Feedback">
+
+        <div id="callQaContainer">
+            <div class="section-title">Evaluation Criteria Rubric</div>
+            <div id="questionsContainer"></div>
+            
+            <div class="section-title">Coaching & Feedback Summary</div>
+            <div class="form-field-block">
+                <label for="comments">Feedback Details</label>
+                <textarea id="comments" rows="4" placeholder="Provide summary performance notes & coaching guidance..."></textarea>
+            </div>
+        </div>
+
+        <div id="ticketQaContainer" style="display: none;">
+            <div class="section-title">Ticket Information & Review</div>
+            
+            <div class="form-field-block">
+                <label for="ticketSubject">Ticket Subject:</label>
+                <input type="text" id="ticketSubject" placeholder="e.g. Subscription Renewal Inquiry">
+            </div>
+
+            <div class="form-field-block">
+                <label for="ticketSummary">Ticket Summary:</label>
+                <textarea id="ticketSummary" rows="3" placeholder="Brief outline of the customer interaction and issue..."></textarea>
+            </div>
+
+            <div class="section-title">Coaching & Action Plan</div>
+
+            <div class="form-field-block">
+                <label for="ticketFeedbackWentWell">Ticket Feedback (What went well):</label>
+                <textarea id="ticketFeedbackWentWell" rows="3" placeholder="Highlight positive observations, tone, and procedure compliance..."></textarea>
+            </div>
+
+            <div class="form-field-block">
+                <label for="ticketCoaching">Coaching:</label>
+                <textarea id="ticketCoaching" rows="3" placeholder="Specific coaching opportunities or technical guidance..."></textarea>
+            </div>
+
+            <div class="form-field-block">
+                <label for="ticketNextSteps">Actions / Next Steps:</label>
+                <textarea id="ticketNextSteps" rows="3" placeholder="Key follow-ups, team escalation, or procedural checks..."></textarea>
+            </div>
+
+            <div class="form-field-block">
+                <label for="ticketAgentActions">Actions required from Agent:</label>
+                <textarea id="ticketAgentActions" rows="3" placeholder="Specific commitment or action items for the agent to review..."></textarea>
+            </div>
+        </div>
+        
+        <button type="submit">Submit Evaluation Audit</button>
+    </form>
+</div>
+
+<div id="confirmModal" class="modal-backdrop">
+    <div class="modal-card">
+        <div class="modal-title">Confirm Evaluation Submission</div>
+        <div class="modal-body" id="confirmModalText">
+            Are you sure you want to submit this QA audit? Once submitted, it will be saved to the database for agent review.
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+            <button type="button" class="btn-confirm" onclick="executeFinalSubmit()">Confirm & Submit</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const callQuestions = [
+        "Did the agent follow appropriate DPA procedures based on the caller type?",
+        "Did the agent identify if there was an existing case for this call?",
+        "Was the agent’s tone positive, professional, upbeat and/or empathetic?",
+        "Did the agent avoid defensive language and phrases?",
+        "Did the agent allow the customer to speak without interruption?",
+        "Did the agent display active listening skills? (listen, relay, verbal nodding, summarise)",
+        "Did the agent refrain from using jargon throughout the call?",
+        "Did the agent sound clear and confident throughout the call?",
+        "Did the agent use effective questioning skills? (open & leading)",
+        "Did the agent provide correct answers to the customer’s questions?",
+        "Did the agent set expectations correctly? (actions, timeframes, difficult message)",
+        "Did the agent ask whether there was anything else they could help with?",
+        "Did the agent thank the customer or express appropriate sentiment?",
+        "If ongoing case, did the agent provide a ticket reference?",
+        "Did the agent RESOLVE with all issues raised?",
+        "Did the agent follow the hold procedure correctly?",
+        "Did the agent avoid long silences?",
+        "Do the notes capture all important information?",
+        "Is the case assigned to the correct contact?",
+        "Has the agent followed the correct process/procedure?",
+        "Has the agent followed up within appropriate timeframes?",
+        "Have ticket dispositions been filled out accurately?",
+        "Has the agent sent the correct canned response or confirmation email?",
+        "Was a Trust Pilot sent out to the customer? If not was there a good reason?"
+    ];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const activeTheme = localStorage.getItem('themePreference') || 'light';
+        if (activeTheme === 'dark') { document.body.classList.add('dark-mode'); }
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById("qaDate").value = todayStr;
+
+        const activeUser = sessionStorage.getItem("activeUser");
+        if (activeUser) {
+            document.getElementById("evaluatorName").value = activeUser;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const passedType = urlParams.get('type') || 'Call Listening Feedback';
+        const passedAgentName = urlParams.get('agent') || '';
+
+        document.getElementById("qaStyleInput").value = passedType;
+        if (passedAgentName) {
+            document.getElementById("agentSelect").value = passedAgentName;
+        }
+
+        if (passedType === 'Ticket Feedback') {
+            document.getElementById("formHeaderTitle").innerText = "Ticket Feedback Quality Audit";
+            
+            document.getElementById("callQaContainer").style.display = "none";
+            document.getElementById("ticketQaContainer").style.display = "block";
+            document.getElementById("callRefGroup").style.display = "none";
+            document.getElementById("ticketRefGroup").style.display = "block";
+            document.getElementById("scoreBarWrapper").style.display = "none";
+
+            toggleContainerInputs('callQaContainer', true);
+            toggleContainerInputs('ticketQaContainer', false);
+        } else {
+            document.getElementById("formHeaderTitle").innerText = "Call Listening Quality Audit";
+            
+            document.getElementById("callQaContainer").style.display = "block";
+            document.getElementById("ticketQaContainer").style.display = "none";
+            document.getElementById("callRefGroup").style.display = "block";
+            document.getElementById("ticketRefGroup").style.display = "none";
+            document.getElementById("scoreBarWrapper").style.display = "flex";
+
+            toggleContainerInputs('callQaContainer', false);
+            toggleContainerInputs('ticketQaContainer', true);
+
+            renderCallQuestions();
+            calculateScore();
+        }
+    });
+
+    function toggleContainerInputs(containerId, isDisabled) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const inputs = container.querySelectorAll("input, textarea, select");
+        inputs.forEach(el => {
+            el.disabled = isDisabled;
+        });
+    }
+
+    function renderCallQuestions() {
+        const container = document.getElementById("questionsContainer");
+        container.innerHTML = "";
+        
+        callQuestions.forEach((qText, index) => {
+            const qId = `q${index + 1}`;
+            const row = document.createElement("div");
+            row.className = "question-row";
+            row.innerHTML = `
+                <div class="question-text"><strong>${index + 1}.</strong> ${qText}</div>
+                <div class="radio-group" onchange="calculateScore()">
+                    ${[1, 2, 3, 4].map(val => `<label class="radio-label"><input type="radio" name="${qId}" value="${val}" required ${val === 4 ? 'checked' : ''}>${val}</label>`).join('')}
+                </div>`;
+            container.appendChild(row);
+        });
+    }
+
+    function calculateScore() {
+        let totalEarned = 0;
+        const maxPossiblePoints = callQuestions.length * 4;
+        
+        callQuestions.forEach((_, index) => {
+            const qId = `q${index + 1}`;
+            const selected = document.querySelector(`input[name="${qId}"]:checked`);
+            if (selected) totalEarned += parseInt(selected.value);
+        });
+
+        const percentage = Math.round((totalEarned / maxPossiblePoints) * 100);
+        document.getElementById("liveScore").innerText = `${percentage}%`;
+        return percentage;
+    }
+
+    /* CONFIRMATION MODAL HANDLERS */
+    function promptSubmissionConfirmation(event) {
+        event.preventDefault();
+        const agentName = document.getElementById("agentSelect").value.trim();
+        const qaStyle = document.getElementById("qaStyleInput").value;
+        const modalText = document.getElementById("confirmModalText");
+
+        if (qaStyle === 'Ticket Feedback') {
+            modalText.innerText = `Confirm submitting Ticket Feedback evaluation for ${agentName}?`;
+        } else {
+            const score = calculateScore();
+            modalText.innerText = `Confirm submitting Call Quality evaluation for ${agentName} with a score of ${score}%?`;
+        }
+
+        document.getElementById("confirmModal").style.display = "flex";
+    }
+
+    function closeConfirmModal() {
+        document.getElementById("confirmModal").style.display = "none";
+    }
+
+    function executeFinalSubmit() {
+        const agentName = document.getElementById("agentSelect").value.trim();
+        const evaluatorName = document.getElementById("evaluatorName").value.trim();
+        const qaDate = document.getElementById("qaDate").value;
+        const qaStyle = document.getElementById("qaStyleInput").value;
+
+        let newRecord = {
+            id: Date.now(),
+            agent: agentName,
+            evaluator: evaluatorName,
+            date: qaDate,
+            status: "Pending",
+            qaStyle: qaStyle
+        };
+
+        if (qaStyle === 'Ticket Feedback') {
+            newRecord.score = "N/A";
+            newRecord.ticketRef = document.getElementById("ticketRefInput").value.trim() || 'N/A';
+            newRecord.ticketSubject = document.getElementById("ticketSubject").value.trim();
+            newRecord.ticketSummary = document.getElementById("ticketSummary").value.trim();
+            newRecord.ticketWentWell = document.getElementById("ticketFeedbackWentWell").value.trim();
+            newRecord.ticketCoaching = document.getElementById("ticketCoaching").value.trim();
+            newRecord.ticketNextSteps = document.getElementById("ticketNextSteps").value.trim();
+            newRecord.ticketAgentActions = document.getElementById("ticketAgentActions").value.trim();
+            newRecord.comments = newRecord.ticketWentWell || newRecord.ticketCoaching || "Ticket audit completed.";
+        } else {
+            const finalScore = calculateScore();
+            const radioMap = {};
+            const questionsListMap = {};
+
+            callQuestions.forEach((qText, index) => {
+                const qId = `q${index + 1}`;
+                const selected = document.querySelector(`input[name="${qId}"]:checked`);
+                const val = selected ? selected.value : 4;
+                radioMap[index + 1] = parseInt(val);
+                questionsListMap[index + 1] = qText;
+            });
+
+            newRecord.score = finalScore;
+            newRecord.callRef = document.getElementById("callRefInput").value.trim() || 'N/A';
+            newRecord.comments = document.getElementById("comments").value.trim();
+            newRecord.questionsMap = radioMap;
+            newRecord.questionsTextMap = questionsListMap;
+        }
+
+        const currentDocs = JSON.parse(localStorage.getItem('feedbackDocs')) || [];
+        currentDocs.unshift(newRecord);
+        localStorage.setItem('feedbackDocs', JSON.stringify(currentDocs));
+
+        // Safely notify the parent dashboard window
+        try {
+            if (window.opener && !window.opener.closed) { 
+                if (typeof window.opener.renderDashboard === 'function') {
+                    window.opener.renderDashboard();
+                } else {
+                    window.opener.location.reload(); 
+                }
+            }
+        } catch(err) {
+            console.log("Opener window sync omitted.", err);
+        }
+
+        // Close form window cleanly
+        setTimeout(() => {
+            window.close();
+        }, 100);
+    }
+</script>
+</body>
+</html>

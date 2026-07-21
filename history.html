@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historical Timeline - Zzoomm Performance Tracker</title>
+    <style>
+        :root { 
+            --primary: #e6007e; 
+            --primary-hover: #b80064; 
+            --dark: #0f172a; 
+            --light: #f8fafc; 
+            --card-bg: #ffffff; 
+            --border: #e2e8f0; 
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --warning: #f59e0b;
+            --text-main: #0f172a; 
+        }
+        body.dark-mode {
+            --light: #0f172a; 
+            --dark: #f4f7fa; 
+            --card-bg: #1e293b; 
+            --text-main: #f1f5f9; 
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--light); color: var(--text-main); padding: 2rem; transition: background 0.3s, color 0.3s; }
+        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
+        .btn-back { background: #0f172a; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        body.dark-mode .btn-back { background: #1e293b; border: 1px solid var(--border); }
+
+        /* Filter Deck Card */
+        .filter-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+        }
+
+        .filter-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .filter-label { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .filter-select, .calendar-input { padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
+
+        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .card h2 { font-size: 1.2rem; margin-bottom: 1rem; border-left: 4px solid var(--primary); padding-left: 0.5rem; }
+
+        /* Timeline Cards */
+        .timeline-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; text-align: center; }
+        .kpi-box { background: var(--light); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
+        .kpi-title { font-size: 0.85rem; text-transform: uppercase; color: #64748b; font-weight: 600; }
+        .kpi-val { font-size: 1.75rem; font-weight: 700; margin-top: 0.35rem; color: var(--text-main); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { text-align: left; padding: 0.85rem; border-bottom: 1px solid var(--border); }
+        th { background-color: var(--light); color: #64748b; font-size: 0.85rem; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-bar">
+        <div>
+            <h1>📈 Historical KPI Timeline</h1>
+            <p style="color:#64748b;" id="userRoleContext">Loading timeline analysis...</p>
+        </div>
+        <a href="index.html" class="btn-back">← Back to Dashboard</a>
+    </div>
+
+    <div class="filter-card">
+        <div class="filter-group">
+            <span class="filter-label">Timescale:</span>
+            <select id="timeframeTypeFilter" class="filter-select" onchange="handleTimeframeTypeChange()">
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-label" id="valueFilterLabel">Target Period:</span>
+            <div id="timeframeSelectorContainer" style="display: inline-block;"></div>
+        </div>
+
+        <div class="filter-group" id="agentFilterBlock" style="display: none;">
+            <span class="filter-label">Agent:</span>
+            <select id="agentFilter" class="filter-select" onchange="renderTimeline()">
+                <option value="All">-- All Personnel --</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 id="periodSummaryTitle">Period Overview Summary</h2>
+        <div id="kpiSummaryArea"></div>
+    </div>
+
+    <div class="card">
+        <h2>Historical Entry Logs</h2>
+        <div id="timelineTableArea"></div>
+    </div>
+</div>
+
+<script>
+    const currentUser = sessionStorage.getItem("activeUser");
+    const currentRole = sessionStorage.getItem("activeRole");
+
+    if (!currentUser) { window.location.href = "login.html"; }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const activeTheme = localStorage.getItem('themePreference') || 'light';
+        if (activeTheme === 'dark') { document.body.classList.add('dark-mode'); }
+
+        const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
+        document.getElementById("userRoleContext").innerText = `Logged in as: ${currentUser} (${currentRole})`;
+
+        if (isManagement) {
+            document.getElementById("agentFilterBlock").style.display = "flex";
+            populateAgentDropdown();
+        }
+
+        handleTimeframeTypeChange();
+    });
+
+    function getAgentProfile(db, targetName) {
+        if (!targetName || !db) return {};
+        if (db[targetName]) return db[targetName];
+
+        const cleanTarget = targetName.trim().toLowerCase();
+        const matchedKey = Object.keys(db).find(k => {
+            const cleanK = k.trim().toLowerCase();
+            return cleanK === cleanTarget || cleanK.includes(cleanTarget) || cleanTarget.includes(cleanK);
+        });
+
+        return matchedKey ? db[matchedKey] : {};
+    }
+
+    function populateAgentDropdown() {
+        const select = document.getElementById("agentFilter");
+        if (!select) return;
+        const db = JSON.parse(localStorage.getItem('agentStatsDB')) || {};
+        select.innerHTML = '<option value="All">-- All Personnel --</option>';
+        Object.keys(db).forEach(k => {
+            const o = document.createElement("option"); o.value = k; o.innerText = k; select.appendChild(o);
+        });
+    }
+
+    function handleTimeframeTypeChange() {
+        const type = document.getElementById("timeframeTypeFilter").value;
+        const container = document.getElementById("timeframeSelectorContainer");
+        const label = document.getElementById("valueFilterLabel");
+        const db = JSON.parse(localStorage.getItem('agentStatsDB')) || {};
+        let optionsSet = new Set();
+
+        Object.values(db).forEach(o => { if (o && o[type]) Object.keys(o[type]).forEach(k => optionsSet.add(k)); });
+
+        if (type === "Daily") {
+            label.innerText = "Select Day:";
+            const todayStr = new Date().toISOString().split('T')[0];
+            container.innerHTML = `<input type="date" id="timeframeValueFilter" class="calendar-input" value="${todayStr}" onchange="renderTimeline()">`;
+        } else {
+            label.innerText = type === "Weekly" ? "Select Week:" : "Select Month:";
+            let html = `<select id="timeframeValueFilter" class="filter-select" onchange="renderTimeline()">`;
+            if (optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
+            else {
+                Array.from(optionsSet).sort().reverse().forEach(v => html += `<option value="${v}">${v}</option>`);
+            }
+            html += `</select>`;
+            container.innerHTML = html;
+        }
+
+        renderTimeline();
+    }
+
+    function renderTimeline() {
+        const db = JSON.parse(localStorage.getItem('agentStatsDB')) || {};
+        const docs = JSON.parse(localStorage.getItem('feedbackDocs')) || [];
+        const type = document.getElementById("timeframeTypeFilter").value;
+        const valEl = document.getElementById("timeframeValueFilter");
+        const targetVal = valEl ? valEl.value : "";
+
+        const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
+        const agentFilterEl = document.getElementById("agentFilter");
+        const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
+
+        document.getElementById("periodSummaryTitle").innerText = `Period Summary (${type}: ${targetVal || 'N/A'})`;
+
+        const kpiArea = document.getElementById("kpiSummaryArea");
+        const tableArea = document.getElementById("timelineTableArea");
+
+        if (selectedAgent === "All") {
+            // TEAM SCOPE
+            let teamCalls = 0, teamAhtSec = 0, teamWrapSec = 0, teamTrans = 0, count = 0;
+            let tableRows = "";
+
+            Object.keys(db).forEach(agentName => {
+                const profile = db[agentName];
+                if (profile[type] && profile[type][targetVal]) {
+                    const data = profile[type][targetVal];
+                    teamCalls += parseInt(data.calls) || 0;
+                    teamAhtSec += timeToSeconds(data.aht);
+                    teamWrapSec += timeToSeconds(data.wrap);
+                    teamTrans += parseFloat(data.transfer) || 0;
+                    count++;
+
+                    tableRows += `<tr>
+                        <td><strong>${agentName}</strong></td>
+                        <td>${data.calls}</td>
+                        <td>${data.aht}</td>
+                        <td>${data.wrap}</td>
+                        <td>${data.transfer || '0%'}</td>
+                    </tr>`;
+                }
+            });
+
+            if (count === 0) {
+                kpiArea.innerHTML = "<p style='color:#64748b;'>No data recorded for this target period.</p>";
+                tableArea.innerHTML = "<p style='color:#64748b;'>No entries logged.</p>";
+                return;
+            }
+
+            const avgAht = secondsToTimeStr(Math.round(teamAhtSec / count));
+            const avgWrap = secondsToTimeStr(Math.round(teamWrapSec / count));
+            const avgTrans = (teamTrans / count).toFixed(1) + "%";
+
+            kpiArea.innerHTML = `
+                <div class="timeline-grid">
+                    <div class="kpi-box"><div class="kpi-title">Team Calls Answered</div><div class="kpi-val">${teamCalls}</div></div>
+                    <div class="kpi-box"><div class="kpi-title">Avg AHT</div><div class="kpi-val">${avgAht}</div></div>
+                    <div class="kpi-box"><div class="kpi-title">Avg Wrap</div><div class="kpi-val">${avgWrap}</div></div>
+                    <div class="kpi-box"><div class="kpi-title">Avg Transfer %</div><div class="kpi-val">${avgTrans}</div></div>
+                </div>
+            `;
+
+            tableArea.innerHTML = `
+                <table>
+                    <thead><tr><th>Agent</th><th>Calls Answered</th><th>AHT</th><th>Wrap Time</th><th>Transfer %</th></tr></thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            `;
+
+        } else {
+            // SINGLE AGENT SCOPE
+            const profile = getAgentProfile(db, selectedAgent);
+            const periodData = (profile[type] && profile[type][targetVal]) || { calls: "0", aht: "00:00:00", wrap: "00:00:00", transfer: "0%" };
+
+            kpiArea.innerHTML = `
+                <div class="timeline-grid">
+                    <div class="kpi-box"><div class="kpi-title">Calls Answered</div><div class="kpi-val">${periodData.calls}</div></div>
+                    <div class="kpi-box"><div class="kpi-title">AHT</div><div class="kpi-val">${periodData.aht}</div></div>
+                    <div class="kpi-box"><div class="kpi-title">Average Wrap</div><div class="kpi-val">${periodData.wrap}</div></div>
+                    <div class="kpi-box"><div class="kpi-title">Transfer %</div><div class="kpi-val">${periodData.transfer || '0%'}</div></div>
+                </div>
+            `;
+
+            // Render all historical records for this agent
+            let historyRows = "";
+            if (profile[type]) {
+                Object.keys(profile[type]).sort().reverse().forEach(key => {
+                    const row = profile[type][key];
+                    const isSelected = key === targetVal ? "style='background: rgba(230,0,126,0.08); font-weight:bold;'" : "";
+                    historyRows += `<tr ${isSelected}>
+                        <td>${key}</td>
+                        <td>${row.calls}</td>
+                        <td>${row.aht}</td>
+                        <td>${row.wrap}</td>
+                        <td>${row.transfer || '0%'}</td>
+                    </tr>`;
+                });
+            }
+
+            if (!historyRows) {
+                tableArea.innerHTML = "<p style='color:#64748b;'>No timeline entries found for this personnel record.</p>";
+            } else {
+                tableArea.innerHTML = `
+                    <table>
+                        <thead><tr><th>Period (${type})</th><th>Calls Answered</th><th>AHT</th><th>Wrap Time</th><th>Transfer %</th></tr></thead>
+                        <tbody>${historyRows}</tbody>
+                    </table>
+                `;
+            }
+        }
+    }
+
+    function timeToSeconds(timeStr) {
+        if (!timeStr || timeStr === "N/A" || typeof timeStr !== 'string' || timeStr.includes("#")) return 0;
+        const cleaned = timeStr.trim();
+        if (!isNaN(cleaned)) return parseInt(cleaned);
+        const parts = cleaned.split(':');
+        if (parts.length === 3) return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+        if (parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        return 0;
+    }
+
+    function secondsToTimeStr(totalSeconds) {
+        if (isNaN(totalSeconds) || totalSeconds <= 0) return "00:00:00";
+        const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+        const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+</script>
+</body>
+</html>
