@@ -338,7 +338,9 @@
             document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
             
             const todayStr = new Date().toISOString().split('T')[0];
-            document.getElementById("uploadTargetDate").value = todayStr;
+            if (document.getElementById("uploadTargetDate")) {
+                document.getElementById("uploadTargetDate").value = todayStr;
+            }
 
             const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
             
@@ -417,37 +419,29 @@
             }
         }
 
+        /* FORGIVING AGENT NAME MATCHING */
         function getAgentProfile(db, targetName) {
-    if (!targetName || !db) return {};
-    
-    // Direct exact match
-    if (db[targetName]) return db[targetName];
+            if (!targetName || !db) return {};
+            if (db[targetName]) return db[targetName];
 
-    // Helper to sanitize and break a name into individual words/tokens
-    const tokenize = (str) => 
-        str.toLowerCase()
-           .replace(/[^a-z0-9\s]/g, '') // Remove punctuation like commas/dots
-           .split(/\s+/)               // Split into individual words
-           .filter(Boolean);
+            const tokenize = (str) => 
+                str.toLowerCase()
+                   .replace(/[^a-z0-9\s]/g, '')
+                   .split(/\s+/)
+                   .filter(Boolean);
 
-    const targetTokens = tokenize(targetName);
-    if (targetTokens.length === 0) return {};
+            const targetTokens = tokenize(targetName);
+            if (targetTokens.length === 0) return {};
 
-    // Search through database keys for a fuzzy token match
-    const matchedKey = Object.keys(db).find(dbName => {
-        const dbTokens = tokenize(dbName);
-        
-        // Match if all words in targetName exist in dbName (e.g., "John Smith" matches "Smith, John")
-        const allTargetInDb = targetTokens.every(t => dbTokens.includes(t));
-        
-        // Or match if all words in dbName exist in targetName
-        const allDbInTarget = dbTokens.every(t => targetTokens.includes(t));
+            const matchedKey = Object.keys(db).find(dbName => {
+                const dbTokens = tokenize(dbName);
+                const allTargetInDb = targetTokens.every(t => dbTokens.includes(t));
+                const allDbInTarget = dbTokens.every(t => targetTokens.includes(t));
+                return allTargetInDb || allDbInTarget;
+            });
 
-        return allTargetInDb || allDbInTarget;
-    });
-
-    return matchedKey ? db[matchedKey] : {};
-}
+            return matchedKey ? db[matchedKey] : {};
+        }
 
         function switchView(viewId) {
             const views = ['homeView', 'importView', 'statsView', 'qaView'];
@@ -795,7 +789,7 @@
             };
         }
 
-        /* WEIGHTED TEAM STATS CALCULATOR */
+        /* WEIGHTED TEAM STATS CALCULATOR FOR SUPERVISORS */
         function calculateTeamAverageStats(statsDb, scope, value) {
             let totalTeamCalls = 0;
             let totalWeightedAhtSec = 0;
@@ -1065,20 +1059,29 @@
                 const headerTitle = document.getElementById("homeKpiHeaderTitle");
 
                 if (isManagement) {
-                    // SUPERVISOR VIEW: Show Team-wide aggregated metrics
+                    // SUPERVISOR / SUPERUSER VIEW: Show Team Performance KPIs
                     if (headerTitle) headerTitle.innerText = "📊 Team Performance KPIs";
                     const teamAvgStats = calculateTeamAverageStats(statsDb, homeScope, homeVal);
                     homeKpiArea.innerHTML = generateKpiCardsHTML(teamAvgStats, {});
                 } else {
-                    // AGENT VIEW: Show personal metrics only
+                    // AGENT VIEW: Show My Performance KPIs
                     if (headerTitle) headerTitle.innerText = "📊 My Performance KPIs";
+                    
                     const personalProfile = getAgentProfile(statsDb, currentUser);
                     let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
 
                     if (homeScope === "MTD") {
                         personalStats = calculateMtdStats(personalProfile, homeVal);
-                    } else if (personalProfile && personalProfile[homeScope] && personalProfile[homeScope][homeVal]) {
-                        personalStats = personalProfile[homeScope][homeVal];
+                    } else if (personalProfile && personalProfile[homeScope]) {
+                        if (personalProfile[homeScope][homeVal]) {
+                            personalStats = personalProfile[homeScope][homeVal];
+                        } else {
+                            // Fallback to most recent uploaded entry if target date doesn't exist yet
+                            const dates = Object.keys(personalProfile[homeScope]).sort();
+                            if (dates.length > 0) {
+                                personalStats = personalProfile[homeScope][dates[dates.length - 1]];
+                            }
+                        }
                     }
 
                     const personalTrends = calculateKpiTrends(personalProfile, homeScope, homeVal);
