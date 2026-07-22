@@ -1,229 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Zzoomm Performance Tracker</title>
+    <title>Zzoomm Performance Tracker - Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <style>
-        :root { 
-            --primary: #e6007e; 
-            --primary-hover: #b80064; 
-            --dark: #0f172a; 
-            --light: #f8fafc; 
-            --card-bg: #ffffff; 
-            --border: #e2e8f0; 
-            --danger: #ef4444;
-            --text-main: #0f172a; 
-        }
-        
-        body.dark-mode { 
-            --light: #0f172a; 
-            --dark: #f4f7fa; 
-            --card-bg: #1e293b; 
-            --text-main: #f1f5f9; 
-            --border: #334155; 
-        }
-
+        :root { --primary: #e6007e; --dark: #0f172a; --light: #f8fafc; --border: #cbd5e1; --danger: #ef4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        
-        body { 
-            background-color: var(--light); 
-            color: var(--text-main); 
-            min-height: 100vh; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 1.5rem;
-            transition: background 0.3s, color 0.3s; 
-        }
-
-        .login-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 2.5rem;
-            width: 100%;
-            max-width: 420px;
-            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-        }
-
-        .login-header {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .login-header h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        .login-header p {
-            font-size: 0.88rem;
-            color: #64748b;
-        }
-
-        .error-alert-box {
-            background: #fee2e2;
-            color: var(--danger);
-            border: 1px solid #fca5a5;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            display: none;
-            text-align: center;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-
-        label {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.95rem;
-            outline: none;
-            background: var(--card-bg);
-            color: var(--text-main);
-            transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus, input[type="password"]:focus {
-            border-color: var(--primary);
-        }
-
-        .btn-submit {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.95rem;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 0.5rem;
-        }
-
-        .btn-submit:hover {
-            background: var(--primary-hover);
-        }
-
-        .login-tips {
-            font-size: 0.82rem;
-            color: #64748b;
-            background: var(--light);
-            border: 1px solid var(--border);
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            line-height: 1.5;
-        }
+        body { background-color: var(--dark); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .login-card { background: white; color: var(--dark); padding: 2.5rem; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .login-card h2 { color: var(--primary); margin-bottom: 0.5rem; text-align: center; }
+        .form-group { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
+        label { font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+        input, select { padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; width: 100%; }
+        .btn-submit { background: var(--primary); color: white; border: none; padding: 0.85rem; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 0.5rem; }
+        .btn-submit:hover { opacity: 0.95; }
+        .error-msg { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; display: none; margin-bottom: 1rem; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-body { background: white; color: var(--dark); padding: 2rem; border-radius: 10px; max-width: 400px; width: 90%; }
+        .rule-list { font-size: 0.8rem; color: #64748b; margin: 0.5rem 0 1rem 1rem; }
     </style>
 </head>
 <body>
 
-<div class="login-card">
-    <div class="login-header">
-        <h1>Zzoomm Performance Tracker</h1>
-        <p>Sign in to access your operational portal</p>
+    <div class="login-card">
+        <h2>Zzoomm Performance Tracker</h2>
+        <p style="text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Sign in to access your dashboard</p>
+        
+        <div id="loginError" class="error-msg">Invalid Credentials.</div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Username / Agent Name</label>
+                <input type="text" id="loginUser" required placeholder="e.g. Jane Smith">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" required placeholder="••••••••">
+            </div>
+            <div class="form-group">
+                <label>Role Scope</label>
+                <select id="loginRole">
+                    <option value="Agent">Agent</option>
+                    <option value="Supervisor">Supervisor</option>
+                    <option value="Superuser">Superuser</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Sign In</button>
+        </form>
     </div>
 
-    <div id="errorAlert" class="error-alert-box">
-        Incorrect username or password.
+    <div id="passwordResetModal" class="modal-overlay">
+        <div class="modal-body">
+            <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Password Change Required</h3>
+            <p style="font-size: 0.85rem; color: #475569;">Your account requires a new password before you can proceed.</p>
+            
+            <div id="modalError" class="error-msg" style="margin-top: 0.75rem;"></div>
+
+            <ul class="rule-list">
+                <li>At least 8 characters long</li>
+                <li>At least one capital letter (A-Z)</li>
+                <li>At least one number (0-9)</li>
+                <li>At least one special character (!@#$%^&*)</li>
+            </ul>
+
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="newPasswordInput" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="confirmPasswordInput" placeholder="••••••••">
+            </div>
+            <button class="btn-submit" onclick="submitPasswordChange()">Update Password & Continue</button>
+        </div>
     </div>
 
-    <form id="loginForm" onsubmit="handleLogin(event)">
-        <div class="form-group">
-            <label for="usernameInput">Username / Name</label>
-            <input type="text" id="usernameInput" placeholder="e.g. Admin" required autocomplete="username">
-        </div>
+    <script>
+        let pendingUserObj = null;
 
-        <div class="form-group">
-            <label for="passwordInput">Password</label>
-            <input type="password" id="passwordInput" placeholder="••••••••" required autocomplete="current-password">
-        </div>
-
-        <button type="submit" class="btn-submit">Sign In to Dashboard</button>
-    </form>
-
-
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        // Apply theme if configured
-        const activeTheme = localStorage.getItem('themePreference') || 'light';
-        if (activeTheme === 'dark') { document.body.classList.add('dark-mode'); }
-
-        // Seed default database if not initialized yet
-        let userAccountsDB = JSON.parse(localStorage.getItem("appUsersDB"));
-        if (!userAccountsDB) {
-            userAccountsDB = {
-                "Admin": { password: "admin123", role: "Superuser" },
-                "Superuser": { password: "admin123", role: "Superuser" },
-                "Supervisor": { password: "super123", role: "Supervisor" },
-                "Agent Alex": { password: "agent123", role: "Agent" }
-            };
-            localStorage.setItem("appUsersDB", JSON.stringify(userAccountsDB));
+        function validatePasswordComplexity(pwd) {
+            if (pwd.length < 8) return "Password must be at least 8 characters long.";
+            if (!/[A-Z]/.test(pwd)) return "Password must contain at least one uppercase letter.";
+            if (!/[0-9]/.test(pwd)) return "Password must contain at least one number.";
+            if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) return "Password must contain at least one special character.";
+            return null;
         }
 
-        // Redirect if session is already active
-        if (sessionStorage.getItem("activeUser")) {
-            window.location.href = "index.html";
-        }
-    });
+        async function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById("loginUser").value.trim();
+            const role = document.getElementById("loginRole").value;
+            const errDiv = document.getElementById("loginError");
 
-    function handleLogin(event) {
-        event.preventDefault();
+            errDiv.style.display = "none";
 
-        const errorBox = document.getElementById("errorAlert");
-        errorBox.style.display = "none";
+            if (!user) return;
 
-        const username = document.getElementById("usernameInput").value.trim();
-        const password = document.getElementById("passwordInput").value;
+            // Fetch force-reset flag from DB if available
+            const client = window.supabaseClient || window.supabase;
+            let mustReset = false;
 
-        const userAccountsDB = JSON.parse(localStorage.getItem("appUsersDB")) || {};
+            if (client && typeof client.from === 'function') {
+                const { data } = await client.from('agent_stats').select('must_change_password').ilike('agent_name', user).single();
+                if (data) mustReset = !!data.must_change_password;
+            }
 
-        // Case-insensitive lookup matching for usernames
-        const matchedKey = Object.keys(userAccountsDB).find(
-            key => key.toLowerCase() === username.toLowerCase()
-        );
+            pendingUserObj = { user, role };
 
-        if (matchedKey) {
-            const userRecord = userAccountsDB[matchedKey];
-
-            // Verify password
-            if (userRecord.password === password) {
-                sessionStorage.setItem("activeUser", matchedKey);
-                sessionStorage.setItem("activeRole", userRecord.role);
-                window.location.href = "index.html";
-                return;
+            if (mustReset) {
+                document.getElementById("passwordResetModal").style.display = "flex";
+            } else {
+                completeLoginSession(user, role);
             }
         }
 
-        // If user is not found or password doesn't match
-        errorBox.innerText = "Incorrect username or password.";
-        errorBox.style.display = "block";
-    }
-</script>
+        async function submitPasswordChange() {
+            const newPwd = document.getElementById("newPasswordInput").value;
+            const confirmPwd = document.getElementById("confirmPasswordInput").value;
+            const errDiv = document.getElementById("modalError");
 
+            errDiv.style.display = "none";
+
+            if (newPwd !== confirmPwd) {
+                errDiv.innerText = "Passwords do not match.";
+                errDiv.style.display = "block";
+                return;
+            }
+
+            const ruleError = validatePasswordComplexity(newPwd);
+            if (ruleError) {
+                errDiv.innerText = ruleError;
+                errDiv.style.display = "block";
+                return;
+            }
+
+            // Clear reset flag in Supabase
+            const client = window.supabaseClient || window.supabase;
+            if (client && typeof client.from === 'function' && pendingUserObj) {
+                await client.from('agent_stats').update({ must_change_password: false }).ilike('agent_name', pendingUserObj.user);
+            }
+
+            completeLoginSession(pendingUserObj.user, pendingUserObj.role);
+        }
+
+        function completeLoginSession(user, role) {
+            sessionStorage.setItem("activeUser", user);
+            sessionStorage.setItem("activeRole", role);
+            window.location.href = "index.html";
+        }
+    </script>
 </body>
 </html>
