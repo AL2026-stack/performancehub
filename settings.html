@@ -1,286 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings & Management - Zzoomm Performance Tracker</title>
+    <title>Zzoomm Performance Tracker - Settings</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <style>
         :root { 
-            --primary: #e6007e; 
-            --primary-hover: #b80064; 
-            --dark: #0f172a; 
-            --light: #f8fafc; 
-            --card-bg: #ffffff; 
-            --border: #e2e8f0; 
-            --success: #10b981; 
-            --danger: #ef4444; 
-            --warning: #f59e0b;
-            --text-main: #0f172a; 
+            --primary: #e6007e; --primary-hover: #b80064; --dark: #0f172a; 
+            --light: #f8fafc; --card-bg: #ffffff; --border: #e2e8f0; --text-main: #0f172a; 
         }
-        
-        body.dark-mode { 
-            --light: #0f172a; 
-            --dark: #f4f7fa; 
-            --card-bg: #1e293b; 
-            --text-main: #f1f5f9; 
-            --border: #334155; 
-        }
-
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; padding: 2rem; transition: background 0.3s, color 0.3s; }
-        
-        .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
-
-        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 1rem; }
-        .header-bar h1 { font-size: 1.6rem; font-weight: 700; }
-        
-        .btn-back { background: var(--dark); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: 600; font-size: 0.85rem; }
-        body.dark-mode .btn-back { background: #1e293b; border: 1px solid var(--border); }
-
+        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; }
+        .btn-back { background: var(--dark); color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
         .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .card h2 { font-size: 1.2rem; margin-bottom: 1rem; border-left: 4px solid var(--primary); padding-left: 0.5rem; display: flex; align-items: center; justify-content: space-between; }
-
-        .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
-        label { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-        input[type="text"], input[type="password"], select { width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; background: var(--card-bg); color: var(--text-main); }
-        input[type="text"]:focus, input[type="password"]:focus, select:focus { border-color: var(--primary); }
-
-        .btn-primary { background: var(--primary); color: white; border: none; padding: 0.75rem 1.25rem; border-radius: 6px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+        .card h2 { font-size: 1.2rem; margin-bottom: 1rem; border-left: 4px solid var(--primary); padding-left: 0.5rem; }
+        .form-group { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+        label { font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        input, select { padding: 0.65rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-primary:hover { background: var(--primary-hover); }
-
-        .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; }
-        .btn-danger:hover { background: var(--danger); color: white; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        th, td { text-align: left; padding: 0.85rem; border-bottom: 1px solid var(--border); }
-        th { background-color: var(--light); color: #64748b; font-size: 0.85rem; text-transform: uppercase; }
-
-        .role-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.78rem; font-weight: 700; }
-        .role-superuser { background: #fce7f3; color: #c90076; }
-        .role-supervisor { background: #e0f2fe; color: #0369a1; }
-        .role-agent { background: #f1f5f9; color: #475569; }
-
-        .toast-notify { display: none; padding: 1rem; border-radius: 8px; font-weight: 600; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-
-        /* Modal styling for password reset */
-        .modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; max-width: 420px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); display: flex; flex-direction: column; gap: 1rem; }
-        .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 0.5rem; }
-        .btn-cancel { background: transparent; color: #64748b; border: 1px solid var(--border); padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .toast-notify { display: none; padding: 1rem; border-radius: 8px; font-weight: 600; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header-bar">
-        <div>
-            <h1>Portal Settings</h1>
-            <p style="color: #64748b; font-size: 0.9rem;" id="userRoleTag">Logged in user</p>
+    <div class="container">
+        <div class="header-flex">
+            <h1>⚙️ Application Settings</h1>
+            <a href="index.html" class="btn-back">← Back to Dashboard</a>
         </div>
-        <a href="index.html" class="btn-back">← Back to Dashboard</a>
-    </div>
 
-    <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
+        <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
 
-    <div class="card">
-        <h2>🎨 Appearance Settings</h2>
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
-            <div>
-                <strong>Dark Mode Toggle</strong>
-                <p style="font-size: 0.85rem; color: #64748b;">Switch dashboard color theme</p>
+        <div class="card">
+            <h2>🎨 Appearance & Preferences</h2>
+            <div class="form-group">
+                <label>Theme Preference</label>
+                <select id="themeSelect" onchange="saveThemePreference()">
+                    <option value="light">Light Theme</option>
+                    <option value="dark">Dark Theme</option>
+                </select>
             </div>
-            <button class="btn-primary" onclick="toggleTheme()">Toggle Theme</button>
         </div>
-    </div>
 
-    <div class="card" id="superuserPanel" style="display: none;">
-        <h2>
-            <span>👑 User Account Management</span>
-            <span style="font-size: 0.8rem; color: #64748b; font-weight: normal;">Superuser Control</span>
-        </h2>
-
-        <form onsubmit="createNewUser(event)" style="background: var(--light); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1.5rem;">
-            <h3 style="font-size: 0.95rem; margin-bottom: 1rem;">➕ Register New Account</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                <div class="form-group" style="margin:0;">
-                    <label for="newUsername">Username / Full Name</label>
-                    <input type="text" id="newUsername" placeholder="e.g. Jane Doe" required>
-                </div>
-                <div class="form-group" style="margin:0;">
-                    <label for="newPassword">Initial Password</label>
-                    <input type="password" id="newPassword" placeholder="••••••••" required>
-                </div>
-                <div class="form-group" style="margin:0;">
-                    <label for="newRole">Assigned Role</label>
-                    <select id="newRole" required>
-                        <option value="Agent">Agent</option>
-                        <option value="Supervisor">Supervisor</option>
-                        <option value="Superuser">Superuser</option>
-                    </select>
-                </div>
+        <div id="superuserSecurityCard" class="card" style="display: none;">
+            <h2>🔒 Security & Access Controls (Superuser)</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">Force a specific user to change their password upon their next login attempt.</p>
+            
+            <div class="form-group">
+                <label>Agent / User Name</label>
+                <input type="text" id="targetResetUser" placeholder="e.g. Jane Smith">
             </div>
-            <button type="submit" class="btn-primary" style="margin-top: 1rem;">Create Account</button>
-        </form>
-
-        <h3 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Registered User Directory</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="userTableBody"></tbody>
-        </table>
-    </div>
-</div>
-
-<div id="resetModal" class="modal-backdrop">
-    <div class="modal-card">
-        <h3 style="font-size: 1.2rem; font-weight: 700;">🔑 Reset Password</h3>
-        <p style="font-size: 0.9rem; color: #64748b;" id="resetModalUserText">Target User: --</p>
-        
-        <input type="hidden" id="resetTargetUsername">
-        <div class="form-group">
-            <label for="modalNewPassword">New Password</label>
-            <input type="password" id="modalNewPassword" placeholder="Enter new password" required>
-        </div>
-
-        <div class="modal-actions">
-            <button type="button" class="btn-cancel" onclick="closeResetModal()">Cancel</button>
-            <button type="button" class="btn-primary" onclick="confirmPasswordReset()">Save New Password</button>
+            <button class="btn-primary" onclick="triggerForcePasswordReset()">Flag User for Mandatory Reset</button>
         </div>
     </div>
-</div>
 
-<script>
-    const currentUser = sessionStorage.getItem("activeUser");
-    const currentRole = sessionStorage.getItem("activeRole");
+    <script>
+        const currentUser = sessionStorage.getItem("activeUser");
+        const currentRole = sessionStorage.getItem("activeRole");
 
-    if (!currentUser) { window.location.href = "login.html"; }
+        if (!currentUser) { window.location.href = "login.html"; }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        const activeTheme = localStorage.getItem('themePreference') || 'light';
-        if (activeTheme === 'dark') { document.body.classList.add('dark-mode'); }
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedTheme = localStorage.getItem('themePreference') || 'light';
+            document.getElementById("themeSelect").value = savedTheme;
 
-        document.getElementById("userRoleTag").innerText = `Logged in as: ${currentUser} (${currentRole})`;
-
-        if (currentRole === "Superuser") {
-            document.getElementById("superuserPanel").style.display = "block";
-            renderUserDirectory();
-        }
-    });
-
-    function toggleTheme() {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
-        localStorage.setItem('themePreference', isDark ? 'dark' : 'light');
-    }
-
-    function triggerToast(msg) {
-        const t = document.getElementById("toastNotification");
-        t.innerText = msg;
-        t.style.display = "block";
-        setTimeout(() => t.style.display = "none", 4000);
-    }
-
-    function renderUserDirectory() {
-        const tbody = document.getElementById("userTableBody");
-        const userAccountsDB = JSON.parse(localStorage.getItem("appUsersDB")) || {};
-        tbody.innerHTML = "";
-
-        Object.keys(userAccountsDB).forEach(username => {
-            const record = userAccountsDB[username];
-            const tr = document.createElement("tr");
-
-            let badgeClass = "role-agent";
-            if (record.role === "Superuser") badgeClass = "role-superuser";
-            else if (record.role === "Supervisor") badgeClass = "role-supervisor";
-
-            const deleteBtn = (username !== currentUser) 
-                ? `<button class="btn-danger" onclick="deleteUser('${username}')">Delete</button>` 
-                : `<span style="font-size:0.75rem; color:#94a3b8;">(Active Session)</span>`;
-
-            tr.innerHTML = `
-                <td><strong>${username}</strong></td>
-                <td><span class="role-badge ${badgeClass}">${record.role}</span></td>
-                <td style="display:flex; gap:0.5rem; align-items:center;">
-                    <button class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.8rem;" onclick="openResetModal('${username}')">🔑 Reset Password</button>
-                    ${deleteBtn}
-                </td>
-            `;
-            tbody.appendChild(tr);
+            // Show Security Controls only to Superusers
+            if (currentRole === "Superuser") {
+                document.getElementById("superuserSecurityCard").style.display = "block";
+            }
         });
-    }
 
-    function createNewUser(event) {
-        event.preventDefault();
-        const username = document.getElementById("newUsername").value.trim();
-        const password = document.getElementById("newPassword").value;
-        const role = document.getElementById("newRole").value;
-
-        const userAccountsDB = JSON.parse(localStorage.getItem("appUsersDB")) || {};
-
-        if (userAccountsDB[username]) {
-            alert("An account with this username already exists.");
-            return;
+        function saveThemePreference() {
+            const theme = document.getElementById("themeSelect").value;
+            localStorage.setItem('themePreference', theme);
+            triggerToast("Theme preference updated.");
         }
 
-        userAccountsDB[username] = { password: password, role: role };
-        localStorage.setItem("appUsersDB", JSON.stringify(userAccountsDB));
+        async function triggerForcePasswordReset() {
+            const targetUser = document.getElementById("targetResetUser").value.trim();
+            if (!targetUser) return alert("Please enter an agent or username.");
 
-        document.getElementById("newUsername").value = "";
-        document.getElementById("newPassword").value = "";
+            const client = window.supabaseClient || window.supabase;
+            if (client && typeof client.from === 'function') {
+                const { error } = await client
+                    .from('agent_stats')
+                    .update({ must_change_password: true })
+                    .ilike('agent_name', targetUser);
 
-        triggerToast(`Account created successfully for ${username}.`);
-        renderUserDirectory();
-    }
-
-    function openResetModal(username) {
-        document.getElementById("resetTargetUsername").value = username;
-        document.getElementById("resetModalUserText").innerText = `Target User: ${username}`;
-        document.getElementById("modalNewPassword").value = "";
-        document.getElementById("resetModal").style.display = "flex";
-    }
-
-    function closeResetModal() {
-        document.getElementById("resetModal").style.display = "none";
-    }
-
-    function confirmPasswordReset() {
-        const username = document.getElementById("resetTargetUsername").value;
-        const newPassword = document.getElementById("modalNewPassword").value;
-
-        if (!newPassword) {
-            alert("Please enter a valid password.");
-            return;
+                if (!error) {
+                    triggerToast(`Flagged ${targetUser} to change password on next logon.`);
+                    document.getElementById("targetResetUser").value = "";
+                } else {
+                    alert("Failed to update user flag. Please verify the user exists.");
+                }
+            }
         }
 
-        const userAccountsDB = JSON.parse(localStorage.getItem("appUsersDB")) || {};
-
-        if (userAccountsDB[username]) {
-            userAccountsDB[username].password = newPassword;
-            localStorage.setItem("appUsersDB", JSON.stringify(userAccountsDB));
-            triggerToast(`Password for ${username} has been updated.`);
+        function triggerToast(msg) {
+            const t = document.getElementById("toastNotification");
+            t.innerText = msg;
+            t.style.display = "block";
+            setTimeout(() => t.style.display = "none", 4000);
         }
-
-        closeResetModal();
-        renderUserDirectory();
-    }
-
-    function deleteUser(username) {
-        if (confirm(`Are you sure you want to delete the account for "${username}"?`)) {
-            const userAccountsDB = JSON.parse(localStorage.getItem("appUsersDB")) || {};
-            delete userAccountsDB[username];
-            localStorage.setItem("appUsersDB", JSON.stringify(userAccountsDB));
-            triggerToast(`User account for ${username} deleted.`);
-            renderUserDirectory();
-        }
-    }
-</script>
-
+    </script>
 </body>
 </html>
