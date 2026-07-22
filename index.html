@@ -777,42 +777,55 @@
         }
 
         function calculateTeamAverageStats(statsDb, scope, value) {
-            let agentCount = 0;
-            let totalCalls = 0;
-            let totalAhtSec = 0;
-            let totalWrapSec = 0;
-            let totalTrans = 0;
+    let totalTeamCalls = 0;
+    let totalWeightedAhtSec = 0;
+    let totalWeightedWrapSec = 0;
+    let totalWeightedTransfers = 0;
 
-            Object.keys(statsDb).forEach(agentName => {
-                const agentProfile = statsDb[agentName];
-                let agentStats = null;
+    Object.keys(statsDb).forEach(agentName => {
+        const agentProfile = statsDb[agentName];
+        let agentStats = null;
 
-                if (scope === "MTD") {
-                    agentStats = calculateMtdStats(agentProfile, value);
-                } else if (agentProfile && agentProfile[scope] && agentProfile[scope][value]) {
-                    agentStats = agentProfile[scope][value];
-                }
-
-                if (agentStats && (agentStats.calls !== "0" || agentStats.aht !== "N/A")) {
-                    totalCalls += parseInt(agentStats.calls) || 0;
-                    totalAhtSec += timeToSeconds(agentStats.aht);
-                    totalWrapSec += timeToSeconds(agentStats.wrap);
-                    totalTrans += parseFloat(agentStats.transfer) || 0;
-                    agentCount++;
-                }
-            });
-
-            if (agentCount === 0) {
-                return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-            }
-
-            return {
-                calls: Math.round(totalCalls / agentCount).toString(),
-                aht: secondsToTimeStr(Math.round(totalAhtSec / agentCount)),
-                wrap: secondsToTimeStr(Math.round(totalWrapSec / agentCount)),
-                transfer: (totalTrans / agentCount).toFixed(1) + "%"
-            };
+        if (scope === "MTD") {
+            agentStats = calculateMtdStats(agentProfile, value);
+        } else if (agentProfile && agentProfile[scope] && agentProfile[scope][value]) {
+            agentStats = agentProfile[scope][value];
         }
+
+        if (agentStats) {
+            const calls = parseInt(agentStats.calls) || 0;
+            const ahtSec = timeToSeconds(agentStats.aht);
+            const wrapSec = timeToSeconds(agentStats.wrap);
+            const transPct = parseFloat(agentStats.transfer) || 0;
+
+            if (calls > 0) {
+                // 1. Sum total calls across the whole team
+                totalTeamCalls += calls;
+                
+                // 2. Accumulate weighted totals for accurate team averages
+                totalWeightedAhtSec += (ahtSec * calls);
+                totalWeightedWrapSec += (wrapSec * calls);
+                totalWeightedTransfers += (transPct * calls);
+            }
+        }
+    });
+
+    if (totalTeamCalls === 0) {
+        return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+    }
+
+    // Compute team-wide averages weighted by call volume
+    const realAvgAhtSec = Math.round(totalWeightedAhtSec / totalTeamCalls);
+    const realAvgWrapSec = Math.round(totalWeightedWrapSec / totalTeamCalls);
+    const realAvgTransPct = (totalWeightedTransfers / totalTeamCalls).toFixed(1);
+
+    return {
+        calls: totalTeamCalls.toLocaleString(), // Total calls answered (summed)
+        aht: secondsToTimeStr(realAvgAhtSec),   // Team average AHT
+        wrap: secondsToTimeStr(realAvgWrapSec), // Team average Wrap
+        transfer: realAvgTransPct + "%"          // Team average Transfer %
+    };
+}
 
         function setupDragAndDropStyles() {
             const dz = document.getElementById("dropzoneContainer");
