@@ -243,7 +243,7 @@
 
                 <div class="card">
                     <div class="card-header-flex">
-                        <h2>📊 Team Performance KPIs</h2>
+                        <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
                         <div class="filter-group">
                             <span class="filter-label">Timescale:</span>
                             <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
@@ -418,17 +418,36 @@
         }
 
         function getAgentProfile(db, targetName) {
-            if (!targetName || !db) return {};
-            if (db[targetName]) return db[targetName];
+    if (!targetName || !db) return {};
+    
+    // Direct exact match
+    if (db[targetName]) return db[targetName];
 
-            const cleanTarget = targetName.trim().toLowerCase();
-            const matchedKey = Object.keys(db).find(k => {
-                const cleanK = k.trim().toLowerCase();
-                return cleanK === cleanTarget || cleanK.includes(cleanTarget) || cleanTarget.includes(cleanK);
-            });
+    // Helper to sanitize and break a name into individual words/tokens
+    const tokenize = (str) => 
+        str.toLowerCase()
+           .replace(/[^a-z0-9\s]/g, '') // Remove punctuation like commas/dots
+           .split(/\s+/)               // Split into individual words
+           .filter(Boolean);
 
-            return matchedKey ? db[matchedKey] : {};
-        }
+    const targetTokens = tokenize(targetName);
+    if (targetTokens.length === 0) return {};
+
+    // Search through database keys for a fuzzy token match
+    const matchedKey = Object.keys(db).find(dbName => {
+        const dbTokens = tokenize(dbName);
+        
+        // Match if all words in targetName exist in dbName (e.g., "John Smith" matches "Smith, John")
+        const allTargetInDb = targetTokens.every(t => dbTokens.includes(t));
+        
+        // Or match if all words in dbName exist in targetName
+        const allDbInTarget = dbTokens.every(t => targetTokens.includes(t));
+
+        return allTargetInDb || allDbInTarget;
+    });
+
+    return matchedKey ? db[matchedKey] : {};
+}
 
         function switchView(viewId) {
             const views = ['homeView', 'importView', 'statsView', 'qaView'];
@@ -776,56 +795,53 @@
             };
         }
 
+        /* WEIGHTED TEAM STATS CALCULATOR */
         function calculateTeamAverageStats(statsDb, scope, value) {
-    let totalTeamCalls = 0;
-    let totalWeightedAhtSec = 0;
-    let totalWeightedWrapSec = 0;
-    let totalWeightedTransfers = 0;
+            let totalTeamCalls = 0;
+            let totalWeightedAhtSec = 0;
+            let totalWeightedWrapSec = 0;
+            let totalWeightedTransfers = 0;
 
-    Object.keys(statsDb).forEach(agentName => {
-        const agentProfile = statsDb[agentName];
-        let agentStats = null;
+            Object.keys(statsDb).forEach(agentName => {
+                const agentProfile = statsDb[agentName];
+                let agentStats = null;
 
-        if (scope === "MTD") {
-            agentStats = calculateMtdStats(agentProfile, value);
-        } else if (agentProfile && agentProfile[scope] && agentProfile[scope][value]) {
-            agentStats = agentProfile[scope][value];
-        }
+                if (scope === "MTD") {
+                    agentStats = calculateMtdStats(agentProfile, value);
+                } else if (agentProfile && agentProfile[scope] && agentProfile[scope][value]) {
+                    agentStats = agentProfile[scope][value];
+                }
 
-        if (agentStats) {
-            const calls = parseInt(agentStats.calls) || 0;
-            const ahtSec = timeToSeconds(agentStats.aht);
-            const wrapSec = timeToSeconds(agentStats.wrap);
-            const transPct = parseFloat(agentStats.transfer) || 0;
+                if (agentStats) {
+                    const calls = parseInt(agentStats.calls) || 0;
+                    const ahtSec = timeToSeconds(agentStats.aht);
+                    const wrapSec = timeToSeconds(agentStats.wrap);
+                    const transPct = parseFloat(agentStats.transfer) || 0;
 
-            if (calls > 0) {
-                // 1. Sum total calls across the whole team
-                totalTeamCalls += calls;
-                
-                // 2. Accumulate weighted totals for accurate team averages
-                totalWeightedAhtSec += (ahtSec * calls);
-                totalWeightedWrapSec += (wrapSec * calls);
-                totalWeightedTransfers += (transPct * calls);
+                    if (calls > 0) {
+                        totalTeamCalls += calls;
+                        totalWeightedAhtSec += (ahtSec * calls);
+                        totalWeightedWrapSec += (wrapSec * calls);
+                        totalWeightedTransfers += (transPct * calls);
+                    }
+                }
+            });
+
+            if (totalTeamCalls === 0) {
+                return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
             }
+
+            const realAvgAhtSec = Math.round(totalWeightedAhtSec / totalTeamCalls);
+            const realAvgWrapSec = Math.round(totalWeightedWrapSec / totalTeamCalls);
+            const realAvgTransPct = (totalWeightedTransfers / totalTeamCalls).toFixed(1);
+
+            return {
+                calls: totalTeamCalls.toLocaleString(),
+                aht: secondsToTimeStr(realAvgAhtSec),
+                wrap: secondsToTimeStr(realAvgWrapSec),
+                transfer: realAvgTransPct + "%"
+            };
         }
-    });
-
-    if (totalTeamCalls === 0) {
-        return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-    }
-
-    // Compute team-wide averages weighted by call volume
-    const realAvgAhtSec = Math.round(totalWeightedAhtSec / totalTeamCalls);
-    const realAvgWrapSec = Math.round(totalWeightedWrapSec / totalTeamCalls);
-    const realAvgTransPct = (totalWeightedTransfers / totalTeamCalls).toFixed(1);
-
-    return {
-        calls: totalTeamCalls.toLocaleString(), // Total calls answered (summed)
-        aht: secondsToTimeStr(realAvgAhtSec),   // Team average AHT
-        wrap: secondsToTimeStr(realAvgWrapSec), // Team average Wrap
-        transfer: realAvgTransPct + "%"          // Team average Transfer %
-    };
-}
 
         function setupDragAndDropStyles() {
             const dz = document.getElementById("dropzoneContainer");
@@ -1039,16 +1055,35 @@
                 if (homePendingCountBadge) homePendingCountBadge.style.display = "none";
             }
 
-            // RENDER TEAM PERFORMANCE KPIS ON HOME DASHBOARD
+            // RENDER KPIS ON HOME DASHBOARD BASED ON ROLE
             if (homeKpiArea) {
                 const homeScopeEl = document.getElementById("homeScopeFilter");
                 const homeScope = homeScopeEl ? homeScopeEl.value : "Daily";
                 const homeValEl = document.getElementById("homeValueFilter");
                 const homeVal = homeValEl ? homeValEl.value : "";
 
-                // Compute team-wide average stats
-                const teamAvgStats = calculateTeamAverageStats(statsDb, homeScope, homeVal);
-                homeKpiArea.innerHTML = generateKpiCardsHTML(teamAvgStats, {});
+                const headerTitle = document.getElementById("homeKpiHeaderTitle");
+
+                if (isManagement) {
+                    // SUPERVISOR VIEW: Show Team-wide aggregated metrics
+                    if (headerTitle) headerTitle.innerText = "📊 Team Performance KPIs";
+                    const teamAvgStats = calculateTeamAverageStats(statsDb, homeScope, homeVal);
+                    homeKpiArea.innerHTML = generateKpiCardsHTML(teamAvgStats, {});
+                } else {
+                    // AGENT VIEW: Show personal metrics only
+                    if (headerTitle) headerTitle.innerText = "📊 My Performance KPIs";
+                    const personalProfile = getAgentProfile(statsDb, currentUser);
+                    let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+                    if (homeScope === "MTD") {
+                        personalStats = calculateMtdStats(personalProfile, homeVal);
+                    } else if (personalProfile && personalProfile[homeScope] && personalProfile[homeScope][homeVal]) {
+                        personalStats = personalProfile[homeScope][homeVal];
+                    }
+
+                    const personalTrends = calculateKpiTrends(personalProfile, homeScope, homeVal);
+                    homeKpiArea.innerHTML = generateKpiCardsHTML(personalStats, personalTrends);
+                }
             }
 
             if (homePendingContainer) {
