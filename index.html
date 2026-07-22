@@ -224,7 +224,7 @@
                         <div class="upload-row-flex">
                             <div>
                                 <label class="filter-label" style="display:block; margin-bottom:0.25rem;">Target Logging Date:</label>
-                                <input type="date" id="uploadTargetDate" class="calendar-input" value="2026-07-21">
+                                <input type="date" id="uploadTargetDate" class="calendar-input" value="2026-07-22">
                             </div>
                             <div class="upload-dropzone" id="dropzoneContainer">
                                 <p id="dropzoneText">Drag & Drop CSV File Here or Click to Browse</p>
@@ -243,7 +243,7 @@
 
                 <div class="card">
                     <div class="card-header-flex">
-                        <h2>📊 My Performance KPIs</h2>
+                        <h2>📊 Team Performance KPIs</h2>
                         <div class="filter-group">
                             <span class="filter-label">Timescale:</span>
                             <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
@@ -350,33 +350,38 @@
 
             setupDragAndDropStyles();
 
-            // Fetch central cloud data from Supabase
+            // Fetch central cloud data from Supabase using window.supabaseClient
             await syncCloudData();
 
             populateAgentFilters();
             handleHomeScopeChange();
             handleTimeframeTypeChange(); 
 
-            // REAL-TIME SUPABASE LISTENERS across all devices
-            supabase.channel('public:feedback_docs')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'feedback_docs' }, async () => {
-                    await syncCloudData();
-                    renderDashboard();
-                }).subscribe();
+            // REAL-TIME SUPABASE LISTENERS using global client
+            if (window.supabaseClient) {
+                window.supabaseClient.channel('public:feedback_docs')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'feedback_docs' }, async () => {
+                        await syncCloudData();
+                        renderDashboard();
+                    }).subscribe();
 
-            supabase.channel('public:agent_stats')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_stats' }, async () => {
-                    await syncCloudData();
-                    populateAgentFilters();
-                    renderDashboard();
-                }).subscribe();
+                window.supabaseClient.channel('public:agent_stats')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_stats' }, async () => {
+                        await syncCloudData();
+                        populateAgentFilters();
+                        renderDashboard();
+                    }).subscribe();
+            }
         });
 
         /* SYNC DATA FROM SUPABASE CLOUD TABLES */
         async function syncCloudData() {
             try {
+                const client = window.supabaseClient || window.supabase;
+                if (!client || typeof client.from !== 'function') return;
+
                 // 1. Fetch QA evaluations
-                const { data: docsData } = await supabase.from('feedback_docs').select('*');
+                const { data: docsData } = await client.from('feedback_docs').select('*');
                 if (docsData) {
                     globalDocs = docsData.map(d => ({
                         id: d.id,
@@ -396,7 +401,7 @@
                 }
 
                 // 2. Fetch 8x8 Agent Metrics
-                const { data: statsData } = await supabase.from('agent_stats').select('*');
+                const { data: statsData } = await client.from('agent_stats').select('*');
                 globalStatsDb = {};
                 if (statsData) {
                     statsData.forEach(row => {
@@ -589,13 +594,16 @@
                         globalStatsDb[name]["Weekly"][targetWeek] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getWeekNumber(d) === targetWeek);
                         globalStatsDb[name]["Monthly"][targetMonth] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getMonthName(d) === targetMonth);
 
-                        // Save row to Supabase Cloud
-                        await supabase.from('agent_stats').upsert({
-                            agent_name: name,
-                            daily_stats: globalStatsDb[name]["Daily"],
-                            weekly_stats: globalStatsDb[name]["Weekly"],
-                            monthly_stats: globalStatsDb[name]["Monthly"]
-                        });
+                        // Save row to Supabase Cloud using global client
+                        const client = window.supabaseClient || window.supabase;
+                        if (client && typeof client.from === 'function') {
+                            await client.from('agent_stats').upsert({
+                                agent_name: name,
+                                daily_stats: globalStatsDb[name]["Daily"],
+                                weekly_stats: globalStatsDb[name]["Weekly"],
+                                monthly_stats: globalStatsDb[name]["Monthly"]
+                            });
+                        }
 
                         count++;
                     }
@@ -626,15 +634,19 @@
             const date = document.getElementById("uploadTargetDate").value;
             if(!confirm(`Purge 8x8 data production for ${date}?`)) return;
 
+            const client = window.supabaseClient || window.supabase;
+
             for (const name of Object.keys(globalStatsDb)) {
                 if (globalStatsDb[name]["Daily"] && globalStatsDb[name]["Daily"][date]) {
                     delete globalStatsDb[name]["Daily"][date];
-                    await supabase.from('agent_stats').upsert({
-                        agent_name: name,
-                        daily_stats: globalStatsDb[name]["Daily"],
-                        weekly_stats: globalStatsDb[name]["Weekly"],
-                        monthly_stats: globalStatsDb[name]["Monthly"]
-                    });
+                    if (client && typeof client.from === 'function') {
+                        await client.from('agent_stats').upsert({
+                            agent_name: name,
+                            daily_stats: globalStatsDb[name]["Daily"],
+                            weekly_stats: globalStatsDb[name]["Weekly"],
+                            monthly_stats: globalStatsDb[name]["Monthly"]
+                        });
+                    }
                 }
             }
 
@@ -645,10 +657,13 @@
 
         async function deleteQA(id) {
             if (confirm("Are you sure you want to permanently delete this QA evaluation record?")) {
-                await supabase.from('feedback_docs').delete().eq('id', id);
-                await syncCloudData();
-                triggerToast("QA evaluation record deleted.");
-                renderDashboard();
+                const client = window.supabaseClient || window.supabase;
+                if (client && typeof client.from === 'function') {
+                    await client.from('feedback_docs').delete().eq('id', id);
+                    await syncCloudData();
+                    triggerToast("QA evaluation record deleted.");
+                    renderDashboard();
+                }
             }
         }
 
@@ -692,7 +707,7 @@
 
             if (type === "Daily") {
                 if (label) label.innerText = "Select Day:";
-                const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "2026-07-21";
+                const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "2026-07-22";
                 if (container) container.innerHTML = `<input type="date" id="timeframeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
             } else {
                 if (label) label.innerText = type === "Weekly" ? "Select Week:" : "Select Month:";
@@ -761,6 +776,44 @@
             };
         }
 
+        function calculateTeamAverageStats(statsDb, scope, value) {
+            let agentCount = 0;
+            let totalCalls = 0;
+            let totalAhtSec = 0;
+            let totalWrapSec = 0;
+            let totalTrans = 0;
+
+            Object.keys(statsDb).forEach(agentName => {
+                const agentProfile = statsDb[agentName];
+                let agentStats = null;
+
+                if (scope === "MTD") {
+                    agentStats = calculateMtdStats(agentProfile, value);
+                } else if (agentProfile && agentProfile[scope] && agentProfile[scope][value]) {
+                    agentStats = agentProfile[scope][value];
+                }
+
+                if (agentStats && (agentStats.calls !== "0" || agentStats.aht !== "N/A")) {
+                    totalCalls += parseInt(agentStats.calls) || 0;
+                    totalAhtSec += timeToSeconds(agentStats.aht);
+                    totalWrapSec += timeToSeconds(agentStats.wrap);
+                    totalTrans += parseFloat(agentStats.transfer) || 0;
+                    agentCount++;
+                }
+            });
+
+            if (agentCount === 0) {
+                return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+            }
+
+            return {
+                calls: Math.round(totalCalls / agentCount).toString(),
+                aht: secondsToTimeStr(Math.round(totalAhtSec / agentCount)),
+                wrap: secondsToTimeStr(Math.round(totalWrapSec / agentCount)),
+                transfer: (totalTrans / agentCount).toFixed(1) + "%"
+            };
+        }
+
         function setupDragAndDropStyles() {
             const dz = document.getElementById("dropzoneContainer");
             if (!dz) return;
@@ -805,16 +858,18 @@
             if(!input || !input.value.trim()) return;
 
             const userComment = input.value.trim();
+            const client = window.supabaseClient || window.supabase;
 
-            // Save to Supabase Cloud
-            await supabase.from('feedback_docs').update({
-                status: 'Acknowledged',
-                agent_commit_message: userComment
-            }).eq('id', docId);
+            if (client && typeof client.from === 'function') {
+                await client.from('feedback_docs').update({
+                    status: 'Acknowledged',
+                    agent_commit_message: userComment
+                }).eq('id', docId);
 
-            await syncCloudData();
-            triggerToast("Coaching alignment plan synchronized to cloud.");
-            renderDashboard();
+                await syncCloudData();
+                triggerToast("Coaching alignment plan synchronized to cloud.");
+                renderDashboard();
+            }
         }
 
         function getPreviousPeriodKey(type, currentVal, availableKeys) {
@@ -971,23 +1026,16 @@
                 if (homePendingCountBadge) homePendingCountBadge.style.display = "none";
             }
 
+            // RENDER TEAM PERFORMANCE KPIS ON HOME DASHBOARD
             if (homeKpiArea) {
                 const homeScopeEl = document.getElementById("homeScopeFilter");
                 const homeScope = homeScopeEl ? homeScopeEl.value : "Daily";
                 const homeValEl = document.getElementById("homeValueFilter");
                 const homeVal = homeValEl ? homeValEl.value : "";
 
-                const userProfile = getAgentProfile(statsDb, currentUser);
-                let userStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-
-                if (homeScope === "MTD") {
-                    userStats = calculateMtdStats(userProfile, homeVal);
-                } else if (userProfile[homeScope] && userProfile[homeScope][homeVal]) {
-                    userStats = userProfile[homeScope][homeVal];
-                }
-
-                const homeTrends = calculateKpiTrends(userProfile, homeScope, homeVal);
-                homeKpiArea.innerHTML = generateKpiCardsHTML(userStats, homeTrends);
+                // Compute team-wide average stats
+                const teamAvgStats = calculateTeamAverageStats(statsDb, homeScope, homeVal);
+                homeKpiArea.innerHTML = generateKpiCardsHTML(teamAvgStats, {});
             }
 
             if (homePendingContainer) {
