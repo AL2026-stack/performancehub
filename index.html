@@ -98,7 +98,7 @@
         th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
         th { background-color: var(--light); color: #64748b; font-size: 0.9rem; }
 
-        .coaching-card { background: var(--card-bg); border-left: 4px solid var(--primary); padding: 1.25rem; border-radius: 8px; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .coaching-card { background: var(--card-bg); border-left: 4px solid var(--primary); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); }
         .coaching-item { margin-top: 0.75rem; padding: 0.85rem; background: var(--light); border-radius: 6px; border: 1px solid var(--border); }
 
         .toast-notify { display: none; padding: 1rem; border-radius: 8px; font-weight: 600; margin-bottom: 1.5rem; }
@@ -158,7 +158,7 @@
                         <div class="upload-row-flex">
                             <div>
                                 <label class="filter-label" style="display:block; margin-bottom:0.25rem;">Target Logging Date:</label>
-                                <input type="date" id="uploadTargetDate" class="calendar-input" value="2026-07-22">
+                                <input type="date" id="uploadTargetDate" class="calendar-input" value="2026-07-22" onchange="handleHomeScopeChange()">
                             </div>
                             <div class="upload-dropzone" id="dropzoneContainer">
                                 <p id="dropzoneText">Drag & Drop CSV File Here or Click to Browse</p>
@@ -362,6 +362,27 @@
             return matchedKey ? db[matchedKey] : {};
         }
 
+        function getWeekNumber(dateStr) {
+            if (!dateStr) return "W/C: Unknown";
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return "W/C: Unknown";
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+            const monday = new Date(d.setDate(diff));
+            const yyyy = monday.getFullYear();
+            const mm = String(monday.getMonth() + 1).padStart(2, '0');
+            const dd = String(monday.getDate()).padStart(2, '0');
+            return `W/C: ${yyyy}-${mm}-${dd}`;
+        }
+
+        function getMonthName(dateStr) {
+            if (!dateStr) return "Unknown";
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return "Unknown";
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            return `${months[d.getMonth()]} ${d.getFullYear()}`;
+        }
+
         function timeToSeconds(timeStr) {
             if (!timeStr || timeStr === "N/A" || typeof timeStr !== 'string') return 0;
             const parts = timeStr.trim().split(':');
@@ -376,6 +397,281 @@
             const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
             const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
             return `${h}:${m}:${s}`;
+        }
+
+        /* 8X8 CSV PARSER & UPLOAD HANDLERS */
+        function stageCsvFile() {
+            const input = document.getElementById("dashboardCsvInput");
+            if (!input || !input.files || !input.files.length) return;
+            const dropTxt = document.getElementById("dropzoneText");
+            if (dropTxt) dropTxt.innerHTML = `📄 Staged: <strong>${input.files[0].name}</strong>`;
+            const confirmWrap = document.getElementById("confirmActionWrapper");
+            if (confirmWrap) confirmWrap.style.display = "flex";
+        }
+
+        function parseCSVLineAdaptive(lineText, delimiter) {
+            const tokens = []; let cell = ''; let insideQuote = false;
+            for (let i = 0; i < lineText.length; i++) {
+                const ch = lineText.charAt(i);
+                if (ch === '"') { insideQuote = !insideQuote; } 
+                else if (ch === delimiter && !insideQuote) {
+                    tokens.push(cell.trim().replace(/^["']|["']$/g, '').trim()); cell = '';
+                } else { cell += ch; }
+            }
+            tokens.push(cell.trim().replace(/^["']|["']$/g, '').trim());
+            return tokens;
+        }
+
+        async function processStagedCsvFile() {
+            const input = document.getElementById("dashboardCsvInput");
+            if (!input || !input.files || !input.files.length) {
+                alert("Please select a valid CSV file first.");
+                return;
+            }
+
+            const reader = new FileReader();
+            const dateInput = document.getElementById("uploadTargetDate");
+            const targetDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+            const targetWeek = getWeekNumber(targetDate);
+            const targetMonth = getMonthName(targetDate);
+
+            reader.onload = async function(e) {
+                try {
+                    let contents = e.target.result;
+                    if (!contents) { throw new Error("File is empty."); }
+
+                    const rawLines = contents.split(/\r\n|\n|\r/).map(l => l.trim()).filter(l => l.length > 0);
+                    if (rawLines.length < 2) { throw new Error("CSV file does not contain enough data rows."); }
+
+                    const separator = rawLines[0].indexOf(';') !== -1 ? ';' : ',';
+                    const headers = parseCSVLineAdaptive(rawLines[0], separator).map(h => h.toLowerCase());
+                    
+                    let idxAgent = headers.findIndex(h => h.includes('agent') || h.includes('name') || h.includes('user'));
+                    let idxAccepted = headers.findIndex(h => h.includes('accepted') || h.includes('answered') || h.includes('calls') || h.includes('inbound'));
+                    let idxAHT = headers.findIndex(h => h.includes('aht') || h.includes('handling') || h.includes('handle') || h.includes('talk'));
+                    let idxWrap = headers.findIndex(h => h.includes('wrap') || h.includes('post') || h.includes('work'));
+                    let idxTransfers = headers.findIndex(h => h.includes('transfer'));
+
+                    if (idxAgent === -1) idxAgent = 0; 
+                    if (idxAccepted === -1) idxAccepted = 1;
+                    if (idxAHT === -1) idxAHT = 2; 
+                    if (idxWrap === -1) idxWrap = 3;
+
+                    let count = 0;
+
+                    for (let i = 1; i < rawLines.length; i++) {
+                        const cols = parseCSVLineAdaptive(rawLines[i], separator);
+                        if (!cols || cols.length <= idxAgent) continue;
+
+                        const name = cols[idxAgent];
+                        if (!name || name.toLowerCase().includes('total') || name.toLowerCase() === 'agent' || name.toLowerCase() === 'name') continue;
+
+                        const callsVal = (idxAccepted !== -1 && cols[idxAccepted]) ? (parseInt(cols[idxAccepted]) || 0) : 0;
+                        const ahtStr = (idxAHT !== -1 && cols[idxAHT]) ? cols[idxAHT] : "00:00:00";
+                        const wrapStr = (idxWrap !== -1 && cols[idxWrap]) ? cols[idxWrap] : "00:00:00";
+                        
+                        let rawTransfer = 0;
+                        if (idxTransfers !== -1 && cols[idxTransfers]) {
+                            const parsedT = parseFloat(cols[idxTransfers].replace('%', ''));
+                            if (!isNaN(parsedT)) rawTransfer = parsedT;
+                        }
+
+                        if (!globalStatsDb[name]) globalStatsDb[name] = { Daily: {}, Weekly: {}, Monthly: {} };
+
+                        globalStatsDb[name]["Daily"][targetDate] = {
+                            calls: callsVal.toString(),
+                            aht: ahtStr,
+                            wrap: wrapStr,
+                            transfer: (rawTransfer * (rawTransfer <= 1 && rawTransfer > 0 ? 100 : 1)).toFixed(1) + "%"
+                        };
+
+                        globalStatsDb[name]["Weekly"][targetWeek] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getWeekNumber(d) === targetWeek);
+                        globalStatsDb[name]["Monthly"][targetMonth] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getMonthName(d) === targetMonth);
+
+                        const client = window.supabaseClient || window.supabase;
+                        if (client && typeof client.from === 'function') {
+                            await client.from('agent_stats').upsert({
+                                agent_name: name,
+                                daily_stats: globalStatsDb[name]["Daily"],
+                                weekly_stats: globalStatsDb[name]["Weekly"],
+                                monthly_stats: globalStatsDb[name]["Monthly"]
+                            });
+                        }
+
+                        count++;
+                    }
+
+                    triggerToast(`Successfully recorded 8x8 cloud system logs for ${count} agents.`);
+                    handleHomeScopeChange();
+                    handleTimeframeTypeChange();
+                } catch(err) { 
+                    console.error("CSV Import Error:", err);
+                    alert("Parsing engine failed execution: " + err.message); 
+                }
+                resetStagedFile(); 
+                populateAgentFilters();
+            };
+            reader.readAsText(input.files[0]);
+        }
+
+        function resetStagedFile() {
+            const input = document.getElementById("dashboardCsvInput");
+            if (input) input.value = "";
+            const dropTxt = document.getElementById("dropzoneText");
+            if (dropTxt) dropTxt.innerText = "Drag & Drop CSV File Here or Click to Browse";
+            const confirmWrap = document.getElementById("confirmActionWrapper");
+            if (confirmWrap) confirmWrap.style.display = "none";
+        }
+
+        async function purgeStatsBySelectedDate() {
+            const date = document.getElementById("uploadTargetDate").value;
+            if(!confirm(`Purge 8x8 data production for ${date}?`)) return;
+
+            const client = window.supabaseClient || window.supabase;
+
+            for (const name of Object.keys(globalStatsDb)) {
+                if (globalStatsDb[name]["Daily"] && globalStatsDb[name]["Daily"][date]) {
+                    delete globalStatsDb[name]["Daily"][date];
+                    if (client && typeof client.from === 'function') {
+                        await client.from('agent_stats').upsert({
+                            agent_name: name,
+                            daily_stats: globalStatsDb[name]["Daily"],
+                            weekly_stats: globalStatsDb[name]["Weekly"],
+                            monthly_stats: globalStatsDb[name]["Monthly"]
+                        });
+                    }
+                }
+            }
+
+            triggerToast("Target date context wiped from cloud database.");
+            handleHomeScopeChange();
+            handleTimeframeTypeChange();
+        }
+
+        async function promptForcePasswordReset() {
+            if (currentRole !== "Superuser") return alert("Only Superusers can trigger forced password resets.");
+            const targetUser = prompt("Enter the exact Agent / Username requiring a mandatory password change on next logon:");
+            if (!targetUser) return;
+
+            const client = window.supabaseClient || window.supabase;
+            if (client && typeof client.from === 'function') {
+                const { error } = await client.from('agent_stats').update({ must_change_password: true }).ilike('agent_name', targetUser.trim());
+                if (!error) {
+                    triggerToast(`Flagged ${targetUser} to reset password on next logon.`);
+                } else {
+                    alert("User not found or database update failed.");
+                }
+            }
+        }
+
+        /* PERIOD & TIMESCALE FILTER GENERATORS */
+        function handleHomeScopeChange() {
+            const scopeSelect = document.getElementById("homeScopeFilter");
+            if (!scopeSelect) return;
+            const scope = scopeSelect.value;
+            const container = document.getElementById("homePeriodSelectorContainer");
+            const label = document.getElementById("homeValueFilterLabel");
+            let optionsSet = new Set();
+
+            const lookupType = scope === "MTD" ? "Daily" : scope;
+            Object.values(globalStatsDb).forEach(o => { if (o && o[lookupType]) Object.keys(o[lookupType]).forEach(k => optionsSet.add(k)); });
+
+            const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : new Date().toISOString().split('T')[0];
+
+            if (scope === "Daily" || scope === "MTD") {
+                if (label) label.innerText = scope === "MTD" ? "Through Date:" : "Select Day:";
+                if (container) container.innerHTML = `<input type="date" id="homeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
+            } else {
+                if (label) label.innerText = scope === "Weekly" ? "Select Week:" : "Select Month:";
+                let html = `<select id="homeValueFilter" class="filter-select" onchange="renderDashboard()">`;
+                if (optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
+                else {
+                    Array.from(optionsSet).sort().forEach(v => html += `<option value="${v}">${v}</option>`);
+                }
+                html += `</select>`;
+                if (container) container.innerHTML = html;
+            }
+            renderDashboard();
+        }
+
+        function handleTimeframeTypeChange() {
+            const typeSelect = document.getElementById("timeframeTypeFilter");
+            if (!typeSelect) return;
+            const type = typeSelect.value;
+            const container = document.getElementById("timeframeSelectorContainer");
+            const label = document.getElementById("valueFilterLabel");
+            let optionsSet = new Set();
+            Object.values(globalStatsDb).forEach(o => { if(o && o[type]) Object.keys(o[type]).forEach(k => optionsSet.add(k)); });
+
+            if (type === "Daily") {
+                if (label) label.innerText = "Select Day:";
+                const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "2026-07-22";
+                if (container) container.innerHTML = `<input type="date" id="timeframeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
+            } else {
+                if (label) label.innerText = type === "Weekly" ? "Select Week:" : "Select Month:";
+                let html = `<select id="timeframeValueFilter" class="filter-select" onchange="renderDashboard()">`;
+                if(optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
+                else {
+                    Array.from(optionsSet).sort().forEach(v => html += `<option value="${v}">${v}</option>`);
+                }
+                html += `</select>`; 
+                if (container) container.innerHTML = html;
+            }
+            renderDashboard();
+        }
+
+        function recalculateAggregates(dailyDb, filterCondition) {
+            if (!dailyDb) return null;
+            let calls = 0, aht = 0, wrap = 0, trans = 0, count = 0;
+            Object.keys(dailyDb).forEach(k => {
+                if (dailyDb[k] && filterCondition(k)) {
+                    calls += parseInt(dailyDb[k].calls) || 0;
+                    aht += timeToSeconds(dailyDb[k].aht);
+                    wrap += timeToSeconds(dailyDb[k].wrap);
+                    trans += parseFloat(dailyDb[k].transfer) || 0;
+                    count++;
+                }
+            });
+            if(count === 0) return null;
+            return {
+                calls: calls.toString(), 
+                aht: secondsToTimeStr(Math.round(aht / count)), 
+                wrap: secondsToTimeStr(Math.round(wrap / count)), 
+                transfer: (trans / count).toFixed(1) + "%"
+            };
+        }
+
+        function calculateMtdStats(profileData, throughDateStr) {
+            if (!profileData || !profileData["Daily"]) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+            const dailyMap = profileData["Daily"];
+            const targetDate = new Date(throughDateStr);
+            if (isNaN(targetDate.getTime())) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+            const targetMonth = targetDate.getMonth();
+            const targetYear = targetDate.getFullYear();
+
+            let calls = 0, aht = 0, wrap = 0, trans = 0, count = 0;
+
+            Object.keys(dailyMap).forEach(dStr => {
+                const d = new Date(dStr);
+                if (!isNaN(d.getTime()) && d.getFullYear() === targetYear && d.getMonth() === targetMonth && d <= targetDate) {
+                    const entry = dailyMap[dStr];
+                    calls += parseInt(entry.calls) || 0;
+                    aht += timeToSeconds(entry.aht);
+                    wrap += timeToSeconds(entry.wrap);
+                    trans += parseFloat(entry.transfer) || 0;
+                    count++;
+                }
+            });
+
+            if (count === 0) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+            return {
+                calls: calls.toString(),
+                aht: secondsToTimeStr(Math.round(aht / count)),
+                wrap: secondsToTimeStr(Math.round(wrap / count)),
+                transfer: (trans / count).toFixed(1) + "%"
+            };
         }
 
         /* TARGET THRESHOLD FORMATTER */
@@ -416,7 +712,7 @@
             </div>`;
         }
 
-        /* SUPERVISOR AUTOMATED COACHING ASSISTANT */
+        /* COACHING ASSISTANT LOGIC */
         function generateCoachingGuide(agentName, statsObj) {
             const ahtSec = timeToSeconds(statsObj.aht);
             const wrapSec = timeToSeconds(statsObj.wrap);
@@ -499,7 +795,14 @@
 
             Object.keys(statsDb).forEach(agentName => {
                 const profile = statsDb[agentName];
-                const stats = profile && profile[scope] && profile[scope][value];
+                let stats = null;
+
+                if (scope === "MTD") {
+                    stats = calculateMtdStats(profile, value);
+                } else if (profile && profile[scope] && profile[scope][value]) {
+                    stats = profile[scope][value];
+                }
+
                 if (stats) {
                     const calls = parseInt(stats.calls) || 0;
                     if (calls > 0) {
@@ -527,11 +830,25 @@
             const coachingPanel = document.getElementById("coachingAssistantPanel");
             
             const homeScope = document.getElementById("homeScopeFilter") ? document.getElementById("homeScopeFilter").value : "Daily";
-            const homeVal = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "";
+            const homeValEl = document.getElementById("homeValueFilter");
+            const homeVal = homeValEl ? homeValEl.value : (document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "");
+            
             const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
 
             const agentFilterEl = document.getElementById("agentFilter");
             const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
+
+            const homeMgmt = document.getElementById("homeManagementPanel");
+            const btnCall = document.getElementById("btnShortCutCall");
+            const btnTicket = document.getElementById("btnShortCutTicket");
+            const supBlock = document.getElementById("supervisorFilterBlock");
+
+            if (isManagement) {
+                if (homeMgmt) homeMgmt.style.display = "block";
+                if (btnCall) btnCall.style.display = "inline-flex";
+                if (btnTicket) btnTicket.style.display = "inline-flex";
+                if (supBlock) supBlock.style.display = "flex";
+            }
 
             if (homeKpiArea) {
                 if (isManagement && selectedAgent === "All") {
@@ -545,13 +862,19 @@
                     const personalProfile = getAgentProfile(globalStatsDb, selectedAgent);
                     let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
 
-                    if (personalProfile && personalProfile[homeScope] && personalProfile[homeScope][homeVal]) {
-                        personalStats = personalProfile[homeScope][homeVal];
+                    if (homeScope === "MTD") {
+                        personalStats = calculateMtdStats(personalProfile, homeVal);
+                    } else if (personalProfile && personalProfile[homeScope]) {
+                        if (personalProfile[homeScope][homeVal]) {
+                            personalStats = personalProfile[homeScope][homeVal];
+                        } else {
+                            const dates = Object.keys(personalProfile[homeScope]).sort();
+                            if (dates.length > 0) personalStats = personalProfile[homeScope][dates[dates.length - 1]];
+                        }
                     }
 
                     homeKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
 
-                    // Show Coaching Assistant Panel if Supervisor is inspecting a specific agent
                     if (isManagement && selectedAgent !== "All" && coachingPanel) {
                         coachingPanel.innerHTML = generateCoachingGuide(selectedAgent, personalStats);
                         coachingPanel.style.display = "block";
@@ -564,13 +887,11 @@
             renderTrendChart(selectedAgent !== "All" ? selectedAgent : currentUser);
         }
 
-        function handleHomeScopeChange() { renderDashboard(); }
-        function handleTimeframeTypeChange() { renderDashboard(); }
         function populateAgentFilters() {
             const select = document.getElementById("agentFilter");
             if (!select) return;
             select.innerHTML = '<option value="All">-- All Personnel --</option>';
-            Object.keys(globalStatsDb).forEach(k => {
+            Object.keys(globalStatsDb).sort().forEach(k => {
                 const o = document.createElement("option"); o.value = k; o.innerText = k; select.appendChild(o);
             });
         }
@@ -583,6 +904,11 @@
             renderDashboard();
         }
 
+        function openEvaluationWindow(type) { 
+            const agentVal = document.getElementById("agentFilter") ? document.getElementById("agentFilter").value : "All";
+            window.open(`form.html?type=${encodeURIComponent(type)}&agent=${encodeURIComponent(agentVal !== "All" ? agentVal : "")}`, 'FormWindow', 'width=750,height=700'); 
+        }
+        function viewQAFormHistorical(docId) { window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=700,height=800'); }
         function setupDragAndDropStyles() {}
         function triggerToast(msg) {
             const t = document.getElementById("toastNotification"); 
