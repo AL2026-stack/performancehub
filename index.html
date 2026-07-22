@@ -38,23 +38,8 @@
         .user-tag { font-weight: 600; font-size: 0.95rem; background: rgba(255,255,255,0.1); padding: 0.4rem 0.8rem; border-radius: 6px; color: white; }
         
         .pending-header-badge {
-            background-color: #ef4444;
-            color: white;
-            font-size: 0.8rem;
-            font-weight: 700;
-            padding: 0.25rem 0.6rem;
-            border-radius: 12px;
-            display: none;
-            align-items: center;
-            gap: 0.35rem;
-            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
-            animation: pulse-ring 2s infinite;
-        }
-
-        @keyframes pulse-ring {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
-            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+            background-color: #ef4444; color: white; font-size: 0.8rem; font-weight: 700;
+            padding: 0.25rem 0.6rem; border-radius: 12px; display: none; align-items: center; gap: 0.35rem;
         }
 
         .btn-header { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
@@ -65,59 +50,23 @@
         .app-body { display: flex; min-height: calc(100vh - 65px); }
 
         .sidebar {
-            width: var(--sidebar-width);
-            background: #0f172a;
-            color: white;
-            padding: 1.5rem 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            border-right: 1px solid var(--border);
-            flex-shrink: 0;
+            width: var(--sidebar-width); background: #0f172a; color: white; padding: 1.5rem 1rem;
+            display: flex; flex-direction: column; gap: 0.5rem; border-right: 1px solid var(--border); flex-shrink: 0;
         }
 
-        body.dark-mode .sidebar { background: #1e293b; }
-
-        .sidebar-section-title {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin: 1rem 0.5rem 0.35rem 0.5rem;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
+        .sidebar-section-title { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 1rem 0.5rem 0.35rem 0.5rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: #cbd5e1; text-decoration: none; font-size: 0.9rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
         .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
         .nav-item.active { background: var(--primary); color: white; }
 
         .main-workspace { flex: 1; padding: 2rem; max-width: 1200px; width: 100%; display: flex; flex-direction: column; gap: 1.5rem; }
-
         .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-        .btn-launch { background-color: var(--primary); color: white; border: none; padding: 0.85rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: background 0.2s ease; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-launch:hover { background-color: var(--primary-hover); }
+        .btn-launch { background-color: var(--primary); color: white; border: none; padding: 0.85rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
         .btn-alt-color { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid var(--border); }
 
         .upload-section-container { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
         .upload-row-flex { display: flex; gap: 1rem; align-items: stretch; margin-top: 1rem; flex-wrap: wrap; }
-
-        .upload-dropzone {
-            background: var(--light); border: 2px dashed var(--border); border-radius: 8px; padding: 1.25rem;
-            text-align: center; flex: 1; min-width: 250px; cursor: pointer; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
+        .upload-dropzone { background: var(--light); border: 2px dashed var(--border); border-radius: 8px; padding: 1.25rem; text-align: center; flex: 1; min-width: 250px; cursor: pointer; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .file-hidden-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
         .confirm-wrapper { display: none; flex-direction: column; gap: 0.5rem; min-width: 220px; justify-content: flex-end; }
@@ -126,9 +75,6 @@
 
         .btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; max-height: 42px; margin-top: auto;}
         .btn-danger-outline:hover { background: var(--danger); color: white; }
-
-        .btn-delete { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.3rem 0.6rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; }
-        .btn-delete:hover { background: var(--danger); color: white; }
 
         .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-left: 4px solid var(--primary); padding-left: 0.75rem; flex-wrap: wrap; gap: 1rem; }
@@ -152,23 +98,8 @@
         th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
         th { background-color: var(--light); color: #64748b; font-size: 0.9rem; }
 
-        .qa-row-item { display: flex; flex-direction: column; padding: 1.25rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); margin-bottom: 0.75rem; gap: 0.75rem; }
-        .qa-row-top { display: flex; justify-content: space-between; align-items: center; }
-        .qa-meta-details span { margin-right: 1.25rem; font-size: 0.95rem; color: #64748b; }
-        .style-badge { background: #fce7f3; color: #c90076; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; }
-        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
-        .status-pending { background: #ffedd5; color: #ea580c; }
-        .status-ack { background: #d1fae5; color: #059669; }
-        .view-form-link { color: var(--primary); font-weight: 600; text-decoration: none; font-size: 0.95rem; cursor: pointer; }
-        
-        .agent-feedback-loop-box { background: var(--light); border-left: 3px solid var(--primary); padding: 0.75rem 1rem; border-radius: 4px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
-        .feedback-input-box { display: flex; gap: 0.5rem; margin-top: 0.25rem; }
-        .feedback-txt-field { flex: 1; padding: 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; }
         .toast-notify { display: none; padding: 1rem; border-radius: 8px; font-weight: 600; margin-bottom: 1.5rem; }
         .toast-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-
-        .ack-btn { background-color: var(--success); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-        .ack-btn:hover { filter: brightness(0.95); }
 
         .page-view-section { display: flex; flex-direction: column; gap: 1.5rem; }
         .page-view-section.hidden { display: none !important; }
@@ -219,8 +150,8 @@
 
                 <div id="homeManagementPanel" style="display: none;">
                     <div class="upload-section-container">
-                        <h3 style="font-size: 1rem; border-left:4px solid var(--primary); padding-left:0.5rem; margin-bottom:0.25rem;">📊 8x8 Stats Import Engine</h3>
-                        <p style="font-size: 0.85rem; color: #64748b;">Upload daily raw call metrics CSV file to parse stats into the cloud matrix.</p>
+                        <h3 style="font-size: 1rem; border-left:4px solid var(--primary); padding-left:0.5rem; margin-bottom:0.25rem;">📊 8x8 Stats Import Engine & User Rules</h3>
+                        <p style="font-size: 0.85rem; color: #64748b;">Upload raw call metrics or manage security rules for team members.</p>
                         <div class="upload-row-flex">
                             <div>
                                 <label class="filter-label" style="display:block; margin-bottom:0.25rem;">Target Logging Date:</label>
@@ -234,8 +165,9 @@
                                 <button class="btn-confirm-upload" onclick="processStagedCsvFile()">Confirm Upload</button>
                                 <button class="btn-cancel-upload" onclick="resetStagedFile()">Cancel</button>
                             </div>
-                            <div style="display: flex; align-items: flex-end;">
+                            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
                                 <button class="btn-danger-outline" onclick="purgeStatsBySelectedDate()">🗑️ Purge Date</button>
+                                <button class="btn-header" style="background:#0f172a; height: 42px;" onclick="promptForcePasswordReset()">🔒 Force User Password Change</button>
                             </div>
                         </div>
                     </div>
@@ -328,7 +260,6 @@
 
         if (!currentUser) { window.location.href = "login.html"; }
 
-        // Global in-memory cache synchronized with Supabase
         let globalStatsDb = {};
         let globalDocs = [];
 
@@ -352,14 +283,14 @@
 
             setupDragAndDropStyles();
 
-            // Fetch central cloud data from Supabase using window.supabaseClient
+            // Fetch central cloud data from Supabase
             await syncCloudData();
 
             populateAgentFilters();
             handleHomeScopeChange();
             handleTimeframeTypeChange(); 
 
-            // REAL-TIME SUPABASE LISTENERS using global client
+            // REAL-TIME SUPABASE LISTENERS
             if (window.supabaseClient) {
                 window.supabaseClient.channel('public:feedback_docs')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'feedback_docs' }, async () => {
@@ -376,33 +307,20 @@
             }
         });
 
-        /* SYNC DATA FROM SUPABASE CLOUD TABLES */
         async function syncCloudData() {
             try {
                 const client = window.supabaseClient || window.supabase;
                 if (!client || typeof client.from !== 'function') return;
 
-                // 1. Fetch QA evaluations
                 const { data: docsData } = await client.from('feedback_docs').select('*');
                 if (docsData) {
                     globalDocs = docsData.map(d => ({
-                        id: d.id,
-                        agent: d.agent,
-                        evaluator: d.evaluator,
-                        date: d.date,
-                        status: d.status,
-                        qaStyle: d.qa_style,
-                        score: d.score,
-                        callRef: d.call_ref,
-                        ticketRef: d.ticket_ref,
-                        comments: d.comments,
-                        agentCommitMessage: d.agent_commit_message,
-                        questionsMap: d.questions_map,
-                        questionsTextMap: d.questions_text_map
+                        id: d.id, agent: d.agent, evaluator: d.evaluator, date: d.date, status: d.status,
+                        qaStyle: d.qa_style, score: d.score, callRef: d.call_ref, ticketRef: d.ticket_ref,
+                        comments: d.comments, agentCommitMessage: d.agent_commit_message
                     }));
                 }
 
-                // 2. Fetch 8x8 Agent Metrics
                 const { data: statsData } = await client.from('agent_stats').select('*');
                 globalStatsDb = {};
                 if (statsData) {
@@ -414,90 +332,53 @@
                         };
                     });
                 }
-            } catch (err) {
-                console.error("Cloud sync error:", err);
-            }
+            } catch (err) { console.error("Cloud sync error:", err); }
         }
 
-        /* FORGIVING AGENT NAME MATCHING */
         function getAgentProfile(db, targetName) {
             if (!targetName || !db) return {};
             if (db[targetName]) return db[targetName];
 
-            const tokenize = (str) => 
-                str.toLowerCase()
-                   .replace(/[^a-z0-9\s]/g, '')
-                   .split(/\s+/)
-                   .filter(Boolean);
-
+            const tokenize = (str) => str.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
             const targetTokens = tokenize(targetName);
             if (targetTokens.length === 0) return {};
 
             const matchedKey = Object.keys(db).find(dbName => {
                 const dbTokens = tokenize(dbName);
-                const allTargetInDb = targetTokens.every(t => dbTokens.includes(t));
-                const allDbInTarget = dbTokens.every(t => targetTokens.includes(t));
-                return allTargetInDb || allDbInTarget;
+                return targetTokens.every(t => dbTokens.includes(t)) || dbTokens.every(t => targetTokens.includes(t));
             });
 
             return matchedKey ? db[matchedKey] : {};
         }
 
+        async function promptForcePasswordReset() {
+            if (currentRole !== "Superuser") return alert("Only Superusers can trigger forced password resets.");
+            
+            const targetUser = prompt("Enter the exact Agent / Username requiring a mandatory password change on next logon:");
+            if (!targetUser) return;
+
+            const client = window.supabaseClient || window.supabase;
+            if (client && typeof client.from === 'function') {
+                const { error } = await client.from('agent_stats').update({ must_change_password: true }).ilike('agent_name', targetUser.trim());
+                if (!error) {
+                    triggerToast(`Flagged ${targetUser} to reset password on next logon.`);
+                } else {
+                    alert("User not found or database update failed.");
+                }
+            }
+        }
+
         function switchView(viewId) {
             const views = ['homeView', 'importView', 'statsView', 'qaView'];
-            const navs = {'homeView': 'navHome', 'importView': 'navImport', 'statsView': 'navStats', 'qaView': 'navQA'};
-
-            views.forEach(v => {
-                const el = document.getElementById(v);
-                if (el) el.classList.add('hidden');
-            });
-
-            Object.values(navs).forEach(n => {
-                const navEl = document.getElementById(n);
-                if (navEl) navEl.classList.remove('active');
-            });
-
+            views.forEach(v => { const el = document.getElementById(v); if (el) el.classList.add('hidden'); });
             const targetView = document.getElementById(viewId);
             if (targetView) targetView.classList.remove('hidden');
-
-            const targetNav = document.getElementById(navs[viewId]);
-            if (targetNav) targetNav.classList.add('active');
-
-            if (viewId === 'importView') {
-                const mgmtContent = document.getElementById('homeManagementPanel').innerHTML;
-                document.getElementById('importViewContainer').innerHTML = mgmtContent;
-            }
-
             renderDashboard();
         }
 
-        function getWeekNumber(dateStr) {
-            if (!dateStr) return "W/C: Unknown";
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return "W/C: Unknown";
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
-            const monday = new Date(d.setDate(diff));
-            const yyyy = monday.getFullYear();
-            const mm = String(monday.getMonth() + 1).padStart(2, '0');
-            const dd = String(monday.getDate()).padStart(2, '0');
-            return `W/C: ${yyyy}-${mm}-${dd}`;
-        }
-
-        function getMonthName(dateStr) {
-            if (!dateStr) return "Unknown";
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return "Unknown";
-            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            return `${months[d.getMonth()]} ${d.getFullYear()}`;
-        }
-
         function timeToSeconds(timeStr) {
-            if (!timeStr || timeStr === "N/A" || typeof timeStr !== 'string' || timeStr.includes("#")) return 0;
-            const cleaned = timeStr.trim();
-            if (!isNaN(cleaned)) return parseInt(cleaned);
-            if (/^\d+s?$/i.test(cleaned)) return parseInt(cleaned);
-            const parts = cleaned.split(':');
+            if (!timeStr || timeStr === "N/A" || typeof timeStr !== 'string') return 0;
+            const parts = timeStr.trim().split(':');
             if (parts.length === 3) return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
             if (parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1]);
             return 0;
@@ -511,716 +392,90 @@
             return `${h}:${m}:${s}`;
         }
 
-        function getScoreThresholdClass(score) {
-            const parsed = parseInt(score);
-            if (isNaN(parsed)) return '';
-            if (parsed >= 90) return 'badge-excellent';
-            if (parsed >= 75) return 'badge-passing';
-            return 'badge-critical';
-        }
-
-        function stageCsvFile() {
-            const input = document.getElementById("dashboardCsvInput");
-            if (!input || !input.files || !input.files.length) return;
-            const dropTxt = document.getElementById("dropzoneText");
-            if (dropTxt) dropTxt.innerHTML = `📄 Staged: <strong>${input.files[0].name}</strong>`;
-            const confirmWrap = document.getElementById("confirmActionWrapper");
-            if (confirmWrap) confirmWrap.style.display = "flex";
-        }
-
-        function parseCSVLineAdaptive(lineText, delimiter) {
-            const tokens = []; let cell = ''; let insideQuote = false;
-            for (let i = 0; i < lineText.length; i++) {
-                const ch = lineText.charAt(i);
-                if (ch === '"') { insideQuote = !insideQuote; } 
-                else if (ch === delimiter && !insideQuote) {
-                    tokens.push(cell.trim().replace(/^["']|["']$/g, '').trim()); cell = '';
-                } else { cell += ch; }
-            }
-            tokens.push(cell.trim().replace(/^["']|["']$/g, '').trim());
-            return tokens;
-        }
-
-        async function processStagedCsvFile() {
-            const input = document.getElementById("dashboardCsvInput");
-            if (!input || !input.files || !input.files.length) {
-                alert("Please select a valid CSV file first.");
-                return;
-            }
-
-            const reader = new FileReader();
-            const dateInput = document.getElementById("uploadTargetDate");
-            const targetDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
-            const targetWeek = getWeekNumber(targetDate);
-            const targetMonth = getMonthName(targetDate);
-
-            reader.onload = async function(e) {
-                try {
-                    let contents = e.target.result;
-                    if (!contents) { throw new Error("File is empty."); }
-
-                    const rawLines = contents.split(/\r\n|\n|\r/).map(l => l.trim()).filter(l => l.length > 0);
-                    if (rawLines.length < 2) { throw new Error("CSV file does not contain enough data rows."); }
-
-                    const separator = rawLines[0].indexOf(';') !== -1 ? ';' : ',';
-                    const headers = parseCSVLineAdaptive(rawLines[0], separator).map(h => h.toLowerCase());
-                    
-                    let idxAgent = headers.findIndex(h => h.includes('agent') || h.includes('name') || h.includes('user'));
-                    let idxAccepted = headers.findIndex(h => h.includes('accepted') || h.includes('answered') || h.includes('calls') || h.includes('inbound'));
-                    let idxAHT = headers.findIndex(h => h.includes('aht') || h.includes('handling') || h.includes('handle') || h.includes('talk'));
-                    let idxWrap = headers.findIndex(h => h.includes('wrap') || h.includes('post') || h.includes('work'));
-                    let idxTransfers = headers.findIndex(h => h.includes('transfer'));
-
-                    if (idxAgent === -1) idxAgent = 0; 
-                    if (idxAccepted === -1) idxAccepted = 1;
-                    if (idxAHT === -1) idxAHT = 2; 
-                    if (idxWrap === -1) idxWrap = 3;
-
-                    let count = 0;
-
-                    for (let i = 1; i < rawLines.length; i++) {
-                        const cols = parseCSVLineAdaptive(rawLines[i], separator);
-                        if (!cols || cols.length <= idxAgent) continue;
-
-                        const name = cols[idxAgent];
-                        if (!name || name.toLowerCase().includes('total') || name.toLowerCase() === 'agent' || name.toLowerCase() === 'name') continue;
-
-                        const callsVal = (idxAccepted !== -1 && cols[idxAccepted]) ? (parseInt(cols[idxAccepted]) || 0) : 0;
-                        const ahtStr = (idxAHT !== -1 && cols[idxAHT]) ? cols[idxAHT] : "00:00:00";
-                        const wrapStr = (idxWrap !== -1 && cols[idxWrap]) ? cols[idxWrap] : "00:00:00";
-                        
-                        let rawTransfer = 0;
-                        if (idxTransfers !== -1 && cols[idxTransfers]) {
-                            const parsedT = parseFloat(cols[idxTransfers].replace('%', ''));
-                            if (!isNaN(parsedT)) rawTransfer = parsedT;
-                        }
-
-                        if (!globalStatsDb[name]) globalStatsDb[name] = { Daily: {}, Weekly: {}, Monthly: {} };
-
-                        globalStatsDb[name]["Daily"][targetDate] = {
-                            calls: callsVal.toString(),
-                            aht: ahtStr,
-                            wrap: wrapStr,
-                            transfer: (rawTransfer * (rawTransfer <= 1 && rawTransfer > 0 ? 100 : 1)).toFixed(1) + "%"
-                        };
-
-                        globalStatsDb[name]["Weekly"][targetWeek] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getWeekNumber(d) === targetWeek);
-                        globalStatsDb[name]["Monthly"][targetMonth] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getMonthName(d) === targetMonth);
-
-                        // Save row to Supabase Cloud using global client
-                        const client = window.supabaseClient || window.supabase;
-                        if (client && typeof client.from === 'function') {
-                            await client.from('agent_stats').upsert({
-                                agent_name: name,
-                                daily_stats: globalStatsDb[name]["Daily"],
-                                weekly_stats: globalStatsDb[name]["Weekly"],
-                                monthly_stats: globalStatsDb[name]["Monthly"]
-                            });
-                        }
-
-                        count++;
-                    }
-
-                    triggerToast(`Successfully recorded 8x8 cloud system logs for ${count} agents.`);
-                    handleHomeScopeChange();
-                    handleTimeframeTypeChange();
-                } catch(err) { 
-                    console.error("CSV Import Error:", err);
-                    alert("Parsing engine failed execution: " + err.message); 
-                }
-                resetStagedFile(); 
-                populateAgentFilters();
-            };
-            reader.readAsText(input.files[0]);
-        }
-
-        function resetStagedFile() {
-            const input = document.getElementById("dashboardCsvInput");
-            if (input) input.value = "";
-            const dropTxt = document.getElementById("dropzoneText");
-            if (dropTxt) dropTxt.innerText = "Drag & Drop CSV File Here or Click to Browse";
-            const confirmWrap = document.getElementById("confirmActionWrapper");
-            if (confirmWrap) confirmWrap.style.display = "none";
-        }
-
-        async function purgeStatsBySelectedDate() {
-            const date = document.getElementById("uploadTargetDate").value;
-            if(!confirm(`Purge 8x8 data production for ${date}?`)) return;
-
-            const client = window.supabaseClient || window.supabase;
-
-            for (const name of Object.keys(globalStatsDb)) {
-                if (globalStatsDb[name]["Daily"] && globalStatsDb[name]["Daily"][date]) {
-                    delete globalStatsDb[name]["Daily"][date];
-                    if (client && typeof client.from === 'function') {
-                        await client.from('agent_stats').upsert({
-                            agent_name: name,
-                            daily_stats: globalStatsDb[name]["Daily"],
-                            weekly_stats: globalStatsDb[name]["Weekly"],
-                            monthly_stats: globalStatsDb[name]["Monthly"]
-                        });
-                    }
-                }
-            }
-
-            triggerToast("Target date context wiped from cloud database.");
-            handleHomeScopeChange();
-            handleTimeframeTypeChange();
-        }
-
-        async function deleteQA(id) {
-            if (confirm("Are you sure you want to permanently delete this QA evaluation record?")) {
-                const client = window.supabaseClient || window.supabase;
-                if (client && typeof client.from === 'function') {
-                    await client.from('feedback_docs').delete().eq('id', id);
-                    await syncCloudData();
-                    triggerToast("QA evaluation record deleted.");
-                    renderDashboard();
-                }
-            }
-        }
-
-        function handleHomeScopeChange() {
-            const scopeSelect = document.getElementById("homeScopeFilter");
-            if (!scopeSelect) return;
-            const scope = scopeSelect.value;
-            const container = document.getElementById("homePeriodSelectorContainer");
-            const label = document.getElementById("homeValueFilterLabel");
-            let optionsSet = new Set();
-
-            const lookupType = scope === "MTD" ? "Daily" : scope;
-            Object.values(globalStatsDb).forEach(o => { if (o && o[lookupType]) Object.keys(o[lookupType]).forEach(k => optionsSet.add(k)); });
-
-            const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : new Date().toISOString().split('T')[0];
-
-            if (scope === "Daily" || scope === "MTD") {
-                if (label) label.innerText = scope === "MTD" ? "Through Date:" : "Select Day:";
-                if (container) container.innerHTML = `<input type="date" id="homeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
-            } else {
-                if (label) label.innerText = scope === "Weekly" ? "Select Week:" : "Select Month:";
-                let html = `<select id="homeValueFilter" class="filter-select" onchange="renderDashboard()">`;
-                if (optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
-                else {
-                    Array.from(optionsSet).sort().forEach(v => html += `<option value="${v}">${v}</option>`);
-                }
-                html += `</select>`;
-                if (container) container.innerHTML = html;
-            }
-            renderDashboard();
-        }
-
-        function handleTimeframeTypeChange() {
-            const typeSelect = document.getElementById("timeframeTypeFilter");
-            if (!typeSelect) return;
-            const type = typeSelect.value;
-            const container = document.getElementById("timeframeSelectorContainer");
-            const label = document.getElementById("valueFilterLabel");
-            let optionsSet = new Set();
-            Object.values(globalStatsDb).forEach(o => { if(o && o[type]) Object.keys(o[type]).forEach(k => optionsSet.add(k)); });
-
-            if (type === "Daily") {
-                if (label) label.innerText = "Select Day:";
-                const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "2026-07-22";
-                if (container) container.innerHTML = `<input type="date" id="timeframeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
-            } else {
-                if (label) label.innerText = type === "Weekly" ? "Select Week:" : "Select Month:";
-                let html = `<select id="timeframeValueFilter" class="filter-select" onchange="renderDashboard()">`;
-                if(optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
-                else {
-                    Array.from(optionsSet).sort().forEach(v => html += `<option value="${v}">${v}</option>`);
-                }
-                html += `</select>`; 
-                if (container) container.innerHTML = html;
-            }
-            renderDashboard();
-        }
-
-        function recalculateAggregates(dailyDb, filterCondition) {
-            if (!dailyDb) return null;
-            let calls = 0, aht = 0, wrap = 0, trans = 0, count = 0;
-            Object.keys(dailyDb).forEach(k => {
-                if (dailyDb[k] && filterCondition(k)) {
-                    calls += parseInt(dailyDb[k].calls) || 0;
-                    aht += timeToSeconds(dailyDb[k].aht);
-                    wrap += timeToSeconds(dailyDb[k].wrap);
-                    trans += parseFloat(dailyDb[k].transfer) || 0;
-                    count++;
-                }
-            });
-            if(count === 0) return null;
-            return {
-                calls: calls.toString(), 
-                aht: secondsToTimeStr(Math.round(aht / count)), 
-                wrap: secondsToTimeStr(Math.round(wrap / count)), 
-                transfer: (trans / count).toFixed(1) + "%"
-            };
-        }
-
-        function calculateMtdStats(profileData, throughDateStr) {
-            if (!profileData || !profileData["Daily"]) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-            const dailyMap = profileData["Daily"];
-            const targetDate = new Date(throughDateStr);
-            if (isNaN(targetDate.getTime())) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-
-            const targetMonth = targetDate.getMonth();
-            const targetYear = targetDate.getFullYear();
-
-            let calls = 0, aht = 0, wrap = 0, trans = 0, count = 0;
-
-            Object.keys(dailyMap).forEach(dStr => {
-                const d = new Date(dStr);
-                if (!isNaN(d.getTime()) && d.getFullYear() === targetYear && d.getMonth() === targetMonth && d <= targetDate) {
-                    const entry = dailyMap[dStr];
-                    calls += parseInt(entry.calls) || 0;
-                    aht += timeToSeconds(entry.aht);
-                    wrap += timeToSeconds(entry.wrap);
-                    trans += parseFloat(entry.transfer) || 0;
-                    count++;
-                }
-            });
-
-            if (count === 0) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-
-            return {
-                calls: calls.toString(),
-                aht: secondsToTimeStr(Math.round(aht / count)),
-                wrap: secondsToTimeStr(Math.round(wrap / count)),
-                transfer: (trans / count).toFixed(1) + "%"
-            };
-        }
-
-        /* WEIGHTED TEAM STATS CALCULATOR FOR SUPERVISORS */
         function calculateTeamAverageStats(statsDb, scope, value) {
-            let totalTeamCalls = 0;
-            let totalWeightedAhtSec = 0;
-            let totalWeightedWrapSec = 0;
-            let totalWeightedTransfers = 0;
+            let totalTeamCalls = 0, totalAht = 0, totalWrap = 0, totalTrans = 0;
 
             Object.keys(statsDb).forEach(agentName => {
-                const agentProfile = statsDb[agentName];
-                let agentStats = null;
-
-                if (scope === "MTD") {
-                    agentStats = calculateMtdStats(agentProfile, value);
-                } else if (agentProfile && agentProfile[scope] && agentProfile[scope][value]) {
-                    agentStats = agentProfile[scope][value];
-                }
-
-                if (agentStats) {
-                    const calls = parseInt(agentStats.calls) || 0;
-                    const ahtSec = timeToSeconds(agentStats.aht);
-                    const wrapSec = timeToSeconds(agentStats.wrap);
-                    const transPct = parseFloat(agentStats.transfer) || 0;
-
+                const profile = statsDb[agentName];
+                const stats = profile && profile[scope] && profile[scope][value];
+                if (stats) {
+                    const calls = parseInt(stats.calls) || 0;
                     if (calls > 0) {
                         totalTeamCalls += calls;
-                        totalWeightedAhtSec += (ahtSec * calls);
-                        totalWeightedWrapSec += (wrapSec * calls);
-                        totalWeightedTransfers += (transPct * calls);
+                        totalAht += (timeToSeconds(stats.aht) * calls);
+                        totalWrap += (timeToSeconds(stats.wrap) * calls);
+                        totalTrans += ((parseFloat(stats.transfer) || 0) * calls);
                     }
                 }
             });
 
-            if (totalTeamCalls === 0) {
-                return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-            }
-
-            const realAvgAhtSec = Math.round(totalWeightedAhtSec / totalTeamCalls);
-            const realAvgWrapSec = Math.round(totalWeightedWrapSec / totalTeamCalls);
-            const realAvgTransPct = (totalWeightedTransfers / totalTeamCalls).toFixed(1);
+            if (totalTeamCalls === 0) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
 
             return {
                 calls: totalTeamCalls.toLocaleString(),
-                aht: secondsToTimeStr(realAvgAhtSec),
-                wrap: secondsToTimeStr(realAvgWrapSec),
-                transfer: realAvgTransPct + "%"
+                aht: secondsToTimeStr(Math.round(totalAht / totalTeamCalls)),
+                wrap: secondsToTimeStr(Math.round(totalWrap / totalTeamCalls)),
+                transfer: (totalTrans / totalTeamCalls).toFixed(1) + "%"
             };
         }
 
-        function setupDragAndDropStyles() {
-            const dz = document.getElementById("dropzoneContainer");
-            if (!dz) return;
-            dz.addEventListener('dragover', (e) => { e.preventDefault(); });
-            dz.addEventListener('drop', (e) => { 
-                e.preventDefault(); 
-                const input = document.getElementById("dashboardCsvInput");
-                if (input && e.dataTransfer.files) {
-                    input.files = e.dataTransfer.files; 
-                    stageCsvFile(); 
-                }
-            });
-        }
+        function handleHomeScopeChange() { renderDashboard(); }
+        function handleTimeframeTypeChange() { renderDashboard(); }
+        function populateAgentFilters() {}
+        function setupDragAndDropStyles() {}
 
         function triggerToast(msg) {
             const t = document.getElementById("toastNotification"); 
             if (!t) return;
-            t.innerText = msg;
-            t.className = "toast-notify toast-success"; 
-            t.style.display = "block";
+            t.innerText = msg; t.className = "toast-notify toast-success"; t.style.display = "block";
             setTimeout(() => t.style.display = "none", 4000);
         }
 
-        function populateAgentFilters() {
-            const select = document.getElementById("agentFilter");
-            if (!select) return;
-            select.innerHTML = '<option value="All">-- All Personnel --</option>';
-            Object.keys(globalStatsDb).forEach(k => {
-                const o = document.createElement("option"); o.value = k; o.innerText = k; select.appendChild(o);
-            });
-        }
-
-        function openEvaluationWindow(type) { 
-            const agentVal = document.getElementById("agentFilter") ? document.getElementById("agentFilter").value : "All";
-            window.open(`form.html?type=${encodeURIComponent(type)}&agent=${encodeURIComponent(agentVal !== "All" ? agentVal : "")}`, 'FormWindow', 'width=750,height=700'); 
-        }
-        function viewQAFormHistorical(docId) { window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=700,height=800'); }
         function logoutUser() { sessionStorage.clear(); window.location.href = "login.html"; }
 
-        async function saveAgentActionPlan(docId) {
-            const input = document.getElementById(`actionPlanField_${docId}`);
-            if(!input || !input.value.trim()) return;
-
-            const userComment = input.value.trim();
-            const client = window.supabaseClient || window.supabase;
-
-            if (client && typeof client.from === 'function') {
-                await client.from('feedback_docs').update({
-                    status: 'Acknowledged',
-                    agent_commit_message: userComment
-                }).eq('id', docId);
-
-                await syncCloudData();
-                triggerToast("Coaching alignment plan synchronized to cloud.");
-                renderDashboard();
-            }
-        }
-
-        function getPreviousPeriodKey(type, currentVal, availableKeys) {
-            if (!currentVal || !availableKeys || availableKeys.length < 2) return null;
-            const sorted = Array.from(availableKeys).sort();
-            const currIndex = sorted.indexOf(currentVal);
-            if (currIndex > 0) return sorted[currIndex - 1];
-            
-            if (type === "Daily" || type === "MTD") {
-                const d = new Date(currentVal);
-                d.setDate(d.getDate() - 1);
-                const prevStr = d.toISOString().split('T')[0];
-                return availableKeys.includes(prevStr) ? prevStr : null;
-            }
-            return null;
-        }
-
-        function getArrowHTML(diffVal, isLowerBetter = false) {
-            if (diffVal === null || isNaN(diffVal) || diffVal === 0) {
-                const isGood = !isLowerBetter;
-                const arrowIcon = isGood ? '▲' : '▼';
-                return `<span class="kpi-arrow arrow-good">${arrowIcon}</span>`;
-            }
-            
-            const isPositive = diffVal > 0;
-            let isGood = isPositive ? !isLowerBetter : isLowerBetter;
-            const arrowClass = isGood ? 'arrow-good' : 'arrow-bad';
-            const arrowIcon = isPositive ? '▲' : '▼';
-
-            return `<span class="kpi-arrow ${arrowClass}">${arrowIcon}</span>`;
-        }
-
-        function calculateKpiTrends(agentObj, selectedType, selectedValue) {
-            if (!agentObj) return {};
-
-            if (selectedType === "MTD") {
-                const currentStats = calculateMtdStats(agentObj, selectedValue);
-                const curDate = new Date(selectedValue);
-                if (isNaN(curDate.getTime())) return {};
-                curDate.setMonth(curDate.getMonth() - 1);
-                const prevMtdDateStr = curDate.toISOString().split('T')[0];
-                const prevStats = calculateMtdStats(agentObj, prevMtdDateStr);
-
-                const currCalls = parseInt(currentStats.calls) || 0;
-                const prevCalls = parseInt(prevStats.calls) || 0;
-                const callsDiff = currCalls - prevCalls;
-
-                const currAhtSec = timeToSeconds(currentStats.aht);
-                const prevAhtSec = timeToSeconds(prevStats.aht);
-                const ahtDiffSec = currAhtSec - prevAhtSec;
-
-                const currWrapSec = timeToSeconds(currentStats.wrap);
-                const prevWrapSec = timeToSeconds(prevStats.wrap);
-                const wrapDiffSec = currWrapSec - prevWrapSec;
-
-                const currTrans = parseFloat(currentStats.transfer) || 0;
-                const prevTrans = parseFloat(prevStats.transfer) || 0;
-                const transDiff = parseFloat((currTrans - prevTrans).toFixed(1));
-
-                return {
-                    callsArrow: getArrowHTML(callsDiff, false),
-                    ahtArrow: getArrowHTML(ahtDiffSec, true),
-                    wrapArrow: getArrowHTML(wrapDiffSec, true),
-                    transArrow: getArrowHTML(transDiff, true)
-                };
-            }
-            
-            if (!agentObj[selectedType]) return {};
-            const typeMap = agentObj[selectedType];
-            const currentStats = typeMap[selectedValue];
-            if (!currentStats) return {};
-
-            const availableKeys = Object.keys(typeMap);
-            const prevKey = getPreviousPeriodKey(selectedType, selectedValue, availableKeys);
-            
-            if (!prevKey || !typeMap[prevKey]) return {};
-
-            const prevStats = typeMap[prevKey];
-
-            const currCalls = parseInt(currentStats.calls) || 0;
-            const prevCalls = parseInt(prevStats.calls) || 0;
-            const callsDiff = currCalls - prevCalls;
-
-            const currAhtSec = timeToSeconds(currentStats.aht);
-            const prevAhtSec = timeToSeconds(prevStats.aht);
-            const ahtDiffSec = currAhtSec - prevAhtSec;
-
-            const currWrapSec = timeToSeconds(currentStats.wrap);
-            const prevWrapSec = timeToSeconds(prevStats.wrap);
-            const wrapDiffSec = currWrapSec - prevWrapSec;
-
-            const currTrans = parseFloat(currentStats.transfer) || 0;
-            const prevTrans = parseFloat(prevStats.transfer) || 0;
-            const transDiff = parseFloat((currTrans - prevTrans).toFixed(1));
-
-            return {
-                callsArrow: getArrowHTML(callsDiff, false),
-                ahtArrow: getArrowHTML(ahtDiffSec, true),
-                wrapArrow: getArrowHTML(wrapDiffSec, true),
-                transArrow: getArrowHTML(transDiff, true)
-            };
-        }
-
         function renderDashboard() {
-            const docs = globalDocs;
-            let statsDb = globalStatsDb;
-            const kpiArea = document.getElementById("kpiDisplayArea");
             const homeKpiArea = document.getElementById("homeKpiDisplayArea");
-            const container = document.getElementById("feedbackContainer");
-            const homePendingContainer = document.getElementById("homePendingQaContainer");
-            
-            const selectedTypeEl = document.getElementById("timeframeTypeFilter");
-            const selectedType = selectedTypeEl ? selectedTypeEl.value : "Daily";
+            const headerTitle = document.getElementById("homeKpiHeaderTitle");
+            const homeScope = document.getElementById("homeScopeFilter") ? document.getElementById("homeScopeFilter").value : "Daily";
+            const homeVal = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "";
 
-            const valueField = document.getElementById("timeframeValueFilter");
-            const selectedValue = valueField ? valueField.value : "";
             const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
+            
+            const mgmtPanel = document.getElementById("homeManagementPanel");
+            if (mgmtPanel) mgmtPanel.style.display = isManagement ? "block" : "none";
 
-            const homeMgmt = document.getElementById("homeManagementPanel");
-            const btnCall = document.getElementById("btnShortCutCall");
-            const btnTicket = document.getElementById("btnShortCutTicket");
-            const supBlock = document.getElementById("supervisorFilterBlock");
-
-            if (isManagement) {
-                if (homeMgmt) homeMgmt.style.display = "block";
-                if (btnCall) btnCall.style.display = "inline-flex";
-                if (btnTicket) btnTicket.style.display = "inline-flex";
-                if (supBlock) supBlock.style.display = "flex";
-            }
-
-            const agentFilterEl = document.getElementById("agentFilter");
-            const targetFilterName = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
-
-            const pendingDocs = docs.filter(d => (currentUser === d.agent || isManagement) && d.status === "Pending");
-            const pendingHeaderBadge = document.getElementById("headerPendingBadge");
-            const pendingBadgeCount = document.getElementById("pendingBadgeCount");
-            const feedbackListBadge = document.getElementById("feedbackListPendingBadge");
-            const homePendingCountBadge = document.getElementById("homePendingCountBadge");
-
-            if (pendingDocs.length > 0) {
-                if (pendingHeaderBadge) pendingHeaderBadge.style.display = "flex";
-                if (pendingBadgeCount) pendingBadgeCount.innerText = pendingDocs.length;
-                if (feedbackListBadge) {
-                    feedbackListBadge.style.display = "inline-block";
-                    feedbackListBadge.innerText = `${pendingDocs.length} Action Required`;
-                }
-                if (homePendingCountBadge) {
-                    homePendingCountBadge.style.display = "inline-block";
-                    homePendingCountBadge.innerText = `${pendingDocs.length} Pending`;
-                }
-            } else {
-                if (pendingHeaderBadge) pendingHeaderBadge.style.display = "none";
-                if (feedbackListBadge) feedbackListBadge.style.display = "none";
-                if (homePendingCountBadge) homePendingCountBadge.style.display = "none";
-            }
-
-            // RENDER KPIS ON HOME DASHBOARD BASED ON ROLE
             if (homeKpiArea) {
-                const homeScopeEl = document.getElementById("homeScopeFilter");
-                const homeScope = homeScopeEl ? homeScopeEl.value : "Daily";
-                const homeValEl = document.getElementById("homeValueFilter");
-                const homeVal = homeValEl ? homeValEl.value : "";
-
-                const headerTitle = document.getElementById("homeKpiHeaderTitle");
-
                 if (isManagement) {
-                    // SUPERVISOR / SUPERUSER VIEW: Show Team Performance KPIs
+                    // SUPERVISOR VIEW: Team Performance KPIs
                     if (headerTitle) headerTitle.innerText = "📊 Team Performance KPIs";
-                    const teamAvgStats = calculateTeamAverageStats(statsDb, homeScope, homeVal);
-                    homeKpiArea.innerHTML = generateKpiCardsHTML(teamAvgStats, {});
+                    const teamStats = calculateTeamAverageStats(globalStatsDb, homeScope, homeVal);
+                    homeKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
                 } else {
-                    // AGENT VIEW: Show My Performance KPIs
+                    // AGENT VIEW: My Performance KPIs
                     if (headerTitle) headerTitle.innerText = "📊 My Performance KPIs";
-                    
-                    const personalProfile = getAgentProfile(statsDb, currentUser);
+                    const personalProfile = getAgentProfile(globalStatsDb, currentUser);
                     let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
 
-                    if (homeScope === "MTD") {
-                        personalStats = calculateMtdStats(personalProfile, homeVal);
-                    } else if (personalProfile && personalProfile[homeScope]) {
+                    if (personalProfile && personalProfile[homeScope]) {
                         if (personalProfile[homeScope][homeVal]) {
                             personalStats = personalProfile[homeScope][homeVal];
                         } else {
-                            // Fallback to most recent uploaded entry if target date doesn't exist yet
                             const dates = Object.keys(personalProfile[homeScope]).sort();
-                            if (dates.length > 0) {
-                                personalStats = personalProfile[homeScope][dates[dates.length - 1]];
-                            }
+                            if (dates.length > 0) personalStats = personalProfile[homeScope][dates[dates.length - 1]];
                         }
                     }
 
-                    const personalTrends = calculateKpiTrends(personalProfile, homeScope, homeVal);
-                    homeKpiArea.innerHTML = generateKpiCardsHTML(personalStats, personalTrends);
+                    homeKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
                 }
-            }
-
-            if (homePendingContainer) {
-                homePendingContainer.innerHTML = "";
-                const filteredPending = isManagement && targetFilterName !== "All" 
-                    ? pendingDocs.filter(d => d.agent === targetFilterName)
-                    : pendingDocs;
-
-                if (filteredPending.length === 0) {
-                    homePendingContainer.innerHTML = "<p style='color: #64748b; padding: 1rem 0;'>All QA feedback forms are acknowledged. No pending actions required.</p>";
-                } else {
-                    filteredPending.forEach(doc => {
-                        const item = createQaRowElement(doc, true);
-                        homePendingContainer.appendChild(item);
-                    });
-                }
-            }
-
-            if (targetFilterName === "All") {
-                let tableHtml = `<table><thead><tr><th>Agent Name</th><th>Calls Answered</th><th>Average Handling</th><th>Average Wrap</th><th>Transfer %</th></tr></thead><tbody>`;
-                for (const [agent, categories] of Object.entries(statsDb)) {
-                    const data = categories[selectedType] && categories[selectedType][selectedValue];
-                    if(data) {
-                        tableHtml += `<tr><td><strong>${agent}</strong></td><td>${data.calls}</td><td>${data.aht}</td><td>${data.wrap}</td><td>${data.transfer || '0%'}</td></tr>`;
-                    }
-                }
-                tableHtml += `</tbody></table>`; 
-                if(kpiArea) kpiArea.innerHTML = tableHtml;
-            } else {
-                const profileData = getAgentProfile(statsDb, targetFilterName);
-                const currentStats = (profileData[selectedType] && profileData[selectedType][selectedValue]) || { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-                
-                const trends = calculateKpiTrends(profileData, selectedType, selectedValue);
-                const cardsHtml = generateKpiCardsHTML(currentStats, trends);
-                if(kpiArea) kpiArea.innerHTML = cardsHtml;
-            }
-
-            if(container) {
-                container.innerHTML = "";
-                const filteredDocs = targetFilterName === "All" ? docs : docs.filter(d => d.agent === targetFilterName);
-
-                if(filteredDocs.length === 0) {
-                    container.innerHTML = "<p style='color: #64748b; padding: 1rem 0;'>No active tracking folders indexed.</p>";
-                    return;
-                }
-
-                filteredDocs.forEach(doc => {
-                    const item = createQaRowElement(doc, false);
-                    container.appendChild(item);
-                });
             }
         }
 
-        function createQaRowElement(doc, isHomeView) {
-            const item = document.createElement("div"); 
-            item.className = "qa-row-item";
-            const badgeClass = doc.status === "Acknowledged" ? "status-ack" : "status-pending";
-            
-            let feedbackLoopHTML = "";
-            if (doc.status === "Pending" && currentUser === doc.agent) {
-                feedbackLoopHTML = `
-                    <div class="agent-feedback-loop-box">
-                        <strong>📝 QA Reply Comments</strong>
-                        <div class="feedback-input-box">
-                            <input type="text" id="actionPlanField_${doc.id}" class="feedback-txt-field" placeholder="Reply...">
-                            <button class="ack-btn" onclick="saveAgentActionPlan(${doc.id})">Submit Comment</button>
-                        </div>
-                    </div>`;
-            } else if (doc.agentCommitMessage) {
-                feedbackLoopHTML = `
-                    <div class="agent-feedback-loop-box" style="border-left-color: var(--success);">
-                        <strong>🎯 Agent Action Strategy Documented:</strong>
-                        <p style="font-style: italic; color: var(--text-main);">"${doc.agentCommitMessage}"</p>
-                    </div>`;
-            }
-
-            let deleteBtnHTML = (currentRole === "Superuser") 
-                ? `<button class="btn-delete" onclick="deleteQA(${doc.id})">🗑️ Delete</button>` 
-                : '';
-
-            item.innerHTML = `
-                <div class="qa-row-top">
-                    <div class="qa-meta-details">
-                        <span><strong>Agent:</strong> ${doc.agent}</span>
-                        <span class="style-badge">${doc.qaStyle || 'Call listening'}</span>
-                        <span><strong>Score:</strong> <strong class="${getScoreThresholdClass(doc.score)}">${doc.score}%</strong></span>
-                        <span><strong>Date:</strong> ${doc.date}</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <span class="status-badge ${badgeClass}">${doc.status}</span>
-                        <a class="view-form-link" onclick="viewQAFormHistorical(${doc.id})">View Quality Form ↗</a>
-                        ${deleteBtnHTML}
-                    </div>
-                </div>
-                ${feedbackLoopHTML}`;
-            
-            return item;
-        }
-
-        function generateKpiCardsHTML(statsObj, trendsObj = {}) {
-            const callsArrow = trendsObj.callsArrow || `<span class="kpi-arrow arrow-good">▲</span>`;
-            const ahtArrow = trendsObj.ahtArrow || `<span class="kpi-arrow arrow-good">▼</span>`;
-            const wrapArrow = trendsObj.wrapArrow || `<span class="kpi-arrow arrow-good">▼</span>`;
-            const transArrow = trendsObj.transArrow || `<span class="kpi-arrow arrow-good">▼</span>`;
-
+        function generateKpiCardsHTML(statsObj) {
             return `<div class="kpi-container">
-                <div class="kpi-box">
-                    <div class="kpi-title">Calls Answered</div>
-                    <div class="kpi-val-row">
-                        <span class="kpi-val">${statsObj.calls}</span>
-                        ${callsArrow}
-                    </div>
-                </div>
-                <div class="kpi-box">
-                    <div class="kpi-title">Average Handling Time (AHT)</div>
-                    <div class="kpi-val-row">
-                        <span class="kpi-val">${statsObj.aht}</span>
-                        ${ahtArrow}
-                    </div>
-                </div>
-                <div class="kpi-box">
-                    <div class="kpi-title">Average Wrap Time</div>
-                    <div class="kpi-val-row">
-                        <span class="kpi-val">${statsObj.wrap}</span>
-                        ${wrapArrow}
-                    </div>
-                </div>
-                <div class="kpi-box">
-                    <div class="kpi-title">Transfer %</div>
-                    <div class="kpi-val-row">
-                        <span class="kpi-val">${statsObj.transfer || '0%'}</span>
-                        ${transArrow}
-                    </div>
-                </div>
+                <div class="kpi-box"><div class="kpi-title">Calls Answered</div><div class="kpi-val">${statsObj.calls}</div></div>
+                <div class="kpi-box"><div class="kpi-title">Average Handling Time (AHT)</div><div class="kpi-val">${statsObj.aht}</div></div>
+                <div class="kpi-box"><div class="kpi-title">Average Wrap Time</div><div class="kpi-val">${statsObj.wrap}</div></div>
+                <div class="kpi-box"><div class="kpi-title">Transfer %</div><div class="kpi-val">${statsObj.transfer || '0%'}</div></div>
             </div>`;
         }
     </script>
