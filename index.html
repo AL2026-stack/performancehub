@@ -3,904 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zzoomm Performance Tracker</title>
+    <title>Zzoomm Performance Tracker - Login</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="config.js"></script>
     <style>
-        :root { 
-            --primary: #e6007e; 
-            --primary-hover: #b80064; 
-            --dark: #0f172a; 
-            --light: #f8fafc; 
-            --card-bg: #ffffff; 
-            --border: #e2e8f0; 
-            --success: #10b981; 
-            --danger: #ef4444; 
-            --warning: #f59e0b;
-            --text-main: #0f172a; 
-            --sidebar-width: 260px;
-        }
-        
-        body.dark-mode { 
-            --light: #0f172a; --dark: #f4f7fa; --card-bg: #1e293b; --text-main: #f1f5f9; --border: #334155; 
-        }
-
+        :root { --primary: #e6007e; --dark: #0f172a; --light: #f8fafc; --border: #cbd5e1; --danger: #ef4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; transition: background 0.3s, color 0.3s; }
-        
-        header { 
-            background-color: #0f172a; color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-bottom: 1px solid var(--border); position: relative; z-index: 100;
-        }
-        
-        .logo-container { display: flex; align-items: center; gap: 1rem; }
-        .user-profile-box { display: flex; align-items: center; gap: 0.75rem; }
-        .user-tag { font-weight: 600; font-size: 0.95rem; background: rgba(255,255,255,0.1); padding: 0.4rem 0.8rem; border-radius: 6px; color: white; }
-        
-        .pending-header-badge {
-            background-color: #ef4444; color: white; font-size: 0.8rem; font-weight: 700;
-            padding: 0.25rem 0.6rem; border-radius: 12px; display: none; align-items: center; gap: 0.35rem;
-        }
-
-        .btn-header { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
-        .btn-header:hover { background: rgba(255,255,255,0.1); }
-        .btn-logout { background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-        .btn-logout:hover { background: #ef4444; color: white; }
-
-        .app-body { display: flex; min-height: calc(100vh - 65px); }
-
-        .sidebar {
-            width: var(--sidebar-width); background: #0f172a; color: white; padding: 1.5rem 1rem;
-            display: flex; flex-direction: column; gap: 0.5rem; border-right: 1px solid var(--border); flex-shrink: 0;
-        }
-
-        .sidebar-section-title { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 1rem 0.5rem 0.35rem 0.5rem; }
-        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: #cbd5e1; text-decoration: none; font-size: 0.9rem; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-        .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
-        .nav-item.active { background: var(--primary); color: white; }
-
-        .main-workspace { flex: 1; padding: 2rem; max-width: 1200px; width: 100%; display: flex; flex-direction: column; gap: 1.5rem; }
-        .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-        .btn-launch { background-color: var(--primary); color: white; border: none; padding: 0.85rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-alt-color { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid var(--border); }
-
-        .upload-section-container { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
-        .upload-row-flex { display: flex; gap: 1rem; align-items: stretch; margin-top: 1rem; flex-wrap: wrap; }
-        .upload-dropzone { background: var(--light); border: 2px dashed var(--border); border-radius: 8px; padding: 1.25rem; text-align: center; flex: 1; min-width: 250px; cursor: pointer; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .file-hidden-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-
-        .confirm-wrapper { display: none; flex-direction: column; gap: 0.5rem; min-width: 220px; justify-content: flex-end; }
-        .btn-confirm-upload { background-color: var(--success); color: white; border: none; padding: 0.75rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 700; }
-        .btn-cancel-upload { background: transparent; color: #64748b; border: 1px solid var(--border); padding: 0.4rem; border-radius: 6px; cursor: pointer; }
-
-        .btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; max-height: 42px; margin-top: auto;}
-        .btn-danger-outline:hover { background: var(--danger); color: white; }
-
-        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-left: 4px solid var(--primary); padding-left: 0.75rem; flex-wrap: wrap; gap: 1rem; }
-        .card h2 { font-size: 1.25rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
-        
-        .filter-group { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-        .filter-select, .calendar-input { padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border); font-size: 0.9rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
-        .filter-label { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
-        
-        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; text-align: center; }
-        .kpi-box { background: var(--light); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; align-items: center; transition: transform 0.2s; }
-        .kpi-title { font-size: 0.85rem; text-transform: uppercase; color: #64748b; font-weight: 600; }
-        .kpi-val { font-size: 1.75rem; font-weight: 700; color: var(--text-main); margin-top: 0.25rem; }
-        .kpi-target-label { font-size: 0.75rem; color: #64748b; margin-top: 0.2rem; }
-        
-        .val-good { color: var(--success) !important; }
-        .val-bad { color: var(--danger) !important; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
-        th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
-        th { background-color: var(--light); color: #64748b; font-size: 0.9rem; }
-
-        .coaching-card { background: var(--card-bg); border-left: 4px solid var(--primary); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); }
-        .coaching-item { margin-top: 0.75rem; padding: 0.85rem; background: var(--light); border-radius: 6px; border: 1px solid var(--border); }
-
-        .toast-notify { display: none; padding: 1rem; border-radius: 8px; font-weight: 600; margin-bottom: 1.5rem; }
-        .toast-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-
-        .page-view-section { display: flex; flex-direction: column; gap: 1.5rem; }
-        .page-view-section.hidden { display: none !important; }
+        body { background-color: var(--dark); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .login-card { background: white; color: var(--dark); padding: 2.5rem; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .login-card h2 { color: var(--primary); margin-bottom: 0.5rem; text-align: center; }
+        .form-group { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
+        label { font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+        input { padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; width: 100%; }
+        .btn-submit { background: var(--primary); color: white; border: none; padding: 0.85rem; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 0.5rem; }
+        .btn-submit:hover { opacity: 0.95; }
+        .error-msg { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; display: none; margin-bottom: 1rem; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-body { background: white; color: var(--dark); padding: 2rem; border-radius: 10px; max-width: 400px; width: 90%; }
+        .rule-list { font-size: 0.8rem; color: #64748b; margin: 0.5rem 0 1rem 1rem; }
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo-container">
-            <h1 style="font-size: 1.5rem; font-weight: 600; color: white;">Zzoomm Performance Tracker</h1>
-        </div>
-        <div class="user-profile-box">
-            <div id="headerPendingBadge" class="pending-header-badge">
-                🔔 <span id="pendingBadgeCount">0</span> Pending QA
-            </div>
-            <span class="user-tag" id="displayUserName">User</span>
-            <a href="settings.html" class="btn-header">⚙️ Settings</a>
-            <button class="btn-logout" onclick="logoutUser()">Sign Out</button>
-        </div>
-    </header>
 
-    <div class="app-body">
-        <nav class="sidebar">
-            <div class="sidebar-section-title">Navigation Hub</div>
-            <div class="nav-item active" id="navHome" onclick="switchView('homeView')">🏠 Home Dashboard</div>
+    <div class="login-card">
+        <h2>Zzoomm Performance Tracker</h2>
+        <p style="text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Sign in to access your dashboard</p>
+        
+        <div id="loginError" class="error-msg">Invalid User Account.</div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Username / Agent Name</label>
+                <input type="text" id="loginUser" required placeholder="e.g. Jane Smith">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-submit">Sign In</button>
+        </form>
+    </div>
+
+    <div id="passwordResetModal" class="modal-overlay">
+        <div class="modal-body">
+            <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Password Change Required</h3>
+            <p style="font-size: 0.85rem; color: #475569;">Your account requires a new password before you can proceed.</p>
             
-            <div class="sidebar-section-title">Performance Analytics</div>
-            <div class="nav-item" id="navStats" onclick="switchView('statsView')">📊 Performance Stats Overview</div>
-            <div class="nav-item" id="navImport" onclick="switchView('importView')">📥 8x8 Stats Import</div>
-            <a href="history.html" class="nav-item">📈 Historical Timeline</a>
+            <div id="modalError" class="error-msg" style="margin-top: 0.75rem;"></div>
 
-            <div class="sidebar-section-title">Quality & Evaluation</div>
-            <div class="nav-item" id="navQA" onclick="switchView('qaView')">📑 Completed Quality Forms</div>
+            <ul class="rule-list">
+                <li>At least 8 characters long</li>
+                <li>At least one capital letter (A-Z)</li>
+                <li>At least one number (0-9)</li>
+                <li>At least one special character (!@#$%^&*)</li>
+            </ul>
 
-            <div id="teamOpsSidebarSection" style="display: none;">
-                <div class="sidebar-section-title">Team Operations</div>
-                <a href="tiers.html" class="nav-item">🏆 Team Performance Tiers & Insights</a>
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="newPasswordInput" placeholder="••••••••">
             </div>
-        </nav>
-
-        <main class="main-workspace">
-            <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
-
-            <div id="homeView" class="page-view-section">
-                <div class="action-button-grid">
-                    <button id="btnShortCutCall" class="btn-launch" style="display:none;" onclick="openEvaluationWindow('Call Listening Feedback')">🎧 Submit New Call Quality</button>
-                    <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit New Ticket Feedback</button>
-                </div>
-
-                <div id="homeManagementPanel" style="display: none;">
-                    <div class="upload-section-container">
-                        <h3 style="font-size: 1rem; border-left:4px solid var(--primary); padding-left:0.5rem; margin-bottom:0.25rem;">📊 8x8 Stats Import Engine</h3>
-                        <p style="font-size: 0.85rem; color: #64748b;">Upload daily raw call metrics CSV file to parse stats into the cloud matrix.</p>
-                        <div class="upload-row-flex">
-                            <div>
-                                <label class="filter-label" style="display:block; margin-bottom:0.25rem;">Target Logging Date:</label>
-                                <input type="date" id="uploadTargetDate" class="calendar-input" value="2026-07-22" onchange="handleHomeScopeChange()">
-                            </div>
-                            <div class="upload-dropzone" id="dropzoneContainer">
-                                <p id="dropzoneText">Drag & Drop CSV File Here or Click to Browse</p>
-                                <input type="file" id="dashboardCsvInput" class="file-hidden-input" accept=".csv" onchange="stageCsvFile()">
-                            </div>
-                            <div class="confirm-wrapper" id="confirmActionWrapper">
-                                <button class="btn-confirm-upload" onclick="processStagedCsvFile()">Confirm Upload</button>
-                                <button class="btn-cancel-upload" onclick="resetStagedFile()">Cancel</button>
-                            </div>
-                            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                                <button class="btn-danger-outline" onclick="purgeStatsBySelectedDate()">🗑️ Purge Date</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
-                        <div class="filter-group">
-                            <span class="filter-label">Timescale:</span>
-                            <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
-                                <option value="Daily">Daily</option>
-                                <option value="Weekly">Weekly</option>
-                                <option value="Monthly">Monthly</option>
-                                <option value="MTD">Month to Date (MTD)</option>
-                            </select>
-                            <span class="filter-label" id="homeValueFilterLabel">Target:</span>
-                            <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
-                        </div>
-                    </div>
-                    <div id="homeKpiDisplayArea">Loading cloud metrics...</div>
-                </div>
-
-                <div id="coachingAssistantPanel" class="coaching-card" style="display:none;"></div>
-
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>
-                            ⏳ QAs Pending Agent Acknowledgment
-                            <span id="homePendingCountBadge" style="font-size: 0.8rem; background: #ffedd5; color: #ea580c; padding: 0.2rem 0.6rem; border-radius: 12px; display: none;">0 Pending</span>
-                        </h2>
-                        <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
-                    </div>
-                    <div id="homePendingQaContainer">Loading pending evaluations...</div>
-                </div>
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input type="password" id="confirmPasswordInput" placeholder="••••••••">
             </div>
-
-            <div id="importView" class="page-view-section hidden">
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>8x8 Stats Import Engine</h2>
-                    </div>
-                    <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1rem;">Select a date to upload telephony & handling metrics, or use the purge tool to remove stats for a specific day.</p>
-                    <div id="importViewContainer"></div>
-                </div>
-            </div>
-
-            <div id="statsView" class="page-view-section hidden">
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>Performance Stats Overview</h2>
-                        <div class="filter-group">
-                            <span class="filter-label">Scope:</span>
-                            <select id="timeframeTypeFilter" class="filter-select" onchange="handleTimeframeTypeChange()">
-                                <option value="Daily">Daily</option>
-                                <option value="Weekly">Weekly</option>
-                                <option value="Monthly">Monthly</option>
-                            </select>
-
-                            <span class="filter-label" id="valueFilterLabel">Target:</span>
-                            <div id="timeframeSelectorContainer" style="display: inline-block;"></div>
-
-                            <div id="supervisorFilterBlock" style="display: none; display: flex; align-items: center; gap:0.5rem;">
-                                <span class="filter-label">Agent:</span>
-                                <select id="agentFilter" class="filter-select" onchange="renderDashboard()">
-                                    <option value="All">-- All Personnel --</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="kpiDisplayArea"></div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>📈 Performance Trends Over Time</h2>
-                    </div>
-                    <canvas id="performanceTrendChart" style="max-height: 320px; width: 100%;"></canvas>
-                </div>
-            </div>
-
-            <div id="qaView" class="page-view-section hidden">
-                <div class="card">
-                    <div class="card-header-flex" style="margin-bottom: 0;">
-                        <h2 id="listTitleHeader">
-                            Completed Quality Forms 
-                            <span id="feedbackListPendingBadge" style="font-size: 0.8rem; background: #ffedd5; color: #ea580c; padding: 0.2rem 0.6rem; border-radius: 12px; display: none;">0 Action Required</span>
-                        </h2>
-                    </div>
-                    <div id="feedbackContainer" style="margin-top: 1rem;"></div>
-                </div>
-            </div>
-        </main>
+            <button class="btn-submit" onclick="submitPasswordChange()">Update Password & Continue</button>
+        </div>
     </div>
 
     <script>
-        const currentUser = sessionStorage.getItem("activeUser");
-        const currentRole = sessionStorage.getItem("activeRole");
+        let pendingUserObj = null;
 
-        if (!currentUser) { window.location.href = "login.html"; }
+        function validatePasswordComplexity(pwd) {
+            if (pwd.length < 8) return "Password must be at least 8 characters long.";
+            if (!/[A-Z]/.test(pwd)) return "Password must contain at least one uppercase letter.";
+            if (!/[0-9]/.test(pwd)) return "Password must contain at least one number.";
+            if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) return "Password must contain at least one special character.";
+            return null;
+        }
 
-        let globalStatsDb = {};
-        let globalDocs = [];
-        let trendChartInstance = null;
+        async function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById("loginUser").value.trim();
+            const errDiv = document.getElementById("loginError");
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            const activeTheme = localStorage.getItem('themePreference') || 'light';
-            if (activeTheme === 'dark') { document.body.classList.add('dark-mode'); }
-            document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
-            
-            const todayStr = new Date().toISOString().split('T')[0];
-            if (document.getElementById("uploadTargetDate")) {
-                document.getElementById("uploadTargetDate").value = todayStr;
-            }
+            errDiv.style.display = "none";
 
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
-            
-            const navImportEl = document.getElementById("navImport");
-            if (navImportEl) { navImportEl.style.display = isManagement ? "flex" : "none"; }
+            if (!user) return;
 
-            const teamOpsSection = document.getElementById("teamOpsSidebarSection");
-            if (teamOpsSection) { teamOpsSection.style.display = isManagement ? "block" : "none"; }
+            const client = window.supabaseClient || window.supabase;
+            let userRole = "Agent";
+            let mustReset = false;
 
-            setupDragAndDropStyles();
+            if (client && typeof client.from === 'function') {
+                const { data, error } = await client
+                    .from('agent_stats')
+                    .select('role, must_change_password')
+                    .ilike('agent_name', user)
+                    .maybeSingle();
 
-            await syncCloudData();
-
-            populateAgentFilters();
-            handleHomeScopeChange();
-            handleTimeframeTypeChange(); 
-
-            if (window.supabaseClient) {
-                window.supabaseClient.channel('public:feedback_docs')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'feedback_docs' }, async () => {
-                        await syncCloudData();
-                        renderDashboard();
-                    }).subscribe();
-
-                window.supabaseClient.channel('public:agent_stats')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_stats' }, async () => {
-                        await syncCloudData();
-                        populateAgentFilters();
-                        renderDashboard();
-                    }).subscribe();
-            }
-        });
-
-        async function syncCloudData() {
-            try {
-                const client = window.supabaseClient || window.supabase;
-                if (!client || typeof client.from !== 'function') return;
-
-                const { data: docsData } = await client.from('feedback_docs').select('*');
-                if (docsData) {
-                    globalDocs = docsData.map(d => ({
-                        id: d.id, agent: d.agent, evaluator: d.evaluator, date: d.date, status: d.status,
-                        qaStyle: d.qa_style, score: d.score, callRef: d.call_ref, ticketRef: d.ticket_ref,
-                        comments: d.comments, agentCommitMessage: d.agent_commit_message
-                    }));
+                if (data) {
+                    if (data.role) userRole = data.role;
+                    mustReset = !!data.must_change_password;
                 }
-
-                const { data: statsData } = await client.from('agent_stats').select('*');
-                globalStatsDb = {};
-                if (statsData) {
-                    statsData.forEach(row => {
-                        globalStatsDb[row.agent_name] = {
-                            Daily: row.daily_stats || {},
-                            Weekly: row.weekly_stats || {},
-                            Monthly: row.monthly_stats || {}
-                        };
-                    });
-                }
-            } catch (err) { console.error("Cloud sync error:", err); }
-        }
-
-        function getAgentProfile(db, targetName) {
-            if (!targetName || !db) return {};
-            if (db[targetName]) return db[targetName];
-
-            const tokenize = (str) => str.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
-            const targetTokens = tokenize(targetName);
-            if (targetTokens.length === 0) return {};
-
-            const matchedKey = Object.keys(db).find(dbName => {
-                const dbTokens = tokenize(dbName);
-                return targetTokens.every(t => dbTokens.includes(t)) || dbTokens.every(t => targetTokens.includes(t));
-            });
-
-            return matchedKey ? db[matchedKey] : {};
-        }
-
-        function getWeekNumber(dateStr) {
-            if (!dateStr) return "W/C: Unknown";
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return "W/C: Unknown";
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
-            const monday = new Date(d.setDate(diff));
-            const yyyy = monday.getFullYear();
-            const mm = String(monday.getMonth() + 1).padStart(2, '0');
-            const dd = String(monday.getDate()).padStart(2, '0');
-            return `W/C: ${yyyy}-${mm}-${dd}`;
-        }
-
-        function getMonthName(dateStr) {
-            if (!dateStr) return "Unknown";
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return "Unknown";
-            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            return `${months[d.getMonth()]} ${d.getFullYear()}`;
-        }
-
-        function timeToSeconds(timeStr) {
-            if (!timeStr || timeStr === "N/A" || typeof timeStr !== 'string') return 0;
-            const parts = timeStr.trim().split(':');
-            if (parts.length === 3) return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
-            if (parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-            return 0;
-        }
-
-        function secondsToTimeStr(totalSeconds) {
-            if (isNaN(totalSeconds) || totalSeconds <= 0) return "00:00:00";
-            const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
-            const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
-            const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
-            return `${h}:${m}:${s}`;
-        }
-
-        /* 8X8 CSV PARSER & UPLOAD HANDLERS */
-        function stageCsvFile() {
-            const input = document.getElementById("dashboardCsvInput");
-            if (!input || !input.files || !input.files.length) return;
-            const dropTxt = document.getElementById("dropzoneText");
-            if (dropTxt) dropTxt.innerHTML = `📄 Staged: <strong>${input.files[0].name}</strong>`;
-            const confirmWrap = document.getElementById("confirmActionWrapper");
-            if (confirmWrap) confirmWrap.style.display = "flex";
-        }
-
-        function parseCSVLineAdaptive(lineText, delimiter) {
-            const tokens = []; let cell = ''; let insideQuote = false;
-            for (let i = 0; i < lineText.length; i++) {
-                const ch = lineText.charAt(i);
-                if (ch === '"') { insideQuote = !insideQuote; } 
-                else if (ch === delimiter && !insideQuote) {
-                    tokens.push(cell.trim().replace(/^["']|["']$/g, '').trim()); cell = '';
-                } else { cell += ch; }
             }
-            tokens.push(cell.trim().replace(/^["']|["']$/g, '').trim());
-            return tokens;
+
+            pendingUserObj = { user, role: userRole };
+
+            if (mustReset) {
+                document.getElementById("passwordResetModal").style.display = "flex";
+            } else {
+                completeLoginSession(user, userRole);
+            }
         }
 
-        async function processStagedCsvFile() {
-            const input = document.getElementById("dashboardCsvInput");
-            if (!input || !input.files || !input.files.length) {
-                alert("Please select a valid CSV file first.");
+        async function submitPasswordChange() {
+            const newPwd = document.getElementById("newPasswordInput").value;
+            const confirmPwd = document.getElementById("confirmPasswordInput").value;
+            const errDiv = document.getElementById("modalError");
+
+            errDiv.style.display = "none";
+
+            if (newPwd !== confirmPwd) {
+                errDiv.innerText = "Passwords do not match.";
+                errDiv.style.display = "block";
                 return;
             }
 
-            const reader = new FileReader();
-            const dateInput = document.getElementById("uploadTargetDate");
-            const targetDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
-            const targetWeek = getWeekNumber(targetDate);
-            const targetMonth = getMonthName(targetDate);
-
-            reader.onload = async function(e) {
-                try {
-                    let contents = e.target.result;
-                    if (!contents) { throw new Error("File is empty."); }
-
-                    const rawLines = contents.split(/\r\n|\n|\r/).map(l => l.trim()).filter(l => l.length > 0);
-                    if (rawLines.length < 2) { throw new Error("CSV file does not contain enough data rows."); }
-
-                    const separator = rawLines[0].indexOf(';') !== -1 ? ';' : ',';
-                    const headers = parseCSVLineAdaptive(rawLines[0], separator).map(h => h.toLowerCase());
-                    
-                    let idxAgent = headers.findIndex(h => h.includes('agent') || h.includes('name') || h.includes('user'));
-                    let idxAccepted = headers.findIndex(h => h.includes('accepted') || h.includes('answered') || h.includes('calls') || h.includes('inbound'));
-                    let idxAHT = headers.findIndex(h => h.includes('aht') || h.includes('handling') || h.includes('handle') || h.includes('talk'));
-                    let idxWrap = headers.findIndex(h => h.includes('wrap') || h.includes('post') || h.includes('work'));
-                    let idxTransfers = headers.findIndex(h => h.includes('transfer'));
-
-                    if (idxAgent === -1) idxAgent = 0; 
-                    if (idxAccepted === -1) idxAccepted = 1;
-                    if (idxAHT === -1) idxAHT = 2; 
-                    if (idxWrap === -1) idxWrap = 3;
-
-                    let count = 0;
-
-                    for (let i = 1; i < rawLines.length; i++) {
-                        const cols = parseCSVLineAdaptive(rawLines[i], separator);
-                        if (!cols || cols.length <= idxAgent) continue;
-
-                        const name = cols[idxAgent];
-                        if (!name || name.toLowerCase().includes('total') || name.toLowerCase() === 'agent' || name.toLowerCase() === 'name') continue;
-
-                        const callsVal = (idxAccepted !== -1 && cols[idxAccepted]) ? (parseInt(cols[idxAccepted]) || 0) : 0;
-                        const ahtStr = (idxAHT !== -1 && cols[idxAHT]) ? cols[idxAHT] : "00:00:00";
-                        const wrapStr = (idxWrap !== -1 && cols[idxWrap]) ? cols[idxWrap] : "00:00:00";
-                        
-                        let rawTransfer = 0;
-                        if (idxTransfers !== -1 && cols[idxTransfers]) {
-                            const parsedT = parseFloat(cols[idxTransfers].replace('%', ''));
-                            if (!isNaN(parsedT)) rawTransfer = parsedT;
-                        }
-
-                        if (!globalStatsDb[name]) globalStatsDb[name] = { Daily: {}, Weekly: {}, Monthly: {} };
-
-                        globalStatsDb[name]["Daily"][targetDate] = {
-                            calls: callsVal.toString(),
-                            aht: ahtStr,
-                            wrap: wrapStr,
-                            transfer: (rawTransfer * (rawTransfer <= 1 && rawTransfer > 0 ? 100 : 1)).toFixed(1) + "%"
-                        };
-
-                        globalStatsDb[name]["Weekly"][targetWeek] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getWeekNumber(d) === targetWeek);
-                        globalStatsDb[name]["Monthly"][targetMonth] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getMonthName(d) === targetMonth);
-
-                        const client = window.supabaseClient || window.supabase;
-                        if (client && typeof client.from === 'function') {
-                            await client.from('agent_stats').upsert({
-                                agent_name: name,
-                                daily_stats: globalStatsDb[name]["Daily"],
-                                weekly_stats: globalStatsDb[name]["Weekly"],
-                                monthly_stats: globalStatsDb[name]["Monthly"]
-                            });
-                        }
-
-                        count++;
-                    }
-
-                    triggerToast(`Successfully recorded 8x8 cloud system logs for ${count} agents.`);
-                    handleHomeScopeChange();
-                    handleTimeframeTypeChange();
-                } catch(err) { 
-                    console.error("CSV Import Error:", err);
-                    alert("Parsing engine failed execution: " + err.message); 
-                }
-                resetStagedFile(); 
-                populateAgentFilters();
-            };
-            reader.readAsText(input.files[0]);
-        }
-
-        function resetStagedFile() {
-            const input = document.getElementById("dashboardCsvInput");
-            if (input) input.value = "";
-            const dropTxt = document.getElementById("dropzoneText");
-            if (dropTxt) dropTxt.innerText = "Drag & Drop CSV File Here or Click to Browse";
-            const confirmWrap = document.getElementById("confirmActionWrapper");
-            if (confirmWrap) confirmWrap.style.display = "none";
-        }
-
-        async function purgeStatsBySelectedDate() {
-            const date = document.getElementById("uploadTargetDate").value;
-            if(!confirm(`Purge 8x8 data production for ${date}?`)) return;
+            const ruleError = validatePasswordComplexity(newPwd);
+            if (ruleError) {
+                errDiv.innerText = ruleError;
+                errDiv.style.display = "block";
+                return;
+            }
 
             const client = window.supabaseClient || window.supabase;
-
-            for (const name of Object.keys(globalStatsDb)) {
-                if (globalStatsDb[name]["Daily"] && globalStatsDb[name]["Daily"][date]) {
-                    delete globalStatsDb[name]["Daily"][date];
-                    if (client && typeof client.from === 'function') {
-                        await client.from('agent_stats').upsert({
-                            agent_name: name,
-                            daily_stats: globalStatsDb[name]["Daily"],
-                            weekly_stats: globalStatsDb[name]["Weekly"],
-                            monthly_stats: globalStatsDb[name]["Monthly"]
-                        });
-                    }
-                }
+            if (client && typeof client.from === 'function' && pendingUserObj) {
+                await client.from('agent_stats').update({ must_change_password: false }).ilike('agent_name', pendingUserObj.user);
             }
 
-            triggerToast("Target date context wiped from cloud database.");
-            handleHomeScopeChange();
-            handleTimeframeTypeChange();
+            completeLoginSession(pendingUserObj.user, pendingUserObj.role);
         }
 
-        /* PERIOD & TIMESCALE FILTER GENERATORS */
-        function handleHomeScopeChange() {
-            const scopeSelect = document.getElementById("homeScopeFilter");
-            if (!scopeSelect) return;
-            const scope = scopeSelect.value;
-            const container = document.getElementById("homePeriodSelectorContainer");
-            const label = document.getElementById("homeValueFilterLabel");
-            let optionsSet = new Set();
-
-            const lookupType = scope === "MTD" ? "Daily" : scope;
-            Object.values(globalStatsDb).forEach(o => { if (o && o[lookupType]) Object.keys(o[lookupType]).forEach(k => optionsSet.add(k)); });
-
-            const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : new Date().toISOString().split('T')[0];
-
-            if (scope === "Daily" || scope === "MTD") {
-                if (label) label.innerText = scope === "MTD" ? "Through Date:" : "Select Day:";
-                if (container) container.innerHTML = `<input type="date" id="homeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
-            } else {
-                if (label) label.innerText = scope === "Weekly" ? "Select Week:" : "Select Month:";
-                let html = `<select id="homeValueFilter" class="filter-select" onchange="renderDashboard()">`;
-                if (optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
-                else {
-                    Array.from(optionsSet).sort().forEach(v => html += `<option value="${v}">${v}</option>`);
-                }
-                html += `</select>`;
-                if (container) container.innerHTML = html;
-            }
-            renderDashboard();
+        function completeLoginSession(user, role) {
+            sessionStorage.setItem("activeUser", user);
+            sessionStorage.setItem("activeRole", role);
+            window.location.href = "index.html";
         }
-
-        function handleTimeframeTypeChange() {
-            const typeSelect = document.getElementById("timeframeTypeFilter");
-            if (!typeSelect) return;
-            const type = typeSelect.value;
-            const container = document.getElementById("timeframeSelectorContainer");
-            const label = document.getElementById("valueFilterLabel");
-            let optionsSet = new Set();
-            Object.values(globalStatsDb).forEach(o => { if(o && o[type]) Object.keys(o[type]).forEach(k => optionsSet.add(k)); });
-
-            if (type === "Daily") {
-                if (label) label.innerText = "Select Day:";
-                const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "2026-07-22";
-                if (container) container.innerHTML = `<input type="date" id="timeframeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
-            } else {
-                if (label) label.innerText = type === "Weekly" ? "Select Week:" : "Select Month:";
-                let html = `<select id="timeframeValueFilter" class="filter-select" onchange="renderDashboard()">`;
-                if(optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
-                else {
-                    Array.from(optionsSet).sort().forEach(v => html += `<option value="${v}">${v}</option>`);
-                }
-                html += `</select>`; 
-                if (container) container.innerHTML = html;
-            }
-            renderDashboard();
-        }
-
-        function recalculateAggregates(dailyDb, filterCondition) {
-            if (!dailyDb) return null;
-            let calls = 0, aht = 0, wrap = 0, trans = 0, count = 0;
-            Object.keys(dailyDb).forEach(k => {
-                if (dailyDb[k] && filterCondition(k)) {
-                    calls += parseInt(dailyDb[k].calls) || 0;
-                    aht += timeToSeconds(dailyDb[k].aht);
-                    wrap += timeToSeconds(dailyDb[k].wrap);
-                    trans += parseFloat(dailyDb[k].transfer) || 0;
-                    count++;
-                }
-            });
-            if(count === 0) return null;
-            return {
-                calls: calls.toString(), 
-                aht: secondsToTimeStr(Math.round(aht / count)), 
-                wrap: secondsToTimeStr(Math.round(wrap / count)), 
-                transfer: (trans / count).toFixed(1) + "%"
-            };
-        }
-
-        function calculateMtdStats(profileData, throughDateStr) {
-            if (!profileData || !profileData["Daily"]) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-            const dailyMap = profileData["Daily"];
-            const targetDate = new Date(throughDateStr);
-            if (isNaN(targetDate.getTime())) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-
-            const targetMonth = targetDate.getMonth();
-            const targetYear = targetDate.getFullYear();
-
-            let calls = 0, aht = 0, wrap = 0, trans = 0, count = 0;
-
-            Object.keys(dailyMap).forEach(dStr => {
-                const d = new Date(dStr);
-                if (!isNaN(d.getTime()) && d.getFullYear() === targetYear && d.getMonth() === targetMonth && d <= targetDate) {
-                    const entry = dailyMap[dStr];
-                    calls += parseInt(entry.calls) || 0;
-                    aht += timeToSeconds(entry.aht);
-                    wrap += timeToSeconds(entry.wrap);
-                    trans += parseFloat(entry.transfer) || 0;
-                    count++;
-                }
-            });
-
-            if (count === 0) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-
-            return {
-                calls: calls.toString(),
-                aht: secondsToTimeStr(Math.round(aht / count)),
-                wrap: secondsToTimeStr(Math.round(wrap / count)),
-                transfer: (trans / count).toFixed(1) + "%"
-            };
-        }
-
-        /* TARGET THRESHOLD FORMATTER */
-        function generateKpiCardsHTML(statsObj) {
-            const targets = { calls: 30, ahtSec: 480, wrapSec: 180, transferPct: 15.0 };
-
-            const callsVal = parseInt(statsObj.calls.toString().replace(/,/g, '')) || 0;
-            const ahtSec = timeToSeconds(statsObj.aht);
-            const wrapSec = timeToSeconds(statsObj.wrap);
-            const transPct = parseFloat(statsObj.transfer) || 0;
-
-            const callsGood = callsVal >= targets.calls;
-            const ahtGood = ahtSec > 0 && ahtSec <= targets.ahtSec;
-            const wrapGood = wrapSec > 0 && wrapSec <= targets.wrapSec;
-            const transGood = transPct <= targets.transferPct;
-
-            return `<div class="kpi-container">
-                <div class="kpi-box" style="border-top: 4px solid var(--${callsGood ? 'success' : 'danger'});">
-                    <div class="kpi-title">Calls Answered</div>
-                    <div class="kpi-val ${callsGood ? 'val-good' : 'val-bad'}">${statsObj.calls}</div>
-                    <div class="kpi-target-label">Target: 30+ calls</div>
-                </div>
-                <div class="kpi-box" style="border-top: 4px solid var(--${ahtGood ? 'success' : 'danger'});">
-                    <div class="kpi-title">Average Handling Time</div>
-                    <div class="kpi-val ${ahtGood ? 'val-good' : 'val-bad'}">${statsObj.aht}</div>
-                    <div class="kpi-target-label">Target: &le; 08:00</div>
-                </div>
-                <div class="kpi-box" style="border-top: 4px solid var(--${wrapGood ? 'success' : 'danger'});">
-                    <div class="kpi-title">Average Wrap Time</div>
-                    <div class="kpi-val ${wrapGood ? 'val-good' : 'val-bad'}">${statsObj.wrap}</div>
-                    <div class="kpi-target-label">Target: &le; 03:00</div>
-                </div>
-                <div class="kpi-box" style="border-top: 4px solid var(--${transGood ? 'success' : 'danger'});">
-                    <div class="kpi-title">Transfer %</div>
-                    <div class="kpi-val ${transGood ? 'val-good' : 'val-bad'}">${statsObj.transfer || '0%'}</div>
-                    <div class="kpi-target-label">Target: &le; 15%</div>
-                </div>
-            </div>`;
-        }
-
-        /* COACHING ASSISTANT LOGIC */
-        function generateCoachingGuide(agentName, statsObj) {
-            const ahtSec = timeToSeconds(statsObj.aht);
-            const wrapSec = timeToSeconds(statsObj.wrap);
-            const transPct = parseFloat(statsObj.transfer) || 0;
-
-            let insights = [];
-
-            if (wrapSec > 180) {
-                insights.push({
-                    topic: "⏱️ Wrap Time Reduction Strategies",
-                    issue: `Wrap time is ${statsObj.wrap} (Target: ≤ 03:00).`,
-                    guidance: "Guide the agent to utilize standard ticket templates and type summary notes during active listening rather than holding off until call completion."
-                });
-            }
-
-            if (transPct > 15) {
-                insights.push({
-                    topic: "🔄 First Contact Resolution & Transfers",
-                    issue: `Transfer rate is ${statsObj.transfer} (Target: ≤ 15%).`,
-                    guidance: "Review recent transferred calls together. Check knowledge base lookup tools to ensure queries are handled locally wherever possible."
-                });
-            }
-
-            if (ahtSec > 480 && wrapSec <= 180) {
-                insights.push({
-                    topic: "🗣️ Conversation Signposting & Call Control",
-                    issue: `AHT is ${statsObj.aht} (Target: ≤ 08:00).`,
-                    guidance: "Focus coaching on signposting techniques to keep callers focused on resolution steps without silent holds."
-                });
-            }
-
-            if (insights.length === 0) {
-                return `<h3 style="color:var(--success);">🌟 Outstanding Performance</h3>
-                        <p style="font-size:0.9rem; color:#475569; margin-top:0.25rem;">${agentName} is hitting all operational targets! Focus 1-on-1 time on positive reinforcement and personal growth.</p>`;
-            }
-
-            return `<h3>📋 Automated Coaching Guide for ${agentName}</h3>
-                ${insights.map(item => `
-                    <div class="coaching-item">
-                        <strong style="color:var(--primary); font-size:0.95rem;">${item.topic}</strong>
-                        <p style="font-size:0.85rem; color:var(--danger); font-weight:600; margin:0.25rem 0;">⚠️ ${item.issue}</p>
-                        <p style="font-size:0.85rem; color:#334155;"><strong>Supervisor Action Plan:</strong> ${item.guidance}</p>
-                    </div>
-                `).join('')}`;
-        }
-
-        /* RENDER PERFORMANCE TREND GRAPH */
-        function renderTrendChart(agentName) {
-            const ctx = document.getElementById('performanceTrendChart');
-            if (!ctx) return;
-
-            const profile = getAgentProfile(globalStatsDb, agentName);
-            if (!profile || !profile.Daily) return;
-
-            const dates = Object.keys(profile.Daily).sort();
-            const ahtData = dates.map(d => (timeToSeconds(profile.Daily[d].aht) / 60).toFixed(1));
-            const transData = dates.map(d => parseFloat(profile.Daily[d].transfer) || 0);
-
-            if (trendChartInstance) { trendChartInstance.destroy(); }
-
-            trendChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [
-                        { label: 'AHT (Minutes)', data: ahtData, borderColor: '#e6007e', backgroundColor: 'rgba(230,0,126,0.1)', fill: true, tension: 0.3 },
-                        { label: 'Transfer %', data: transData, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.3 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { position: 'top' } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
-
-        function calculateTeamAverageStats(statsDb, scope, value) {
-            let totalCalls = 0, totalAht = 0, totalWrap = 0, totalTrans = 0;
-
-            Object.keys(statsDb).forEach(agentName => {
-                const profile = statsDb[agentName];
-                let stats = null;
-
-                if (scope === "MTD") {
-                    stats = calculateMtdStats(profile, value);
-                } else if (profile && profile[scope] && profile[scope][value]) {
-                    stats = profile[scope][value];
-                }
-
-                if (stats) {
-                    const calls = parseInt(stats.calls) || 0;
-                    if (calls > 0) {
-                        totalCalls += calls;
-                        totalAht += (timeToSeconds(stats.aht) * calls);
-                        totalWrap += (timeToSeconds(stats.wrap) * calls);
-                        totalTrans += ((parseFloat(stats.transfer) || 0) * calls);
-                    }
-                }
-            });
-
-            if (totalCalls === 0) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-
-            return {
-                calls: totalCalls.toLocaleString(),
-                aht: secondsToTimeStr(Math.round(totalAht / totalCalls)),
-                wrap: secondsToTimeStr(Math.round(totalWrap / totalCalls)),
-                transfer: (totalTrans / totalCalls).toFixed(1) + "%"
-            };
-        }
-
-        function renderDashboard() {
-            const homeKpiArea = document.getElementById("homeKpiDisplayArea");
-            const headerTitle = document.getElementById("homeKpiHeaderTitle");
-            const coachingPanel = document.getElementById("coachingAssistantPanel");
-            
-            const homeScope = document.getElementById("homeScopeFilter") ? document.getElementById("homeScopeFilter").value : "Daily";
-            const homeValEl = document.getElementById("homeValueFilter");
-            const homeVal = homeValEl ? homeValEl.value : (document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "");
-            
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
-
-            const agentFilterEl = document.getElementById("agentFilter");
-            const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
-
-            const homeMgmt = document.getElementById("homeManagementPanel");
-            const btnCall = document.getElementById("btnShortCutCall");
-            const btnTicket = document.getElementById("btnShortCutTicket");
-            const supBlock = document.getElementById("supervisorFilterBlock");
-
-            if (isManagement) {
-                if (homeMgmt) homeMgmt.style.display = "block";
-                if (btnCall) btnCall.style.display = "inline-flex";
-                if (btnTicket) btnTicket.style.display = "inline-flex";
-                if (supBlock) supBlock.style.display = "flex";
-            }
-
-            if (homeKpiArea) {
-                if (isManagement && selectedAgent === "All") {
-                    if (headerTitle) headerTitle.innerText = "📊 Team Performance KPIs";
-                    if (coachingPanel) coachingPanel.style.display = "none";
-                    const teamStats = calculateTeamAverageStats(globalStatsDb, homeScope, homeVal);
-                    homeKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
-                } else {
-                    if (headerTitle) headerTitle.innerText = isManagement ? `📊 Performance KPIs (${selectedAgent})` : "📊 My Performance KPIs";
-                    
-                    const personalProfile = getAgentProfile(globalStatsDb, selectedAgent);
-                    let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-
-                    if (homeScope === "MTD") {
-                        personalStats = calculateMtdStats(personalProfile, homeVal);
-                    } else if (personalProfile && personalProfile[homeScope]) {
-                        if (personalProfile[homeScope][homeVal]) {
-                            personalStats = personalProfile[homeScope][homeVal];
-                        } else {
-                            const dates = Object.keys(personalProfile[homeScope]).sort();
-                            if (dates.length > 0) personalStats = personalProfile[homeScope][dates[dates.length - 1]];
-                        }
-                    }
-
-                    homeKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
-
-                    if (isManagement && selectedAgent !== "All" && coachingPanel) {
-                        coachingPanel.innerHTML = generateCoachingGuide(selectedAgent, personalStats);
-                        coachingPanel.style.display = "block";
-                    } else if (coachingPanel) {
-                        coachingPanel.style.display = "none";
-                    }
-                }
-            }
-
-            renderTrendChart(selectedAgent !== "All" ? selectedAgent : currentUser);
-        }
-
-        function populateAgentFilters() {
-            const select = document.getElementById("agentFilter");
-            if (!select) return;
-            select.innerHTML = '<option value="All">-- All Personnel --</option>';
-            Object.keys(globalStatsDb).sort().forEach(k => {
-                const o = document.createElement("option"); o.value = k; o.innerText = k; select.appendChild(o);
-            });
-        }
-
-        function switchView(viewId) {
-            const views = ['homeView', 'importView', 'statsView', 'qaView'];
-            views.forEach(v => { const el = document.getElementById(v); if (el) el.classList.add('hidden'); });
-            const targetView = document.getElementById(viewId);
-            if (targetView) targetView.classList.remove('hidden');
-            renderDashboard();
-        }
-
-        function openEvaluationWindow(type) { 
-            const agentVal = document.getElementById("agentFilter") ? document.getElementById("agentFilter").value : "All";
-            window.open(`form.html?type=${encodeURIComponent(type)}&agent=${encodeURIComponent(agentVal !== "All" ? agentVal : "")}`, 'FormWindow', 'width=750,height=700'); 
-        }
-        function viewQAFormHistorical(docId) { window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=700,height=800'); }
-        function setupDragAndDropStyles() {}
-        function triggerToast(msg) {
-            const t = document.getElementById("toastNotification"); 
-            if (!t) return;
-            t.innerText = msg; t.className = "toast-notify toast-success"; t.style.display = "block";
-            setTimeout(() => t.style.display = "none", 4000);
-        }
-
-        function logoutUser() { sessionStorage.clear(); window.location.href = "login.html"; }
     </script>
 </body>
 </html>
