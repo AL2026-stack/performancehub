@@ -119,18 +119,17 @@
             submitBtn.innerText = "Verifying...";
 
             try {
-                // Fetch user record matching the username
                 const { data, error } = await client
                     .from('agent_stats')
-                    .select('agent_name, role, password, temp_password, must_change_password')
+                    .select('agent_name, role, password, temp_password, must_change_password, theme_preference')
                     .ilike('agent_name', userVal);
 
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Sign In";
 
                 if (error) {
-                    console.error("Supabase Query Error:", error);
-                    showError("Database query failed: " + error.message);
+                    console.error("Supabase Error:", error);
+                    showError("Database error: " + error.message);
                     return;
                 }
 
@@ -142,9 +141,9 @@
 
                 const userRecord = data[0];
 
-                // Check password match against saved password or temporary password
-                const matchesMain = userRecord.password && (userRecord.password === passVal);
-                const matchesTemp = userRecord.temp_password && (userRecord.temp_password === passVal);
+                // Verify credentials against permanent or temp password
+                const matchesMain = Boolean(userRecord.password) && (userRecord.password === passVal);
+                const matchesTemp = Boolean(userRecord.temp_password) && (userRecord.temp_password === passVal);
 
                 if (!matchesMain && !matchesTemp) {
                     showError("Incorrect username or password.");
@@ -152,23 +151,25 @@
                 }
 
                 const userRole = userRecord.role || "Agent";
+                const userTheme = userRecord.theme_preference || "light";
                 const requiresReset = Boolean(userRecord.must_change_password) || Boolean(matchesTemp);
 
                 pendingUserObj = { 
                     user: userRecord.agent_name, 
-                    role: userRole 
+                    role: userRole,
+                    theme: userTheme
                 };
 
                 if (requiresReset) {
                     document.getElementById("passwordResetModal").style.display = "flex";
                 } else {
-                    completeLoginSession(userRecord.agent_name, userRole);
+                    completeLoginSession(userRecord.agent_name, userRole, userTheme);
                 }
             } catch (err) {
-                console.error("Login Handler Failure:", err);
+                console.error("Login failure:", err);
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Sign In";
-                showError("An unexpected error occurred during authentication.");
+                showError("Unexpected error during login.");
             }
         }
 
@@ -210,12 +211,15 @@
                 }
             }
 
-            completeLoginSession(pendingUserObj.user, pendingUserObj.role);
+            completeLoginSession(pendingUserObj.user, pendingUserObj.role, pendingUserObj.theme);
         }
 
-        function completeLoginSession(user, role) {
+        function completeLoginSession(user, role, theme) {
+            const chosenTheme = theme || 'light';
             sessionStorage.setItem("activeUser", user);
             sessionStorage.setItem("activeRole", role);
+            localStorage.setItem("themePreference", chosenTheme);
+            localStorage.setItem(`theme_${user.toLowerCase()}`, chosenTheme);
             window.location.href = "index.html";
         }
     </script>
