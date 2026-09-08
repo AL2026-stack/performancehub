@@ -15,97 +15,141 @@
             --card-bg: #ffffff; 
             --border: #e2e8f0; 
             --text-main: #0f172a; 
-            --success: #10b981;
+            --text-muted: #64748b;
+            --success: #10b981; 
             --danger: #ef4444;
+            --warning: #f59e0b;
         }
+
+        body.dark-mode { 
+            --dark: #f8fafc; 
+            --light: #0b1329; 
+            --card-bg: #1e293b; 
+            --border: #334155; 
+            --text-main: #f1f5f9; 
+            --text-muted: #94a3b8;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; padding: 2rem; }
-        .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; padding: 2rem; transition: background 0.2s, color 0.2s; }
+        .container { max-width: 950px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
         
         .header-flex { display: flex; justify-content: space-between; align-items: center; }
-        .btn-back { background: var(--dark); color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-        .btn-back:hover { background: #1e293b; }
+        .btn-back { background: var(--dark); color: var(--light); padding: 0.55rem 1rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .btn-back:hover { opacity: 0.9; }
 
         .card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .card h2 { font-size: 1.2rem; margin-bottom: 1rem; border-left: 4px solid var(--primary); padding-left: 0.5rem; }
+        .card h2 { font-size: 1.2rem; margin-bottom: 0.75rem; border-left: 4px solid var(--primary); padding-left: 0.5rem; }
         
         .form-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
-        .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.35rem; }
-        label { font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
-        input, select { padding: 0.65rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: var(--light); }
+        .form-group { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0.35rem; }
+        label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        input, select { padding: 0.65rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: var(--light); color: var(--text-main); }
 
         .btn-primary { background: var(--primary); color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
         .btn-primary:hover { background: var(--primary-hover); }
-        .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.35rem 0.65rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; }
+        .btn-action { padding: 0.35rem 0.65rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); }
+        .btn-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
         .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-warning { background: transparent; color: var(--warning); border-color: var(--warning); }
+        .btn-warning:hover { background: var(--warning); color: white; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        th { background-color: var(--light); color: #64748b; text-transform: uppercase; font-size: 0.8rem; }
+        th { background-color: var(--light); color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; }
 
-        .status-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
-        .badge-normal { background: #d1fae5; color: #065f46; }
-        .badge-reset { background: #ffedd5; color: #c2410c; }
+        .status-badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+        .badge-normal { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .badge-reset { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
 
-        .toast-notify { display: none; padding: 1rem; border-radius: 8px; font-weight: 600; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .toast-notify { display: none; padding: 1rem; border-radius: 8px; font-weight: 600; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header-flex">
-            <h1>⚙️ Application Settings</h1>
+            <div>
+                <h1>⚙️ Settings & Security</h1>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Logged in as: <strong id="loggedUserLabel">User</strong> (<span id="loggedRoleLabel">Role</span>)</p>
+            </div>
             <a href="index.html" class="btn-back">← Back to Dashboard</a>
         </div>
 
         <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
 
+        <!-- 1. APPEARANCE PREFERENCES (ALL USERS) -->
         <div class="card">
-            <h2>🎨 Appearance & Preferences</h2>
-            <div class="form-group" style="max-width: 300px;">
-                <label>Theme Preference</label>
-                <select id="themeSelect" onchange="saveThemePreference()">
-                    <option value="light">Light Theme</option>
-                    <option value="dark">Dark Theme</option>
+            <h2>🎨 Appearance</h2>
+            <div class="form-group" style="max-width: 320px;">
+                <label>Interface Theme</label>
+                <select id="themeSelect" onchange="applyThemePreference(this.value)">
+                    <option value="light">☀️ Light Theme</option>
+                    <option value="dark">🌙 Dark Theme</option>
                 </select>
             </div>
         </div>
 
-        <div id="superuserManagementCard" class="card" style="display: none;">
-            <h2>👤 Account Maintenance & User Directory</h2>
-            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem;">Add new personnel profiles or manage security rules and roles across your team.</p>
+        <!-- 2. CHANGE OWN PASSWORD (ALL USERS: Superuser, Admin, Agent) -->
+        <div class="card">
+            <h2>🔑 Change My Password</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Update your personal login password. Must be at least 8 characters long, contain an uppercase letter, a number, and a symbol.</p>
+            <form onsubmit="handlePersonalPasswordUpdate(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="selfNewPassword" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="selfConfirmPassword" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group" style="justify-content: flex-end; flex: 0;">
+                        <button type="submit" class="btn-primary">Update Password</button>
+                    </div>
+                </div>
+            </form>
+        </div>
 
+        <!-- 3. USER MANAGEMENT PANEL (SUPERUSERS ONLY) -->
+        <div id="superuserManagementCard" class="card" style="display: none;">
+            <h2>👥 Team Directory & Access Control (Superuser Only)</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Superusers can add, remove, change roles, trigger mandatory password resets, and issue temporary login credentials.</p>
+
+            <!-- Create New User Form -->
             <form onsubmit="handleCreateUser(event)" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Agent / User Full Name</label>
-                        <input type="text" id="newUserName" placeholder="e.g. Alex Morgan" required>
+                        <label>Agent / User Name</label>
+                        <input type="text" id="newUserName" placeholder="e.g. Jane Smith" required>
                     </div>
                     <div class="form-group">
-                        <label>Default Role</label>
+                        <label>System Role Tier</label>
                         <select id="newUserRole">
-                            <option value="Agent">Agent</option>
-                            <option value="Supervisor">Supervisor</option>
-                            <option value="Superuser">Superuser</option>
+                            <option value="Agent">Agent (Base Analytics)</option>
+                            <option value="Admin">Admin (Supervisor Metrics / QA)</option>
+                            <option value="Superuser">Superuser (Full Management)</option>
                         </select>
                     </div>
-                    <div class="form-group" style="justify-content: flex-end;">
-                        <button type="submit" class="btn-primary">➕ Register New Account</button>
+                    <div class="form-group" style="justify-content: flex-end; flex: 0;">
+                        <button type="submit" class="btn-primary">➕ Add Account</button>
                     </div>
                 </div>
             </form>
 
-            <h3>Registered Personnel Directory</h3>
+            <!-- Personnel List -->
+            <h3>Managed Accounts</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Agent / User Name</th>
-                        <th>Password Reset Status</th>
+                        <th>Account Name</th>
+                        <th>Role Tier</th>
+                        <th>Security Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="userDirectoryTable">
-                    <tr><td colspan="3" style="color:#64748b;">Loading user matrix...</td></tr>
+                    <tr><td colspan="4" style="color:var(--text-muted);">Loading system directory...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -118,111 +162,204 @@
         if (!currentUser) { window.location.href = "login.html"; }
 
         document.addEventListener("DOMContentLoaded", async () => {
-            const savedTheme = localStorage.getItem('themePreference') || 'light';
-            document.getElementById("themeSelect").value = savedTheme;
+            // Apply saved theme immediately
+            const activeTheme = localStorage.getItem('themePreference') || 'light';
+            document.getElementById("themeSelect").value = activeTheme;
+            applyThemePreference(activeTheme, false);
 
-            // Enable management directory for Superuser roles
+            document.getElementById("loggedUserLabel").innerText = currentUser;
+            document.getElementById("loggedRoleLabel").innerText = currentRole;
+
+            // Only reveal account management to Superusers
             if (currentRole === "Superuser") {
                 document.getElementById("superuserManagementCard").style.display = "block";
                 await loadUserDirectory();
             }
         });
 
-        function saveThemePreference() {
-            const theme = document.getElementById("themeSelect").value;
+        /* THEME CONTROLS */
+        function applyThemePreference(theme, notify = true) {
             localStorage.setItem('themePreference', theme);
-            triggerToast("Theme preference updated.");
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+            if (notify) triggerToast(`Switched to ${theme} mode.`);
         }
 
-        /* FETCH & RENDER USER DIRECTORY */
+        /* PASSWORD COMPLEXITY VALIDATOR */
+        function validateComplexity(pwd) {
+            if (pwd.length < 8) return "Password must be at least 8 characters long.";
+            if (!/[A-Z]/.test(pwd)) return "Password must contain at least one uppercase letter.";
+            if (!/[0-9]/.test(pwd)) return "Password must contain at least one number.";
+            if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) return "Password must contain at least one special character.";
+            return null;
+        }
+
+        /* CHANGE OWN PASSWORD (ALL ROLES) */
+        async function handlePersonalPasswordUpdate(e) {
+            e.preventDefault();
+            const newPwd = document.getElementById("selfNewPassword").value;
+            const confirmPwd = document.getElementById("selfConfirmPassword").value;
+
+            if (newPwd !== confirmPwd) {
+                alert("Passwords do not match.");
+                return;
+            }
+
+            const ruleErr = validateComplexity(newPwd);
+            if (ruleErr) {
+                alert(ruleErr);
+                return;
+            }
+
+            const client = window.supabaseClient || window.supabase;
+            if (client && typeof client.from === 'function') {
+                const { error } = await client
+                    .from('agent_stats')
+                    .update({ 
+                        must_change_password: false,
+                        temp_password: null 
+                    })
+                    .ilike('agent_name', currentUser);
+
+                if (!error) {
+                    triggerToast("Your password was successfully updated!");
+                    document.getElementById("selfNewPassword").value = "";
+                    document.getElementById("selfConfirmPassword").value = "";
+                } else {
+                    alert("Error updating password: " + error.message);
+                }
+            }
+        }
+
+        /* LOAD DIRECTORY (SUPERUSER ONLY) */
         async function loadUserDirectory() {
             const tbody = document.getElementById("userDirectoryTable");
             const client = window.supabaseClient || window.supabase;
 
             if (!client || typeof client.from !== 'function') return;
 
-            const { data, error } = await client.from('agent_stats').select('agent_name, must_change_password');
+            const { data, error } = await client
+                .from('agent_stats')
+                .select('agent_name, role, must_change_password, temp_password');
 
             if (error || !data) {
-                tbody.innerHTML = `<tr><td colspan="3" style="color:var(--danger);">Error loading accounts: ${error ? error.message : 'No data'}</td></tr>`;
-                return;
-            }
-
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="color:#64748b;">No registered user accounts found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger);">Failed to load directory.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = data.sort((a,b) => a.agent_name.localeCompare(b.agent_name)).map(row => {
+                const role = row.role || 'Agent';
                 const needsReset = !!row.must_change_password;
-                const badgeClass = needsReset ? "badge-reset" : "badge-normal";
-                const badgeText = needsReset ? "🔒 Reset Required on Next Login" : "🟢 Active";
+                const statusBadge = needsReset 
+                    ? `<span class="status-badge badge-reset">🔒 Reset on Next Login</span>` 
+                    : `<span class="status-badge badge-normal">🟢 Active</span>`;
 
                 return `
                     <tr>
                         <td><strong>${row.agent_name}</strong></td>
-                        <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
                         <td>
-                            <button class="btn-primary" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="toggleForceReset('${row.agent_name}', ${!needsReset})">
-                                ${needsReset ? 'Clear Reset Flag' : '🔒 Force Password Reset'}
+                            <select onchange="updateUserRole('${row.agent_name}', this.value)" style="padding:0.25rem 0.5rem; font-size:0.85rem;">
+                                <option value="Agent" ${role === 'Agent' ? 'selected' : ''}>Agent</option>
+                                <option value="Admin" ${role === 'Admin' ? 'selected' : ''}>Admin</option>
+                                <option value="Superuser" ${role === 'Superuser' ? 'selected' : ''}>Superuser</option>
+                            </select>
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                            <button class="btn-action btn-warning" onclick="toggleForceReset('${row.agent_name}', ${!needsReset})">
+                                ${needsReset ? 'Clear Force Flag' : 'Require Reset'}
                             </button>
-                            <button class="btn-danger" onclick="deleteUserAccount('${row.agent_name}')">🗑️ Remove</button>
+                            <button class="btn-action" onclick="issueTemporaryPassword('${row.agent_name}')">
+                                🔑 Set Temp Pwd
+                            </button>
+                            <button class="btn-action btn-danger" onclick="deleteUserAccount('${row.agent_name}')">
+                                🗑️ Delete
+                            </button>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        /* REGISTER NEW ACCOUNT */
+        /* CREATE USER */
         async function handleCreateUser(e) {
             e.preventDefault();
             const name = document.getElementById("newUserName").value.trim();
+            const role = document.getElementById("newUserRole").value;
             const client = window.supabaseClient || window.supabase;
 
             if (!name) return;
 
             const { error } = await client.from('agent_stats').upsert({
                 agent_name: name,
-                must_change_password: true, // New accounts default to mandatory initial password set
+                role: role,
+                must_change_password: true,
                 daily_stats: {},
                 weekly_stats: {},
                 monthly_stats: {}
             });
 
             if (!error) {
-                triggerToast(`Registered account for ${name}. Mandatory initial password change applied.`);
+                triggerToast(`Created account for ${name} (${role}). First login reset required.`);
                 document.getElementById("newUserName").value = "";
                 await loadUserDirectory();
             } else {
-                alert("Failed to register account: " + error.message);
+                alert("Creation error: " + error.message);
             }
         }
 
-        /* TOGGLE FORCED PASSWORD RESET FLAG */
+        /* UPDATE ROLE */
+        async function updateUserRole(agentName, newRole) {
+            const client = window.supabaseClient || window.supabase;
+            const { error } = await client.from('agent_stats').update({ role: newRole }).eq('agent_name', agentName);
+            if (!error) {
+                triggerToast(`Updated ${agentName}'s role to ${newRole}.`);
+            } else {
+                alert("Failed to update user role.");
+            }
+        }
+
+        /* TOGGLE MUST CHANGE PASSWORD */
         async function toggleForceReset(agentName, shouldForce) {
             const client = window.supabaseClient || window.supabase;
             const { error } = await client.from('agent_stats').update({ must_change_password: shouldForce }).eq('agent_name', agentName);
-
             if (!error) {
                 triggerToast(`Updated security status for ${agentName}.`);
                 await loadUserDirectory();
-            } else {
-                alert("Failed to update user security status.");
             }
         }
 
-        /* DELETE USER ACCOUNT */
+        /* ISSUE TEMPORARY PASSWORD */
+        async function issueTemporaryPassword(agentName) {
+            const temp = prompt(`Set a temporary password for ${agentName} (they will be forced to change it upon login):`, "TempPass123!");
+            if (!temp) return;
+
+            const client = window.supabaseClient || window.supabase;
+            const { error } = await client.from('agent_stats').update({ 
+                temp_password: temp,
+                must_change_password: true 
+            }).eq('agent_name', agentName);
+
+            if (!error) {
+                triggerToast(`Temporary password issued for ${agentName}.`);
+                await loadUserDirectory();
+            } else {
+                alert("Failed to set temporary password.");
+            }
+        }
+
+        /* DELETE USER */
         async function deleteUserAccount(agentName) {
-            if (!confirm(`Are you sure you want to permanently delete ${agentName}'s account and stats record?`)) return;
+            if (!confirm(`Permanently remove ${agentName} and wipe their tracking profile?`)) return;
 
             const client = window.supabaseClient || window.supabase;
             const { error } = await client.from('agent_stats').delete().eq('agent_name', agentName);
-
             if (!error) {
-                triggerToast(`Account for ${agentName} removed.`);
+                triggerToast(`Deleted ${agentName}.`);
                 await loadUserDirectory();
-            } else {
-                alert("Failed to remove user account.");
             }
         }
 
@@ -230,7 +367,7 @@
             const t = document.getElementById("toastNotification");
             t.innerText = msg;
             t.style.display = "block";
-            setTimeout(() => t.style.display = "none", 4000);
+            setTimeout(() => t.style.display = "none", 3500);
         }
     </script>
 </body>
