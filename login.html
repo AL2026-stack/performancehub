@@ -7,7 +7,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <style>
-        :root { --primary: #e6007e; --dark: #0f172a; --light: #f8fafc; --border: #cbd5e1; --danger: #ef4444; }
+        :root { 
+            --primary: #e6007e; 
+            --dark: #0f172a; 
+            --light: #f8fafc; 
+            --border: #cbd5e1; 
+            --danger: #ef4444; 
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background-color: var(--dark); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .login-card { background: white; color: var(--dark); padding: 2.5rem; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
@@ -29,12 +35,12 @@
         <h2>Zzoomm Performance Tracker</h2>
         <p style="text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Sign in to access your dashboard</p>
         
-        <div id="loginError" class="error-msg">Invalid User Account.</div>
+        <div id="loginError" class="error-msg">Incorrect username or password.</div>
 
         <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
-                <label>Username / Agent Name</label>
-                <input type="text" id="loginUser" required placeholder="e.g. Jane Smith">
+                <label>Username</label>
+                <input type="text" id="loginUser" required placeholder="e.g. Anthony">
             </div>
             <div class="form-group">
                 <label>Password</label>
@@ -44,6 +50,7 @@
         </form>
     </div>
 
+    <!-- Mandatory Password Reset Modal -->
     <div id="passwordResetModal" class="modal-overlay">
         <div class="modal-body">
             <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Password Change Required</h3>
@@ -84,35 +91,53 @@
         async function handleLogin(e) {
             e.preventDefault();
             const user = document.getElementById("loginUser").value.trim();
+            const password = document.getElementById("loginPassword").value;
             const errDiv = document.getElementById("loginError");
 
             errDiv.style.display = "none";
 
-            if (!user) return;
+            if (!user || !password) return;
 
             const client = window.supabaseClient || window.supabase;
-            let userRole = "Agent";
-            let mustReset = false;
-
-            if (client && typeof client.from === 'function') {
-                const { data, error } = await client
-                    .from('agent_stats')
-                    .select('role, must_change_password')
-                    .ilike('agent_name', user)
-                    .maybeSingle();
-
-                if (data) {
-                    if (data.role) userRole = data.role;
-                    mustReset = !!data.must_change_password;
-                }
+            if (!client || typeof client.from !== 'function') {
+                errDiv.innerText = "Authentication service unavailable.";
+                errDiv.style.display = "block";
+                return;
             }
 
-            pendingUserObj = { user, role: userRole };
+            // Fetch user row from database
+            const { data, error } = await client
+                .from('agent_stats')
+                .select('agent_name, role, password, temp_password, must_change_password')
+                .ilike('agent_name', user)
+                .maybeSingle();
+
+            // Check if user exists
+            if (error || !data) {
+                errDiv.innerText = "Incorrect username or password.";
+                errDiv.style.display = "block";
+                return;
+            }
+
+            // Verify password against stored password or temporary password
+            const validPassword = (data.password && data.password === password);
+            const validTempPassword = (data.temp_password && data.temp_password === password);
+
+            if (!validPassword && !validTempPassword) {
+                errDiv.innerText = "Incorrect username or password.";
+                errDiv.style.display = "block";
+                return;
+            }
+
+            const userRole = data.role || "Agent";
+            const mustReset = !!data.must_change_password || validTempPassword;
+
+            pendingUserObj = { user: data.agent_name, role: userRole };
 
             if (mustReset) {
                 document.getElementById("passwordResetModal").style.display = "flex";
             } else {
-                completeLoginSession(user, userRole);
+                completeLoginSession(data.agent_name, userRole);
             }
         }
 
@@ -138,7 +163,11 @@
 
             const client = window.supabaseClient || window.supabase;
             if (client && typeof client.from === 'function' && pendingUserObj) {
-                await client.from('agent_stats').update({ must_change_password: false }).ilike('agent_name', pendingUserObj.user);
+                await client.from('agent_stats').update({ 
+                    password: newPwd,
+                    temp_password: null,
+                    must_change_password: false 
+                }).eq('agent_name', pendingUserObj.user);
             }
 
             completeLoginSession(pendingUserObj.user, pendingUserObj.role);
