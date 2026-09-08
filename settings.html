@@ -17,7 +17,7 @@
             --text-main: #0f172a; 
             --text-muted: #64748b;
             --success: #10b981; 
-            --danger: #ef4444;
+            --danger: #ef4444; 
             --warning: #f59e0b;
         }
 
@@ -90,10 +90,10 @@
             </div>
         </div>
 
-        <!-- 2. CHANGE OWN PASSWORD (ALL USERS) -->
+        <!-- 2. CHANGE OWN PASSWORD (ALL USERS: Superuser, Admin, Agent) -->
         <div class="card">
             <h2>🔑 Change My Password</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Must be at least 8 characters long, contain an uppercase letter, a number, and a symbol.</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Update your personal login password. Must be at least 8 characters long, contain an uppercase letter, a number, and a symbol.</p>
             <form onsubmit="handlePersonalPasswordUpdate(event)">
                 <div class="form-row">
                     <div class="form-group">
@@ -114,7 +114,7 @@
         <!-- 3. USER MANAGEMENT PANEL (SUPERUSERS ONLY) -->
         <div id="superuserManagementCard" class="card" style="display: none;">
             <h2>👥 Team Directory & Access Control (Superuser Only)</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Create accounts, assign roles, enforce password changes, and issue temporary passwords.</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Superusers can add, remove, change roles, trigger mandatory password resets, and issue temporary login credentials.</p>
 
             <!-- Create New User Form -->
             <form onsubmit="handleCreateUser(event)" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
@@ -166,29 +166,46 @@
         if (!currentUser) { window.location.href = "login.html"; }
 
         document.addEventListener("DOMContentLoaded", async () => {
-            const activeTheme = localStorage.getItem('themePreference') || 'light';
+            // Read user-specific theme or fall back
+            const activeTheme = localStorage.getItem(`theme_${currentUser.toLowerCase()}`) || 
+                                localStorage.getItem('themePreference') || 
+                                'light';
             document.getElementById("themeSelect").value = activeTheme;
             applyThemePreference(activeTheme, false);
 
             document.getElementById("loggedUserLabel").innerText = currentUser;
             document.getElementById("loggedRoleLabel").innerText = currentRole;
 
+            // Only show user management to Superusers
             if (currentRole === "Superuser") {
                 document.getElementById("superuserManagementCard").style.display = "block";
                 await loadUserDirectory();
             }
         });
 
-        function applyThemePreference(theme, notify = true) {
+        /* THEME CONTROLS (SAVES LOCALLY AND IN DATABASE PER USER) */
+        async function applyThemePreference(theme, notify = true) {
             localStorage.setItem('themePreference', theme);
+            localStorage.setItem(`theme_${currentUser.toLowerCase()}`, theme);
+
             if (theme === 'dark') {
                 document.body.classList.add('dark-mode');
             } else {
                 document.body.classList.remove('dark-mode');
             }
             if (notify) triggerToast(`Switched to ${theme} mode.`);
+
+            // Persist to Supabase row for this specific user
+            const client = window.supabaseClient || window.supabase;
+            if (client && typeof client.from === 'function' && currentUser) {
+                await client
+                    .from('agent_stats')
+                    .update({ theme_preference: theme })
+                    .ilike('agent_name', currentUser);
+            }
         }
 
+        /* PASSWORD COMPLEXITY VALIDATOR */
         function validateComplexity(pwd) {
             if (pwd.length < 8) return "Password must be at least 8 characters long.";
             if (!/[A-Z]/.test(pwd)) return "Password must contain at least one uppercase letter.";
@@ -197,6 +214,7 @@
             return null;
         }
 
+        /* CHANGE OWN PASSWORD */
         async function handlePersonalPasswordUpdate(e) {
             e.preventDefault();
             const newPwd = document.getElementById("selfNewPassword").value;
@@ -222,7 +240,7 @@
                         must_change_password: false,
                         temp_password: null 
                     })
-                    .eq('agent_name', currentUser);
+                    .ilike('agent_name', currentUser);
 
                 if (!error) {
                     triggerToast("Your password was successfully updated!");
@@ -234,6 +252,7 @@
             }
         }
 
+        /* LOAD DIRECTORY (SUPERUSERS) */
         async function loadUserDirectory() {
             const tbody = document.getElementById("userDirectoryTable");
             const client = window.supabaseClient || window.supabase;
@@ -283,6 +302,7 @@
             }).join('');
         }
 
+        /* CREATE USER */
         async function handleCreateUser(e) {
             e.preventDefault();
             const name = document.getElementById("newUserName").value.trim();
@@ -297,13 +317,14 @@
                 role: role,
                 password: initPassword,
                 must_change_password: true,
+                theme_preference: 'light',
                 daily_stats: {},
                 weekly_stats: {},
                 monthly_stats: {}
             });
 
             if (!error) {
-                triggerToast(`Created account for ${name} (${role}). Forced initial reset applied.`);
+                triggerToast(`Created account for ${name} (${role}). First login reset required.`);
                 document.getElementById("newUserName").value = "";
                 await loadUserDirectory();
             } else {
@@ -311,6 +332,7 @@
             }
         }
 
+        /* UPDATE ROLE */
         async function updateUserRole(agentName, newRole) {
             const client = window.supabaseClient || window.supabase;
             const { error } = await client.from('agent_stats').update({ role: newRole }).eq('agent_name', agentName);
@@ -321,6 +343,7 @@
             }
         }
 
+        /* TOGGLE MUST CHANGE PASSWORD */
         async function toggleForceReset(agentName, shouldForce) {
             const client = window.supabaseClient || window.supabase;
             const { error } = await client.from('agent_stats').update({ must_change_password: shouldForce }).eq('agent_name', agentName);
@@ -330,6 +353,7 @@
             }
         }
 
+        /* ISSUE TEMPORARY PASSWORD */
         async function issueTemporaryPassword(agentName) {
             const temp = prompt(`Set a temporary password for ${agentName}:`, "TempPass123!");
             if (!temp) return;
@@ -348,8 +372,9 @@
             }
         }
 
+        /* DELETE USER */
         async function deleteUserAccount(agentName) {
-            if (!confirm(`Permanently remove ${agentName} and delete their profile?`)) return;
+            if (!confirm(`Permanently remove ${agentName} and wipe their profile?`)) return;
 
             const client = window.supabaseClient || window.supabase;
             const { error } = await client.from('agent_stats').delete().eq('agent_name', agentName);
