@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zzoomm Performance Tracker</title>
+    <!-- Supabase SDK, Chart.js & Config -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="config.js"></script>
@@ -23,11 +24,15 @@
         }
         
         body.dark-mode { 
-            --light: #0f172a; --dark: #f4f7fa; --card-bg: #1e293b; --text-main: #f1f5f9; --border: #334155; 
+            --light: #0b1329; 
+            --dark: #f8fafc; 
+            --card-bg: #1e293b; 
+            --text-main: #f1f5f9; 
+            --border: #334155; 
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; transition: background 0.3s, color 0.3s; }
+        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; transition: background 0.2s, color 0.2s; }
         
         header { 
             background-color: #0f172a; color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; 
@@ -145,6 +150,7 @@
         <main class="main-workspace">
             <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
 
+            <!-- VIEW 1: HOME VIEW -->
             <div id="homeView" class="page-view-section">
                 <div class="action-button-grid">
                     <button id="btnShortCutCall" class="btn-launch" style="display:none;" onclick="openEvaluationWindow('Call Listening Feedback')">🎧 Submit New Call Quality</button>
@@ -193,6 +199,7 @@
                     <div id="homeKpiDisplayArea">Loading cloud metrics...</div>
                 </div>
 
+                <!-- COACHING ASSISTANT PANEL -->
                 <div id="coachingAssistantPanel" class="coaching-card" style="display:none;"></div>
 
                 <div class="card">
@@ -207,6 +214,7 @@
                 </div>
             </div>
 
+            <!-- VIEW 2: DEDICATED IMPORT VIEW -->
             <div id="importView" class="page-view-section hidden">
                 <div class="card">
                     <div class="card-header-flex">
@@ -217,6 +225,7 @@
                 </div>
             </div>
 
+            <!-- VIEW 3: PERFORMANCE STATS OVERVIEW -->
             <div id="statsView" class="page-view-section hidden">
                 <div class="card">
                     <div class="card-header-flex">
@@ -243,6 +252,7 @@
                     <div id="kpiDisplayArea"></div>
                 </div>
 
+                <!-- TREND GRAPH CONTAINER -->
                 <div class="card">
                     <div class="card-header-flex">
                         <h2>📈 Performance Trends Over Time</h2>
@@ -251,6 +261,7 @@
                 </div>
             </div>
 
+            <!-- VIEW 4: COMPLETED QUALITY FORMS -->
             <div id="qaView" class="page-view-section hidden">
                 <div class="card">
                     <div class="card-header-flex" style="margin-bottom: 0;">
@@ -276,8 +287,16 @@
         let trendChartInstance = null;
 
         document.addEventListener("DOMContentLoaded", async () => {
-            const activeTheme = localStorage.getItem('themePreference') || 'light';
-            if (activeTheme === 'dark') { document.body.classList.add('dark-mode'); }
+            // Apply per-user theme preference
+            const userTheme = localStorage.getItem(`theme_${currentUser.toLowerCase()}`) || 
+                              localStorage.getItem('themePreference') || 
+                              'light';
+            if (userTheme === 'dark') { 
+                document.body.classList.add('dark-mode'); 
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+
             document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
             
             const todayStr = new Date().toISOString().split('T')[0];
@@ -285,15 +304,14 @@
                 document.getElementById("uploadTargetDate").value = todayStr;
             }
 
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
+            // Superuser or Admin permissions
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
             
             const navImportEl = document.getElementById("navImport");
             if (navImportEl) { navImportEl.style.display = isManagement ? "flex" : "none"; }
 
             const teamOpsSection = document.getElementById("teamOpsSidebarSection");
             if (teamOpsSection) { teamOpsSection.style.display = isManagement ? "block" : "none"; }
-
-            setupDragAndDropStyles();
 
             await syncCloudData();
 
@@ -816,7 +834,7 @@
             const homeValEl = document.getElementById("homeValueFilter");
             const homeVal = homeValEl ? homeValEl.value : (document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "");
             
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser");
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
 
             const agentFilterEl = document.getElementById("agentFilter");
             const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
@@ -892,7 +910,6 @@
             window.open(`form.html?type=${encodeURIComponent(type)}&agent=${encodeURIComponent(agentVal !== "All" ? agentVal : "")}`, 'FormWindow', 'width=750,height=700'); 
         }
         function viewQAFormHistorical(docId) { window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=700,height=800'); }
-        function setupDragAndDropStyles() {}
         function triggerToast(msg) {
             const t = document.getElementById("toastNotification"); 
             if (!t) return;
