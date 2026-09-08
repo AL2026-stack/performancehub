@@ -44,7 +44,8 @@
         .form-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
         .form-group { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0.35rem; }
         label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-        input, select { padding: 0.65rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: var(--light); color: var(--text-main); }
+        input, select, textarea { padding: 0.65rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: var(--light); color: var(--text-main); outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 
         .btn-primary { background: var(--primary); color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
         .btn-primary:hover { background: var(--primary-hover); }
@@ -90,10 +91,10 @@
             </div>
         </div>
 
-        <!-- 2. CHANGE OWN PASSWORD (ALL USERS: Superuser, Admin, Agent) -->
+        <!-- 2. CHANGE PERSONAL PASSWORD (ALL USERS) -->
         <div class="card">
             <h2>🔑 Change My Password</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Update your personal login password. Must be at least 8 characters long, contain an uppercase letter, a number, and a symbol.</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Must be at least 8 characters long, contain an uppercase letter, a number, and a symbol.</p>
             <form onsubmit="handlePersonalPasswordUpdate(event)">
                 <div class="form-row">
                     <div class="form-group">
@@ -113,11 +114,12 @@
 
         <!-- 3. USER MANAGEMENT PANEL (SUPERUSERS ONLY) -->
         <div id="superuserManagementCard" class="card" style="display: none;">
-            <h2>👥 Team Directory & Access Control (Superuser Only)</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Superusers can add, remove, change roles, trigger mandatory password resets, and issue temporary login credentials.</p>
+            <h2>👥 Team Directory & Access Control</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Create accounts individually or in bulk, assign role tiers, enforce password changes, and issue temporary credentials.</p>
 
-            <!-- Create New User Form -->
+            <!-- A. SINGLE USER CREATION -->
             <form onsubmit="handleCreateUser(event)" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">➕ Add Single Account</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Agent / User Name</label>
@@ -136,13 +138,46 @@
                         <input type="text" id="newUserPassword" value="Zzoomm123!" required>
                     </div>
                     <div class="form-group" style="justify-content: flex-end; flex: 0;">
-                        <button type="submit" class="btn-primary">➕ Add Account</button>
+                        <button type="submit" class="btn-primary">Create Account</button>
                     </div>
                 </div>
             </form>
 
-            <!-- Personnel List -->
-            <h3>Managed Accounts</h3>
+            <!-- B. BULK USER CREATION -->
+            <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                <h3 style="font-size: 1rem; margin-bottom: 0.35rem;">⚡ Bulk Create Personnel</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                    Paste one entry per line. Supports: <code>FullName</code> | <code>FullName, Role</code> | <code>FullName, Role, Password</code>
+                </p>
+
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <label>Personnel List</label>
+                    <textarea id="bulkUserTextarea" rows="5" style="width: 100%; font-family: monospace;" placeholder="Alex Morgan&#10;Chris Evans, Admin&#10;Sam Taylor, Agent, Welcome2026!"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                    <div class="form-group" style="min-width: 180px; flex: 0;">
+                        <label>Default Role (If unstated)</label>
+                        <select id="bulkDefaultRole">
+                            <option value="Agent">Agent</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Superuser">Superuser</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="min-width: 180px; flex: 0;">
+                        <label>Default Temp Password</label>
+                        <input type="text" id="bulkDefaultPassword" value="Zzoomm123!">
+                    </div>
+
+                    <div style="margin-top: auto;">
+                        <button type="button" class="btn-primary" onclick="handleBulkCreateUsers()">🚀 Create Users in Bulk</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- C. USER DIRECTORY & MAINTENANCE TABLE -->
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">📋 Managed Accounts Directory</h3>
             <table>
                 <thead>
                     <tr>
@@ -166,7 +201,6 @@
         if (!currentUser) { window.location.href = "login.html"; }
 
         document.addEventListener("DOMContentLoaded", async () => {
-            // Read user-specific theme or fall back
             const activeTheme = localStorage.getItem(`theme_${currentUser.toLowerCase()}`) || 
                                 localStorage.getItem('themePreference') || 
                                 'light';
@@ -176,14 +210,13 @@
             document.getElementById("loggedUserLabel").innerText = currentUser;
             document.getElementById("loggedRoleLabel").innerText = currentRole;
 
-            // Only show user management to Superusers
             if (currentRole === "Superuser") {
                 document.getElementById("superuserManagementCard").style.display = "block";
                 await loadUserDirectory();
             }
         });
 
-        /* THEME CONTROLS (SAVES LOCALLY AND IN DATABASE PER USER) */
+        /* THEME PERSISTENCE */
         async function applyThemePreference(theme, notify = true) {
             localStorage.setItem('themePreference', theme);
             localStorage.setItem(`theme_${currentUser.toLowerCase()}`, theme);
@@ -195,7 +228,6 @@
             }
             if (notify) triggerToast(`Switched to ${theme} mode.`);
 
-            // Persist to Supabase row for this specific user
             const client = window.supabaseClient || window.supabase;
             if (client && typeof client.from === 'function' && currentUser) {
                 await client
@@ -205,7 +237,7 @@
             }
         }
 
-        /* PASSWORD COMPLEXITY VALIDATOR */
+        /* VALIDATOR */
         function validateComplexity(pwd) {
             if (pwd.length < 8) return "Password must be at least 8 characters long.";
             if (!/[A-Z]/.test(pwd)) return "Password must contain at least one uppercase letter.";
@@ -252,7 +284,7 @@
             }
         }
 
-        /* LOAD DIRECTORY (SUPERUSERS) */
+        /* LOAD DIRECTORY */
         async function loadUserDirectory() {
             const tbody = document.getElementById("userDirectoryTable");
             const client = window.supabaseClient || window.supabase;
@@ -302,7 +334,7 @@
             }).join('');
         }
 
-        /* CREATE USER */
+        /* CREATE SINGLE USER */
         async function handleCreateUser(e) {
             e.preventDefault();
             const name = document.getElementById("newUserName").value.trim();
@@ -332,7 +364,72 @@
             }
         }
 
-        /* UPDATE ROLE */
+        /* BULK CREATE USERS */
+        async function handleBulkCreateUsers() {
+            const rawText = document.getElementById("bulkUserTextarea").value.trim();
+            const defaultRole = document.getElementById("bulkDefaultRole").value;
+            const defaultPassword = document.getElementById("bulkDefaultPassword").value.trim() || "Zzoomm123!";
+            const client = window.supabaseClient || window.supabase;
+
+            if (!rawText) {
+                alert("Please enter at least one user entry.");
+                return;
+            }
+
+            if (!client || typeof client.from !== 'function') {
+                alert("Supabase client is not available.");
+                return;
+            }
+
+            const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            const validRoles = ["Agent", "Admin", "Superuser"];
+            const records = [];
+
+            for (const line of lines) {
+                const parts = line.split(',').map(p => p.trim());
+                const name = parts[0];
+                if (!name) continue;
+
+                let role = defaultRole;
+                let pwd = defaultPassword;
+
+                if (parts.length >= 2 && validRoles.includes(parts[1])) {
+                    role = parts[1];
+                }
+                if (parts.length >= 3 && parts[2]) {
+                    pwd = parts[2];
+                }
+
+                records.push({
+                    agent_name: name,
+                    role: role,
+                    password: pwd,
+                    must_change_password: true,
+                    theme_preference: 'light',
+                    daily_stats: {},
+                    weekly_stats: {},
+                    monthly_stats: {}
+                });
+            }
+
+            if (records.length === 0) {
+                alert("No valid records found to insert.");
+                return;
+            }
+
+            const { error } = await client.from('agent_stats').upsert(records, { onConflict: 'agent_name' });
+
+            if (error) {
+                alert("Failed to bulk create users: " + error.message);
+                return;
+            }
+
+            triggerToast(`Successfully registered ${records.length} accounts!`);
+            document.getElementById("bulkUserTextarea").value = "";
+            await loadUserDirectory();
+        }
+
+        /* ROLE UPDATE */
         async function updateUserRole(agentName, newRole) {
             const client = window.supabaseClient || window.supabase;
             const { error } = await client.from('agent_stats').update({ role: newRole }).eq('agent_name', agentName);
@@ -343,7 +440,7 @@
             }
         }
 
-        /* TOGGLE MUST CHANGE PASSWORD */
+        /* TOGGLE RESET FLAG */
         async function toggleForceReset(agentName, shouldForce) {
             const client = window.supabaseClient || window.supabase;
             const { error } = await client.from('agent_stats').update({ must_change_password: shouldForce }).eq('agent_name', agentName);
@@ -353,7 +450,7 @@
             }
         }
 
-        /* ISSUE TEMPORARY PASSWORD */
+        /* SET TEMP PASSWORD */
         async function issueTemporaryPassword(agentName) {
             const temp = prompt(`Set a temporary password for ${agentName}:`, "TempPass123!");
             if (!temp) return;
@@ -372,7 +469,7 @@
             }
         }
 
-        /* DELETE USER */
+        /* REMOVE USER */
         async function deleteUserAccount(agentName) {
             if (!confirm(`Permanently remove ${agentName} and wipe their profile?`)) return;
 
