@@ -150,35 +150,11 @@
         <main class="main-workspace">
             <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
 
-            <!-- VIEW 1: HOME VIEW -->
+            <!-- VIEW 1: HOME VIEW (Import engine completely removed from here) -->
             <div id="homeView" class="page-view-section">
                 <div class="action-button-grid">
                     <button id="btnShortCutCall" class="btn-launch" style="display:none;" onclick="openEvaluationWindow('Call Listening Feedback')">🎧 Submit New Call Quality</button>
                     <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit New Ticket Feedback</button>
-                </div>
-
-                <div id="homeManagementPanel" style="display: none;">
-                    <div class="upload-section-container">
-                        <h3 style="font-size: 1rem; border-left:4px solid var(--primary); padding-left:0.5rem; margin-bottom:0.25rem;">📊 8x8 Stats Import Engine</h3>
-                        <p style="font-size: 0.85rem; color: #64748b;">Upload daily raw call metrics CSV file to parse stats into the cloud matrix.</p>
-                        <div class="upload-row-flex">
-                            <div>
-                                <label class="filter-label" style="display:block; margin-bottom:0.25rem;">Target Logging Date:</label>
-                                <input type="date" id="uploadTargetDate" class="calendar-input" value="2026-07-22" onchange="handleHomeScopeChange()">
-                            </div>
-                            <div class="upload-dropzone" id="dropzoneContainer">
-                                <p id="dropzoneText">Drag & Drop CSV File Here or Click to Browse</p>
-                                <input type="file" id="dashboardCsvInput" class="file-hidden-input" accept=".csv" onchange="stageCsvFile()">
-                            </div>
-                            <div class="confirm-wrapper" id="confirmActionWrapper">
-                                <button class="btn-confirm-upload" onclick="processStagedCsvFile()">Confirm Upload</button>
-                                <button class="btn-cancel-upload" onclick="resetStagedFile()">Cancel</button>
-                            </div>
-                            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                                <button class="btn-danger-outline" onclick="purgeStatsBySelectedDate()">🗑️ Purge Date</button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="card">
@@ -214,14 +190,28 @@
                 </div>
             </div>
 
-            <!-- VIEW 2: DEDICATED IMPORT VIEW -->
+            <!-- VIEW 2: DEDICATED 8x8 STATS IMPORT VIEW (Moved here) -->
             <div id="importView" class="page-view-section hidden">
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>8x8 Stats Import Engine</h2>
+                <div class="upload-section-container">
+                    <h3 style="font-size: 1.15rem; border-left:4px solid var(--primary); padding-left:0.5rem; margin-bottom:0.35rem;">📊 8x8 Stats Import Engine</h3>
+                    <p style="font-size: 0.85rem; color: #64748b;">Upload daily raw call metrics CSV file to parse stats into the cloud matrix or purge a specific date's production.</p>
+                    <div class="upload-row-flex">
+                        <div>
+                            <label class="filter-label" style="display:block; margin-bottom:0.25rem;">Target Logging Date:</label>
+                            <input type="date" id="uploadTargetDate" class="calendar-input" onchange="handleHomeScopeChange()">
+                        </div>
+                        <div class="upload-dropzone" id="dropzoneContainer">
+                            <p id="dropzoneText">Drag & Drop CSV File Here or Click to Browse</p>
+                            <input type="file" id="dashboardCsvInput" class="file-hidden-input" accept=".csv" onchange="stageCsvFile()">
+                        </div>
+                        <div class="confirm-wrapper" id="confirmActionWrapper">
+                            <button class="btn-confirm-upload" onclick="processStagedCsvFile()">Confirm Upload</button>
+                            <button class="btn-cancel-upload" onclick="resetStagedFile()">Cancel</button>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                            <button class="btn-danger-outline" onclick="purgeStatsBySelectedDate()">🗑️ Purge Date</button>
+                        </div>
                     </div>
-                    <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1rem;">Select a date to upload telephony & handling metrics, or use the purge tool to remove stats for a specific day.</p>
-                    <div id="importViewContainer"></div>
                 </div>
             </div>
 
@@ -287,7 +277,6 @@
         let trendChartInstance = null;
 
         document.addEventListener("DOMContentLoaded", async () => {
-            // Apply per-user theme preference
             const userTheme = localStorage.getItem(`theme_${currentUser.toLowerCase()}`) || 
                               localStorage.getItem('themePreference') || 
                               'light';
@@ -304,7 +293,6 @@
                 document.getElementById("uploadTargetDate").value = todayStr;
             }
 
-            // Superuser or Admin permissions
             const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
             
             const navImportEl = document.getElementById("navImport");
@@ -606,7 +594,7 @@
 
             if (type === "Daily") {
                 if (label) label.innerText = "Select Day:";
-                const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "2026-07-22";
+                const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : new Date().toISOString().split('T')[0];
                 if (container) container.innerHTML = `<input type="date" id="timeframeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
             } else {
                 if (label) label.innerText = type === "Weekly" ? "Select Week:" : "Select Month:";
@@ -839,13 +827,11 @@
             const agentFilterEl = document.getElementById("agentFilter");
             const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
 
-            const homeMgmt = document.getElementById("homeManagementPanel");
             const btnCall = document.getElementById("btnShortCutCall");
             const btnTicket = document.getElementById("btnShortCutTicket");
             const supBlock = document.getElementById("supervisorFilterBlock");
 
             if (isManagement) {
-                if (homeMgmt) homeMgmt.style.display = "block";
                 if (btnCall) btnCall.style.display = "inline-flex";
                 if (btnTicket) btnTicket.style.display = "inline-flex";
                 if (supBlock) supBlock.style.display = "flex";
@@ -899,9 +885,26 @@
 
         function switchView(viewId) {
             const views = ['homeView', 'importView', 'statsView', 'qaView'];
-            views.forEach(v => { const el = document.getElementById(v); if (el) el.classList.add('hidden'); });
+            const navMap = {
+                'homeView': 'navHome',
+                'importView': 'navImport',
+                'statsView': 'navStats',
+                'qaView': 'navQA'
+            };
+
+            views.forEach(v => { 
+                const el = document.getElementById(v); 
+                if (el) el.classList.add('hidden'); 
+            });
+
+            document.querySelectorAll('.sidebar .nav-item').forEach(el => el.classList.remove('active'));
+
             const targetView = document.getElementById(viewId);
             if (targetView) targetView.classList.remove('hidden');
+
+            const activeNav = document.getElementById(navMap[viewId]);
+            if (activeNav) activeNav.classList.add('active');
+
             renderDashboard();
         }
 
@@ -909,7 +912,11 @@
             const agentVal = document.getElementById("agentFilter") ? document.getElementById("agentFilter").value : "All";
             window.open(`form.html?type=${encodeURIComponent(type)}&agent=${encodeURIComponent(agentVal !== "All" ? agentVal : "")}`, 'FormWindow', 'width=750,height=700'); 
         }
-        function viewQAFormHistorical(docId) { window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=700,height=800'); }
+
+        function viewQAFormHistorical(docId) { 
+            window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=700,height=800'); 
+        }
+
         function triggerToast(msg) {
             const t = document.getElementById("toastNotification"); 
             if (!t) return;
@@ -917,7 +924,10 @@
             setTimeout(() => t.style.display = "none", 4000);
         }
 
-        function logoutUser() { sessionStorage.clear(); window.location.href = "login.html"; }
+        function logoutUser() { 
+            sessionStorage.clear(); 
+            window.location.href = "login.html"; 
+        }
     </script>
 </body>
 </html>
