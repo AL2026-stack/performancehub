@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Evaluation - Zzoomm Performance Tracker</title>
-    <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,18 +18,24 @@
             --card-bg: #ffffff; 
             --border: #e2e8f0; 
             --success: #10b981; 
+            --success-bg: rgba(16, 185, 129, 0.12);
             --danger: #ef4444; 
+            --warning: #f59e0b;
             --text-main: #0f172a; 
             --text-muted: #64748b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
-        body { background-color: var(--light); color: var(--text-main); padding: 2rem; }
+        body { background-color: var(--light); color: var(--text-main); padding: 2rem 1rem; }
         .container { max-width: 680px; margin: 0 auto; background: var(--card-bg); padding: 2rem; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
         
         .header-box { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 1.5rem; }
         .header-title { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
-        .score-pill { font-size: 1.75rem; font-weight: 800; }
+        .score-pill { font-size: 1.75rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-top: 0.35rem; }
+        .badge-completed { background: var(--success-bg); color: var(--success); }
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
 
         .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; background: var(--light); padding: 1rem; border-radius: 10px; border: 1px solid var(--border); }
         .meta-label { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
@@ -50,7 +55,7 @@
         <div class="header-box">
             <div>
                 <h1 class="header-title" id="qaTitle">Quality Evaluation Review</h1>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;" id="qaSubtitle">Review details and evaluator notes</p>
+                <div id="statusBadgeContainer"></div>
             </div>
             <div class="score-pill" id="qaScorePill">--%</div>
         </div>
@@ -75,7 +80,7 @@
         </div>
 
         <div class="comments-box">
-            <h4>Evaluator Feedback & Coaching Summary</h4>
+            <h4>Evaluator Feedback & Coaching Notes</h4>
             <div class="comments-text" id="qaComments">Loading review comments...</div>
         </div>
 
@@ -92,7 +97,7 @@
 
             <div id="pendingCommentForm" style="display: none;">
                 <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-                    Please read through the score and evaluator feedback above. Add any reflections, feedback, or action steps before signing off on this evaluation.
+                    Please review your evaluation score and comments above. Add any reflections, feedback, or action steps before signing off.
                 </p>
                 <textarea id="agentReflectionInput" rows="3" style="width: 100%; padding: 0.65rem; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.88rem;" placeholder="Type your response, reflections, or commitments here..."></textarea>
                 <button type="button" class="btn-launch" onclick="submitAgentQAAcknowledgment()">✍️ Sign & Acknowledge Evaluation</button>
@@ -133,21 +138,28 @@
 
             document.getElementById("qaComments").innerText = data.comments || "No comments entered.";
 
+            // Status Badge
+            const isCompleted = data.agent_acknowledged || data.status === "Completed" || data.status === "Acknowledged";
+            const badgeContainer = document.getElementById("statusBadgeContainer");
+            badgeContainer.innerHTML = isCompleted
+                ? '<span class="status-badge badge-completed">✔ Completed (Acknowledged)</span>'
+                : '<span class="status-badge badge-pending">⏳ Pending Agent Acknowledgment</span>';
+
             const isFormAgent = data.agent && currentUser && (data.agent.toLowerCase() === currentUser.toLowerCase());
             
-            if (data.agent_acknowledged) {
+            if (isCompleted) {
                 document.getElementById("completedCommentView").style.display = "block";
                 document.getElementById("savedAgentCommentText").innerText = data.agent_comments || "Acknowledged without additional comment.";
                 if (data.acknowledged_at) {
                     const dt = new Date(data.acknowledged_at).toLocaleDateString('en-GB');
-                    document.getElementById("ackTimestampText").innerText = `Signed and acknowledged on ${dt}`;
+                    document.getElementById("ackTimestampText").innerText = `Signed & Completed on ${dt}`;
                 }
             } else if (isFormAgent) {
                 document.getElementById("pendingCommentForm").style.display = "block";
             } else {
                 document.getElementById("completedCommentView").style.display = "block";
-                document.getElementById("savedAgentCommentText").innerText = "Awaiting agent review and sign-off.";
-                document.getElementById("ackTimestampText").innerText = "Pending signature";
+                document.getElementById("savedAgentCommentText").innerText = "Awaiting agent sign-off.";
+                document.getElementById("ackTimestampText").innerText = "Pending Agent Signature";
                 document.getElementById("ackTimestampText").style.color = "var(--warning)";
             }
         }
@@ -158,15 +170,16 @@
 
             if (!client || !docId) return;
 
+            // Flip status to Completed and mark acknowledged
             const { error } = await client.from('feedback_docs').update({
                 agent_acknowledged: true,
                 agent_comments: comment || "Acknowledged",
-                status: "Acknowledged",
+                status: "Completed",
                 acknowledged_at: new Date().toISOString()
             }).eq('id', docId);
 
             if (!error) {
-                alert("Evaluation acknowledged successfully!");
+                alert("Evaluation acknowledged and marked as Completed!");
                 if (window.opener && !window.opener.closed) {
                     window.opener.location.reload();
                 }
