@@ -254,7 +254,11 @@
                         </h2>
                         <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
                     </div>
-                    <div id="homePendingQaContainer">Loading pending evaluations...</div>
+                    <div id="homePendingQaContainer">
+                        <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                            🎉 No Pending QA Forms to be Completed
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -459,6 +463,7 @@
             handleHomeScopeChange();
             handleTimeframeTypeChange(); 
             loadCoachingPlans();
+            renderPendingEvaluations();
         });
 
         async function syncCloudData() {
@@ -495,6 +500,58 @@
             } catch (err) { console.error("Cloud sync error:", err); }
         }
 
+        /* RENDER PENDING EVALUATIONS */
+        function renderPendingEvaluations() {
+            const container = document.getElementById("homePendingQaContainer");
+            const badge = document.getElementById("homePendingCountBadge");
+            const headerBadge = document.getElementById("headerPendingBadge");
+            const headerBadgeCount = document.getElementById("pendingBadgeCount");
+            
+            if (!container) return;
+
+            const pendingList = globalDocs.filter(doc => {
+                const isPending = doc.status === "Pending Agent Acknowledgment" || doc.status === "Pending" || !doc.agentCommitMessage;
+                if (currentRole === "Agent") {
+                    return isPending && doc.agent && doc.agent.toLowerCase() === currentUser.toLowerCase();
+                }
+                return isPending;
+            });
+
+            const pendingCount = pendingList.length;
+
+            if (badge) {
+                badge.innerText = `${pendingCount} Pending`;
+                badge.style.display = pendingCount > 0 ? "inline-block" : "none";
+            }
+            if (headerBadge && headerBadgeCount) {
+                headerBadgeCount.innerText = pendingCount;
+                headerBadge.style.display = pendingCount > 0 ? "inline-flex" : "none";
+            }
+
+            if (pendingCount === 0) {
+                container.innerHTML = `
+                    <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                        🎉 No Pending QA Forms to be Completed
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pendingList.map(doc => `
+                <div style="background: var(--light); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                    <div>
+                        <strong style="font-size: 0.95rem;">${doc.agent || 'Unknown Agent'} — ${doc.qaStyle || 'Quality Review'}</strong>
+                        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">
+                            Date: ${doc.date || 'N/A'} | Score: <strong>${doc.score || 'N/A'}%</strong> | Evaluator: ${doc.evaluator || 'QA Lead'}
+                        </p>
+                    </div>
+                    <button class="btn-launch" style="padding: 0.4rem 0.9rem; font-size: 0.8rem; flex-shrink: 0;" onclick="viewQAFormHistorical(${doc.id})">
+                        Review & Sign ↗
+                    </button>
+                </div>
+            `).join('');
+        }
+
         /* 1-TO-1 MEETING BRIEF GENERATOR & COACHING SUITE */
         function generateOneToOneBrief(agentName) {
             const container = document.getElementById("oneToOneBriefContent");
@@ -507,7 +564,6 @@
             const dailyStats = profile && profile.Daily ? profile.Daily : {};
             const dates = Object.keys(dailyStats).sort();
             
-            // Calculate 30-Day performance window
             let totalCalls = 0, totalAht = 0, totalWrap = 0, totalTrans = 0, count = 0;
             dates.slice(-30).forEach(d => {
                 const day = dailyStats[d];
@@ -523,11 +579,9 @@
             const avgWrap = count > 0 ? secondsToTimeStr(Math.round(totalWrap / count)) : "00:00:00";
             const avgTrans = count > 0 ? (totalTrans / count).toFixed(1) + "%" : "0.0%";
 
-            // Pull Quality Feedback evaluations
             const agentQAs = globalDocs.filter(d => d.agent && d.agent.toLowerCase() === agentName.toLowerCase());
             const avgScore = agentQAs.length > 0 ? Math.round(agentQAs.reduce((acc, q) => acc + (parseFloat(q.score) || 0), 0) / agentQAs.length) : "N/A";
 
-            // Identify coaching triggers
             const wrapSec = timeToSeconds(avgWrap);
             const ahtSec = timeToSeconds(avgAht);
             const transPct = parseFloat(avgTrans);
@@ -612,7 +666,6 @@
             document.getElementById("planObjective").value = suggestedText;
             const targetDateInput = document.getElementById("planDeadline");
             
-            // Default completion date 14 days out
             const future = new Date();
             future.setDate(future.getDate() + 14);
             targetDateInput.value = future.toISOString().split('T')[0];
@@ -1343,6 +1396,7 @@
             }
 
             renderTrendChart(selectedAgent !== "All" ? selectedAgent : currentUser);
+            renderPendingEvaluations();
         }
 
         function populateAgentFilters() {
