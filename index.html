@@ -203,7 +203,7 @@
 
                 <div class="card">
                     <div class="card-header-flex">
-                        <h2>📊 Team Performance KPIs</h2>
+                        <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
                         <div class="filter-group">
                             <span class="filter-label">Timescale:</span>
                             <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
@@ -382,9 +382,18 @@
                 const { data: docsData } = await client.from('feedback_docs').select('*');
                 if (docsData) {
                     globalDocs = docsData.map(d => ({
-                        id: d.id, agent: d.agent, evaluator: d.evaluator, date: d.date, status: d.status,
-                        qaStyle: d.qa_style, score: d.score, callRef: d.call_ref, ticketRef: d.ticket_ref,
-                        comments: d.comments, agentCommitMessage: d.agent_commit_message
+                        id: d.id, 
+                        agent: d.agent, 
+                        evaluator: d.evaluator, 
+                        date: d.date, 
+                        status: d.status,
+                        qaStyle: d.qa_style, 
+                        score: d.score, 
+                        callRef: d.call_ref, 
+                        ticketRef: d.ticket_ref,
+                        comments: d.comments, 
+                        agentComments: d.agent_comments,
+                        agentAcknowledged: d.agent_acknowledged
                     }));
                 }
 
@@ -413,15 +422,16 @@
             const badge = document.getElementById("homePendingCountBadge");
             const headerBadge = document.getElementById("headerPendingBadge");
             const headerBadgeCount = document.getElementById("pendingBadgeCount");
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
             
             if (!container) return;
 
             const pendingList = globalDocs.filter(doc => {
-                const isPending = doc.status === "Pending Agent Acknowledgment" || doc.status === "Pending" || !doc.agentCommitMessage;
-                if (currentRole === "Agent") {
-                    return isPending && doc.agent && doc.agent.toLowerCase() === currentUser.toLowerCase();
+                const needsAck = !doc.agentAcknowledged && doc.status !== "Closed";
+                if (!isManagement) {
+                    return needsAck && doc.agent && doc.agent.toLowerCase() === currentUser.toLowerCase();
                 }
-                return isPending;
+                return needsAck;
             });
 
             const pendingCount = pendingList.length;
@@ -447,16 +457,85 @@
             container.innerHTML = pendingList.map(doc => `
                 <div style="background: var(--light); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                     <div>
-                        <strong style="font-size: 0.95rem;">${doc.agent || 'Unknown Agent'} — ${doc.qaStyle || 'Quality Review'}</strong>
+                        <strong style="font-size: 0.95rem;">${doc.agent || 'Unknown'} — ${doc.qaStyle || 'Quality Evaluation'}</strong>
                         <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">
-                            Date: ${doc.date || 'N/A'} | Score: <strong>${doc.score || 'N/A'}%</strong> | Evaluator: ${doc.evaluator || 'QA Lead'}
+                            Date: ${doc.date || 'N/A'} | Score: <strong style="color: ${parseFloat(doc.score) >= 85 ? 'var(--success)' : 'var(--danger)'};">${doc.score || '0'}%</strong> | Evaluator: ${doc.evaluator || 'Supervisor'}
                         </p>
                     </div>
-                    <button class="btn-launch" style="padding: 0.4rem 0.9rem; font-size: 0.8rem; flex-shrink: 0;" onclick="viewQAFormHistorical(${doc.id})">
-                        Review & Sign ↗
+                    <button class="btn-launch" style="padding: 0.45rem 1rem; font-size: 0.82rem; flex-shrink: 0;" onclick="viewQAFormHistorical(${doc.id})">
+                        ${!isManagement ? '✍️ Review & Respond ↗' : 'View Form ↗'}
                     </button>
                 </div>
             `).join('');
+        }
+
+        function renderDashboard() {
+            const homeKpiArea = document.getElementById("homeKpiDisplayArea");
+            const homeHeaderTitle = document.getElementById("homeKpiHeaderTitle");
+            const homeScope = document.getElementById("homeScopeFilter") ? document.getElementById("homeScopeFilter").value : "Daily";
+            const homeValEl = document.getElementById("homeValueFilter");
+            const homeVal = homeValEl ? homeValEl.value : (document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "");
+            
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+
+            const agentFilterEl = document.getElementById("agentFilter");
+            const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
+
+            const btnCall = document.getElementById("btnShortCutCall");
+            const btnTicket = document.getElementById("btnShortCutTicket");
+            const supBlock = document.getElementById("supervisorFilterBlock");
+
+            if (btnCall) btnCall.style.display = isManagement ? "inline-flex" : "none";
+            if (btnTicket) btnTicket.style.display = isManagement ? "inline-flex" : "none";
+            if (supBlock) supBlock.style.display = isManagement ? "flex" : "none";
+
+            // 1. HOME DASHBOARD: AGENTS SEE OWN STATS; MANAGERS SEE TEAM SUMMARY
+            if (homeKpiArea) {
+                if (!isManagement) {
+                    if (homeHeaderTitle) homeHeaderTitle.innerText = `📊 My Performance KPIs (${currentUser})`;
+                    const personalProfile = getAgentProfile(globalStatsDb, currentUser);
+                    let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+                    if (homeScope === "MTD") {
+                        personalStats = calculateMtdStats(personalProfile, homeVal);
+                    } else if (personalProfile && personalProfile[homeScope] && personalProfile[homeScope][homeVal]) {
+                        personalStats = personalProfile[homeScope][homeVal];
+                    }
+                    homeKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
+                } else {
+                    if (homeHeaderTitle) homeHeaderTitle.innerText = "📊 Team Performance KPIs";
+                    const teamStats = calculateTeamAverageStats(globalStatsDb, homeScope, homeVal);
+                    homeKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
+                }
+            }
+
+            // 2. STATS TAB
+            const statsKpiArea = document.getElementById("kpiDisplayArea");
+            if (statsKpiArea) {
+                const statsScope = document.getElementById("timeframeTypeFilter") ? document.getElementById("timeframeTypeFilter").value : "Daily";
+                const statsValEl = document.getElementById("timeframeValueFilter");
+                const statsVal = statsValEl ? statsValEl.value : homeVal;
+
+                const targetAgent = isManagement ? selectedAgent : currentUser;
+
+                if (targetAgent === "All") {
+                    const teamStats = calculateTeamAverageStats(globalStatsDb, statsScope, statsVal);
+                    statsKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
+                } else {
+                    const personalProfile = getAgentProfile(globalStatsDb, targetAgent);
+                    let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+                    if (statsScope === "MTD") {
+                        personalStats = calculateMtdStats(personalProfile, statsVal);
+                    } else if (personalProfile && personalProfile[statsScope] && personalProfile[statsScope][statsVal]) {
+                        personalStats = personalProfile[statsScope][statsVal];
+                    }
+                    statsKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
+                }
+            }
+
+            renderTrendChart(!isManagement ? currentUser : (selectedAgent !== "All" ? selectedAgent : currentUser));
+            renderPendingEvaluations();
         }
 
         function getSimilarity(s1, s2) {
@@ -1020,59 +1099,6 @@
             };
         }
 
-        function renderDashboard() {
-            const homeKpiArea = document.getElementById("homeKpiDisplayArea");
-            const homeScope = document.getElementById("homeScopeFilter") ? document.getElementById("homeScopeFilter").value : "Daily";
-            const homeValEl = document.getElementById("homeValueFilter");
-            const homeVal = homeValEl ? homeValEl.value : (document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "");
-            
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
-
-            const agentFilterEl = document.getElementById("agentFilter");
-            const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
-
-            const btnCall = document.getElementById("btnShortCutCall");
-            const btnTicket = document.getElementById("btnShortCutTicket");
-            const supBlock = document.getElementById("supervisorFilterBlock");
-
-            if (isManagement) {
-                if (btnCall) btnCall.style.display = "inline-flex";
-                if (btnTicket) btnTicket.style.display = "inline-flex";
-                if (supBlock) supBlock.style.display = "flex";
-            }
-
-            if (homeKpiArea) {
-                const teamStats = calculateTeamAverageStats(globalStatsDb, homeScope, homeVal);
-                homeKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
-            }
-
-            const statsKpiArea = document.getElementById("kpiDisplayArea");
-            if (statsKpiArea) {
-                const statsScope = document.getElementById("timeframeTypeFilter") ? document.getElementById("timeframeTypeFilter").value : "Daily";
-                const statsValEl = document.getElementById("timeframeValueFilter");
-                const statsVal = statsValEl ? statsValEl.value : homeVal;
-
-                if (selectedAgent === "All") {
-                    const teamStats = calculateTeamAverageStats(globalStatsDb, statsScope, statsVal);
-                    statsKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
-                } else {
-                    const personalProfile = getAgentProfile(globalStatsDb, selectedAgent);
-                    let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
-
-                    if (statsScope === "MTD") {
-                        personalStats = calculateMtdStats(personalProfile, statsVal);
-                    } else if (personalProfile && personalProfile[statsScope] && personalProfile[statsScope][statsVal]) {
-                        personalStats = personalProfile[statsScope][statsVal];
-                    }
-
-                    statsKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
-                }
-            }
-
-            renderTrendChart(selectedAgent !== "All" ? selectedAgent : currentUser);
-            renderPendingEvaluations();
-        }
-
         function populateAgentFilters() {
             const select = document.getElementById("agentFilter");
             if (select) {
@@ -1114,7 +1140,7 @@
         }
 
         function viewQAFormHistorical(docId) { 
-            window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=700,height=800'); 
+            window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=750,height=850'); 
         }
 
         function triggerToast(msg) {
