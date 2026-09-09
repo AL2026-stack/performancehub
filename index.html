@@ -113,13 +113,20 @@
 
         .page-view-section { display: flex; flex-direction: column; gap: 1.5rem; }
         .page-view-section.hidden { display: none !important; }
+
+        /* MODAL STYLES */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); color: var(--text-main); border-radius: 12px; padding: 2rem; max-width: 650px; width: 90%; max-height: 85vh; overflow-y: auto; }
+        .form-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.35rem; }
+        .btn-modal-action { background: var(--primary); color: white; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
     <header>
         <div class="logo-container">
             <a href="index.html" style="display: flex; align-items: center; text-decoration: none;">
-                <img src="logo.png" alt="Zzoomm" class="header-logo">
+                <img src="logo.png" alt="Zzoomm" class="header-logo" onerror="this.style.display='none';">
             </a>
         </div>
         <div class="user-profile-box">
@@ -142,8 +149,9 @@
             <div class="nav-item" id="navImport" onclick="switchView('importView')">📥 8x8 Stats Import</div>
             <a href="history.html" class="nav-item">📈 Historical Timeline</a>
 
-            <div class="sidebar-section-title">Quality & Evaluation</div>
+            <div class="sidebar-section-title">Quality & Coaching</div>
             <div class="nav-item" id="navQA" onclick="switchView('qaView')">📑 Completed Quality Forms</div>
+            <div class="nav-item" id="navCoaching" onclick="switchView('coachingView')">🎯 1-to-1 Action Plans</div>
 
             <div id="teamOpsSidebarSection" style="display: none;">
                 <div class="sidebar-section-title">Team Operations</div>
@@ -198,7 +206,7 @@
             <div id="importView" class="page-view-section hidden">
                 <div class="upload-section-container">
                     <h3 style="font-size: 1.15rem; border-left:4px solid var(--primary); padding-left:0.5rem; margin-bottom:0.35rem;">📊 8x8 Stats Import Engine</h3>
-                    <p style="font-size: 0.85rem; color: #64748b;">Upload daily raw call metrics CSV file to parse stats into the cloud matrix or purge a specific date's production.</p>
+                    <p style="font-size: 0.85rem; color: #64748b;">Upload daily raw call metrics CSV file to parse stats into the cloud matrix.</p>
                     <div class="upload-row-flex">
                         <div>
                             <label class="filter-label" style="display:block; margin-bottom:0.25rem;">Target Logging Date:</label>
@@ -246,7 +254,6 @@
                     <div id="kpiDisplayArea"></div>
                 </div>
 
-                <!-- TREND GRAPH CONTAINER -->
                 <div class="card">
                     <div class="card-header-flex">
                         <h2>📈 Performance Trends Over Time</h2>
@@ -267,7 +274,64 @@
                     <div id="feedbackContainer" style="margin-top: 1rem;"></div>
                 </div>
             </div>
+
+            <!-- VIEW 5: 1-TO-1 COACHING & ACTION PLANS -->
+            <div id="coachingView" class="page-view-section hidden">
+                <div class="card" id="newPlanCard" style="display: none;">
+                    <div class="card-header-flex">
+                        <h2>🎯 Create New 1-to-1 Action Objective</h2>
+                    </div>
+                    <form onsubmit="handleCreateCoachingPlan(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="filter-label">Target Agent</label>
+                                <select id="planAgentSelect" class="filter-select" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="filter-label">Key Focus Area</label>
+                                <select id="planFocusArea" class="filter-select">
+                                    <option value="AHT Management">AHT Management</option>
+                                    <option value="Wrap Time Reduction">Wrap Time Reduction</option>
+                                    <option value="First Contact Resolution (FCR)">First Contact Resolution (FCR)</option>
+                                    <option value="Quality & Customer Experience">Quality & Customer Experience</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="filter-label">Target Completion Date</label>
+                                <input type="date" id="planDeadline" class="calendar-input" required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="filter-label">SMART Action Objective & Agreement</label>
+                            <textarea id="planObjective" rows="3" class="calendar-input" style="width: 100%; font-family: inherit;" placeholder="e.g. Reduce wrap time to under 02:45 by typing notes during calls and using pre-approved templates." required></textarea>
+                        </div>
+                        <button type="submit" class="btn-launch">Assign 1-to-1 Plan</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2>Active 1-to-1 Action Goals</h2>
+                    </div>
+                    <div id="coachingPlansList">Loading action plans...</div>
+                </div>
+            </div>
         </main>
+    </div>
+
+    <!-- MODAL: FUZZY AGENT MAPPING MODAL -->
+    <div id="agentMappingModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color: var(--primary); margin-bottom: 0.5rem;">🔍 Unmatched CSV Agents Review</h3>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
+                The following names from your 8x8 CSV do not directly match an existing user account. Match them to an existing user or confirm them as new accounts:
+            </p>
+            <div id="unmatchedAgentsContainer"></div>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
+                <button type="button" class="btn-cancel-upload" onclick="closeMappingModal()">Cancel</button>
+                <button type="button" class="btn-modal-action" onclick="commitResolvedMappings()">Apply Mappings & Import</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -278,6 +342,8 @@
 
         let globalStatsDb = {};
         let globalDocs = [];
+        let globalAliases = {};
+        let pendingImportRows = [];
         let trendChartInstance = null;
 
         document.addEventListener("DOMContentLoaded", async () => {
@@ -305,26 +371,15 @@
             const teamOpsSection = document.getElementById("teamOpsSidebarSection");
             if (teamOpsSection) { teamOpsSection.style.display = isManagement ? "block" : "none"; }
 
+            const newPlanCard = document.getElementById("newPlanCard");
+            if (newPlanCard) { newPlanCard.style.display = isManagement ? "block" : "none"; }
+
             await syncCloudData();
 
             populateAgentFilters();
             handleHomeScopeChange();
             handleTimeframeTypeChange(); 
-
-            if (window.supabaseClient) {
-                window.supabaseClient.channel('public:feedback_docs')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'feedback_docs' }, async () => {
-                        await syncCloudData();
-                        renderDashboard();
-                    }).subscribe();
-
-                window.supabaseClient.channel('public:agent_stats')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_stats' }, async () => {
-                        await syncCloudData();
-                        populateAgentFilters();
-                        renderDashboard();
-                    }).subscribe();
-            }
+            loadCoachingPlans();
         });
 
         async function syncCloudData() {
@@ -352,7 +407,55 @@
                         };
                     });
                 }
+
+                const { data: aliasData } = await client.from('agent_aliases').select('*');
+                globalAliases = {};
+                if (aliasData) {
+                    aliasData.forEach(a => { globalAliases[a.csv_raw_name.toLowerCase()] = a.matched_agent_name; });
+                }
             } catch (err) { console.error("Cloud sync error:", err); }
+        }
+
+        /* FUZZY STRING SIMILARITY (LEVENSHTEIN DISTANCE) */
+        function getSimilarity(s1, s2) {
+            const longer = s1.length < s2.length ? s2.toLowerCase() : s1.toLowerCase();
+            const shorter = s1.length < s2.length ? s1.toLowerCase() : s2.toLowerCase();
+            const longerLength = longer.length;
+            if (longerLength === 0) return 1.0;
+            
+            const costs = [];
+            for (let i = 0; i <= longer.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= shorter.length; j++) {
+                    if (i === 0) costs[j] = j;
+                    else {
+                        if (j > 0) {
+                            let newValue = costs[j - 1];
+                            if (longer.charAt(i - 1) !== shorter.charAt(j - 1)) {
+                                newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                            }
+                            costs[j - 1] = lastValue;
+                            lastValue = newValue;
+                        }
+                    }
+                }
+                if (i > 0) costs[shorter.length] = lastValue;
+            }
+            return (longerLength - costs[shorter.length]) / parseFloat(longerLength);
+        }
+
+        function findBestAgentMatch(rawName, existingNames) {
+            let bestMatch = null;
+            let highestScore = 0;
+
+            for (const name of existingNames) {
+                const score = getSimilarity(rawName, name);
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = name;
+                }
+            }
+            return { match: bestMatch, score: Math.round(highestScore * 100) };
         }
 
         function getAgentProfile(db, targetName) {
@@ -408,7 +511,6 @@
             return `${h}:${m}:${s}`;
         }
 
-        /* 8X8 CSV PARSER & UPLOAD HANDLERS (HARDENED) */
         function stageCsvFile() {
             const input = document.getElementById("dashboardCsvInput");
             if (!input || !input.files || !input.files.length) return;
@@ -441,28 +543,23 @@
             const file = input.files[0];
 
             if (!file.name.toLowerCase().endsWith('.csv')) {
-                alert("Invalid file format. Please upload a comma-separated CSV (.csv) file. If using Excel, use File > Save As > CSV (Comma delimited).");
+                alert("Invalid file format. Please upload a comma-separated CSV (.csv) file.");
                 resetStagedFile();
                 return;
             }
 
             const reader = new FileReader();
-            const dateInput = document.getElementById("uploadTargetDate");
-            const targetDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
-            const targetWeek = getWeekNumber(targetDate);
-            const targetMonth = getMonthName(targetDate);
-
             reader.onload = async function(e) {
                 try {
                     let contents = e.target.result;
-                    if (!contents) { throw new Error("File is empty."); }
+                    if (!contents) throw new Error("File is empty.");
 
                     if (contents.includes('\0') || contents.slice(0, 4).indexOf('PK') === 0) {
-                        throw new Error("This file appears to be a binary Excel spreadsheet (.xlsx). Please export or save it as a standard UTF-8 Comma-Separated Values (.csv) file.");
+                        throw new Error("This file appears to be a binary Excel workbook (.xlsx). Please export it as a standard CSV.");
                     }
 
                     const rawLines = contents.split(/\r\n|\n|\r/).map(l => l.trim()).filter(l => l.length > 0);
-                    if (rawLines.length < 2) { throw new Error("CSV file does not contain enough data rows."); }
+                    if (rawLines.length < 2) throw new Error("CSV does not contain enough data rows.");
 
                     const separator = rawLines[0].indexOf(';') !== -1 ? ';' : ',';
                     const headers = parseCSVLineAdaptive(rawLines[0], separator).map(h => h.toLowerCase());
@@ -478,17 +575,17 @@
                     if (idxAHT === -1) idxAHT = 2; 
                     if (idxWrap === -1) idxWrap = 3;
 
-                    let count = 0;
+                    pendingImportRows = [];
+                    const existingNames = Object.keys(globalStatsDb);
+                    const unmatched = new Map();
 
                     for (let i = 1; i < rawLines.length; i++) {
                         const cols = parseCSVLineAdaptive(rawLines[i], separator);
                         if (!cols || cols.length <= idxAgent) continue;
 
-                        let name = cols[idxAgent].trim();
-
-                        if (!name || name.length < 2) continue;
-                        if (/[\x00-\x1F\x7F-\x9F\uFFFD]/.test(name)) continue;
-                        if (name.toLowerCase().includes('total') || name.toLowerCase() === 'agent' || name.toLowerCase() === 'name') continue;
+                        let rawName = cols[idxAgent].trim();
+                        if (!rawName || rawName.length < 2 || /[\x00-\x1F\x7F-\x9F\uFFFD]/.test(rawName)) continue;
+                        if (rawName.toLowerCase().includes('total') || rawName.toLowerCase() === 'agent') continue;
 
                         const callsVal = (idxAccepted !== -1 && cols[idxAccepted]) ? (parseInt(cols[idxAccepted]) || 0) : 0;
                         const ahtStr = (idxAHT !== -1 && cols[idxAHT]) ? cols[idxAHT] : "00:00:00";
@@ -500,42 +597,140 @@
                             if (!isNaN(parsedT)) rawTransfer = parsedT;
                         }
 
-                        if (!globalStatsDb[name]) globalStatsDb[name] = { Daily: {}, Weekly: {}, Monthly: {} };
+                        // Determine mapped name via alias cache or exact match
+                        let mappedName = globalAliases[rawName.toLowerCase()] || rawName;
+                        const isKnown = existingNames.some(n => n.toLowerCase() === mappedName.toLowerCase());
 
-                        globalStatsDb[name]["Daily"][targetDate] = {
-                            calls: callsVal.toString(),
-                            aht: ahtStr,
-                            wrap: wrapStr,
-                            transfer: (rawTransfer * (rawTransfer <= 1 && rawTransfer > 0 ? 100 : 1)).toFixed(1) + "%"
-                        };
-
-                        globalStatsDb[name]["Weekly"][targetWeek] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getWeekNumber(d) === targetWeek);
-                        globalStatsDb[name]["Monthly"][targetMonth] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getMonthName(d) === targetMonth);
-
-                        const client = window.supabaseClient || window.supabase;
-                        if (client && typeof client.from === 'function') {
-                            await client.from('agent_stats').upsert({
-                                agent_name: name,
-                                daily_stats: globalStatsDb[name]["Daily"],
-                                weekly_stats: globalStatsDb[name]["Weekly"],
-                                monthly_stats: globalStatsDb[name]["Monthly"]
-                            }, { onConflict: 'agent_name' });
+                        if (!isKnown && !globalAliases[rawName.toLowerCase()]) {
+                            if (!unmatched.has(rawName)) {
+                                unmatched.set(rawName, findBestAgentMatch(rawName, existingNames));
+                            }
                         }
 
-                        count++;
+                        pendingImportRows.push({
+                            rawName,
+                            resolvedName: mappedName,
+                            calls: callsVal,
+                            aht: ahtStr,
+                            wrap: wrapStr,
+                            transfer: rawTransfer
+                        });
                     }
 
-                    triggerToast(`Successfully recorded 8x8 metrics for ${count} agents.`);
-                    handleHomeScopeChange();
-                    handleTimeframeTypeChange();
+                    if (unmatched.size > 0) {
+                        displayMappingModal(unmatched, existingNames);
+                    } else {
+                        await executeStatsBatchUpload();
+                    }
                 } catch(err) { 
-                    console.error("CSV Import Error:", err);
                     alert("Import Error: " + err.message); 
+                    resetStagedFile();
                 }
-                resetStagedFile(); 
-                populateAgentFilters();
             };
             reader.readAsText(file, "UTF-8");
+        }
+
+        function displayMappingModal(unmatchedMap, existingNames) {
+            const container = document.getElementById("unmatchedAgentsContainer");
+            container.innerHTML = "";
+
+            unmatchedMap.forEach((bestMatchData, rawName) => {
+                const row = document.createElement("div");
+                row.style.cssText = "display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; background: var(--light); padding: 0.5rem; border-radius: 6px;";
+                
+                let optionsHtml = `<option value="__NEW__">➕ Create as New User ("${rawName}")</option>`;
+                existingNames.forEach(name => {
+                    const selected = (bestMatchData.match === name && bestMatchData.score >= 50) ? 'selected' : '';
+                    const confidence = (bestMatchData.match === name) ? ` (${bestMatchData.score}% match)` : '';
+                    optionsHtml += `<option value="${name}" ${selected}>Map to: ${name}${confidence}</option>`;
+                });
+
+                row.innerHTML = `
+                    <div style="flex: 1; font-weight: 600;">${rawName}</div>
+                    <div style="flex: 1.5;">
+                        <select class="filter-select mapping-select" data-raw="${rawName}" style="width: 100%;">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            document.getElementById("agentMappingModal").style.display = "flex";
+        }
+
+        function closeMappingModal() {
+            document.getElementById("agentMappingModal").style.display = "none";
+            resetStagedFile();
+        }
+
+        async function commitResolvedMappings() {
+            const selects = document.querySelectorAll(".mapping-select");
+            const client = window.supabaseClient || window.supabase;
+            const newAliasesToSave = [];
+
+            selects.forEach(sel => {
+                const rawName = sel.getAttribute("data-raw");
+                const target = sel.value;
+
+                if (target !== "__NEW__") {
+                    globalAliases[rawName.toLowerCase()] = target;
+                    newAliasesToSave.push({ csv_raw_name: rawName, matched_agent_name: target });
+                    
+                    pendingImportRows.forEach(row => {
+                        if (row.rawName === rawName) row.resolvedName = target;
+                    });
+                }
+            });
+
+            if (newAliasesToSave.length > 0 && client) {
+                await client.from('agent_aliases').upsert(newAliasesToSave, { onConflict: 'csv_raw_name' });
+            }
+
+            document.getElementById("agentMappingModal").style.display = "none";
+            await executeStatsBatchUpload();
+        }
+
+        async function executeStatsBatchUpload() {
+            const dateInput = document.getElementById("uploadTargetDate");
+            const targetDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+            const targetWeek = getWeekNumber(targetDate);
+            const targetMonth = getMonthName(targetDate);
+            const client = window.supabaseClient || window.supabase;
+
+            let count = 0;
+
+            for (const row of pendingImportRows) {
+                const name = row.resolvedName;
+
+                if (!globalStatsDb[name]) globalStatsDb[name] = { Daily: {}, Weekly: {}, Monthly: {} };
+
+                globalStatsDb[name]["Daily"][targetDate] = {
+                    calls: row.calls.toString(),
+                    aht: row.aht,
+                    wrap: row.wrap,
+                    transfer: (row.transfer * (row.transfer <= 1 && row.transfer > 0 ? 100 : 1)).toFixed(1) + "%"
+                };
+
+                globalStatsDb[name]["Weekly"][targetWeek] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getWeekNumber(d) === targetWeek);
+                globalStatsDb[name]["Monthly"][targetMonth] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getMonthName(d) === targetMonth);
+
+                if (client && typeof client.from === 'function') {
+                    await client.from('agent_stats').upsert({
+                        agent_name: name,
+                        daily_stats: globalStatsDb[name]["Daily"],
+                        weekly_stats: globalStatsDb[name]["Weekly"],
+                        monthly_stats: globalStatsDb[name]["Monthly"]
+                    }, { onConflict: 'agent_name' });
+                }
+                count++;
+            }
+
+            triggerToast(`Successfully processed metrics for ${count} agents.`);
+            resetStagedFile();
+            populateAgentFilters();
+            handleHomeScopeChange();
+            handleTimeframeTypeChange();
         }
 
         function resetStagedFile() {
@@ -572,6 +767,115 @@
             handleTimeframeTypeChange();
         }
 
+        /* 1-TO-1 COACHING ACTION PLANS */
+        async function handleCreateCoachingPlan(e) {
+            e.preventDefault();
+            const agent = document.getElementById("planAgentSelect").value;
+            const focus = document.getElementById("planFocusArea").value;
+            const deadline = document.getElementById("planDeadline").value;
+            const objective = document.getElementById("planObjective").value.trim();
+
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const { error } = await client.from('coaching_plans').insert([{
+                agent_name: agent,
+                supervisor_name: currentUser,
+                focus_area: focus,
+                smart_objective: objective,
+                deadline: deadline,
+                status: 'Open'
+            }]);
+
+            if (!error) {
+                triggerToast("1-to-1 Action Objective assigned successfully.");
+                document.getElementById("planObjective").value = "";
+                await loadCoachingPlans();
+            } else {
+                alert("Failed to create plan: " + error.message);
+            }
+        }
+
+        async function loadCoachingPlans() {
+            const container = document.getElementById("coachingPlansList");
+            const client = window.supabaseClient || window.supabase;
+            if (!container || !client) return;
+
+            let query = client.from('coaching_plans').select('*').order('created_at', { ascending: false });
+
+            // Agents only see their personal plans
+            if (currentRole === "Agent") {
+                query = query.eq('agent_name', currentUser);
+            }
+
+            const { data, error } = await query;
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<p style="color:#64748b; font-size:0.9rem;">No active 1-to-1 plans on record.</p>`;
+                return;
+            }
+
+            container.innerHTML = data.map(plan => {
+                const isOwner = plan.agent_name.toLowerCase() === currentUser.toLowerCase();
+                const isMgmt = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+
+                return `
+                    <div style="background:var(--light); border:1px solid var(--border); border-left:4px solid var(--primary); border-radius:8px; padding:1rem; margin-bottom:1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong>${plan.focus_area} — ${plan.agent_name}</strong>
+                            <span class="status-badge ${plan.status === 'Achieved' ? 'badge-normal' : 'badge-reset'}">${plan.status}</span>
+                        </div>
+                        <p style="font-size:0.85rem; color:#475569; margin:0.5rem 0;">${plan.smart_objective}</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#64748b;">
+                            <span>Target Deadline: <strong>${plan.deadline}</strong> | Assigned by: ${plan.supervisor_name}</span>
+                            <div style="display:flex; gap:0.5rem;">
+                                ${isOwner && !plan.agent_acknowledged ? `
+                                    <button class="btn-launch" style="padding:0.35rem 0.75rem; font-size:0.75rem;" onclick="acknowledgePlan(${plan.id})">✍️ Sign & Acknowledge</button>
+                                ` : ''}
+                                ${isMgmt ? `
+                                    <select onchange="updatePlanStatus(${plan.id}, this.value)" style="padding:0.25rem; font-size:0.75rem; border-radius:4px; border:1px solid var(--border);">
+                                        <option value="Open" ${plan.status === 'Open' ? 'selected' : ''}>Open</option>
+                                        <option value="In Progress" ${plan.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                        <option value="Achieved" ${plan.status === 'Achieved' ? 'selected' : ''}>Achieved</option>
+                                        <option value="Closed" ${plan.status === 'Closed' ? 'selected' : ''}>Closed</option>
+                                    </select>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function acknowledgePlan(planId) {
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const { error } = await client.from('coaching_plans').update({
+                agent_acknowledged: true,
+                status: 'In Progress'
+            }).eq('id', planId);
+
+            if (!error) {
+                triggerToast("Acknowledged action plan.");
+                await loadCoachingPlans();
+            }
+        }
+
+        async function updatePlanStatus(planId, newStatus) {
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const { error } = await client.from('coaching_plans').update({
+                status: newStatus
+            }).eq('id', planId);
+
+            if (!error) {
+                triggerToast("Plan status updated.");
+                await loadCoachingPlans();
+            }
+        }
+
+        /* TIMESCALE & KPI COMPUTATION */
         function handleHomeScopeChange() {
             const scopeSelect = document.getElementById("homeScopeFilter");
             if (!scopeSelect) return;
@@ -891,20 +1195,31 @@
 
         function populateAgentFilters() {
             const select = document.getElementById("agentFilter");
-            if (!select) return;
-            select.innerHTML = '<option value="All">-- All Personnel --</option>';
-            Object.keys(globalStatsDb).sort().forEach(k => {
-                const o = document.createElement("option"); o.value = k; o.innerText = k; select.appendChild(o);
-            });
+            const planSelect = document.getElementById("planAgentSelect");
+            
+            if (select) {
+                select.innerHTML = '<option value="All">-- All Personnel --</option>';
+                Object.keys(globalStatsDb).sort().forEach(k => {
+                    const o = document.createElement("option"); o.value = k; o.innerText = k; select.appendChild(o);
+                });
+            }
+
+            if (planSelect) {
+                planSelect.innerHTML = '';
+                Object.keys(globalStatsDb).sort().forEach(k => {
+                    const o = document.createElement("option"); o.value = k; o.innerText = k; planSelect.appendChild(o);
+                });
+            }
         }
 
         function switchView(viewId) {
-            const views = ['homeView', 'importView', 'statsView', 'qaView'];
+            const views = ['homeView', 'importView', 'statsView', 'qaView', 'coachingView'];
             const navMap = {
                 'homeView': 'navHome',
                 'importView': 'navImport',
                 'statsView': 'navStats',
-                'qaView': 'navQA'
+                'qaView': 'navQA',
+                'coachingView': 'navCoaching'
             };
 
             views.forEach(v => { 
@@ -920,16 +1235,13 @@
             const activeNav = document.getElementById(navMap[viewId]);
             if (activeNav) activeNav.classList.add('active');
 
+            if (viewId === 'coachingView') loadCoachingPlans();
             renderDashboard();
         }
 
         function openEvaluationWindow(type) { 
             const agentVal = document.getElementById("agentFilter") ? document.getElementById("agentFilter").value : "All";
             window.open(`form.html?type=${encodeURIComponent(type)}&agent=${encodeURIComponent(agentVal !== "All" ? agentVal : "")}`, 'FormWindow', 'width=750,height=700'); 
-        }
-
-        function viewQAFormHistorical(docId) { 
-            window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=700,height=800'); 
         }
 
         function triggerToast(msg) {
