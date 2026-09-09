@@ -399,20 +399,22 @@
                 const client = window.supabaseClient || window.supabase;
                 if (!client || typeof client.from !== 'function') return;
 
-                const { data: docsData } = await client.from('feedback_docs').select('*').order('id', { ascending: false });
-                if (docsData) {
+                const { data: docsData, error: docsErr } = await client.from('feedback_docs').select('*').order('id', { ascending: false });
+                if (docsErr) {
+                    console.error("Error fetching feedback_docs:", docsErr);
+                } else if (docsData) {
                     globalDocs = docsData.map(d => ({
                         id: d.id, 
-                        agent: d.agent, 
-                        evaluator: d.evaluator, 
-                        date: d.date, 
+                        agent: d.agent || '', 
+                        evaluator: d.evaluator || 'Supervisor', 
+                        date: d.date || '', 
                         status: d.status || (d.agent_acknowledged ? "Completed" : "Pending"),
-                        qaStyle: d.qa_style, 
-                        score: d.score, 
-                        callRef: d.call_ref, 
-                        ticketRef: d.ticket_ref,
-                        comments: d.comments, 
-                        agentComments: d.agent_comments,
+                        qaStyle: d.qa_style || 'Quality Evaluation', 
+                        score: d.score ?? 0, 
+                        callRef: d.call_ref || '', 
+                        ticketRef: d.ticket_ref || '',
+                        comments: d.comments || '', 
+                        agentComments: d.agent_comments || '',
                         agentAcknowledged: Boolean(d.agent_acknowledged)
                     }));
                 }
@@ -449,16 +451,13 @@
             const selectedAgent = (isManagement && filterDropdown) ? filterDropdown.value : currentUser;
             const selectedStatus = statusDropdown ? statusDropdown.value : "All";
 
-            // Filter by agent and acknowledgment status
             let visibleDocs = globalDocs.filter(doc => {
-                // Agent restriction
                 if (!isManagement) {
-                    if (!doc.agent || doc.agent.toLowerCase() !== currentUser.toLowerCase()) return false;
+                    if (!doc.agent || doc.agent.toLowerCase().trim() !== currentUser.toLowerCase().trim()) return false;
                 } else if (selectedAgent !== "All") {
-                    if (!doc.agent || doc.agent.toLowerCase() !== selectedAgent.toLowerCase()) return false;
+                    if (!doc.agent || doc.agent.toLowerCase().trim() !== selectedAgent.toLowerCase().trim()) return false;
                 }
 
-                // Status filter (Pending vs Completed)
                 const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
                 if (selectedStatus === "Pending") return !isCompleted;
                 if (selectedStatus === "Completed") return isCompleted;
@@ -474,7 +473,7 @@
                 return;
             }
 
-            let html = `
+            container.innerHTML = `
                 <div style="overflow-x: auto;">
                     <table>
                         <thead>
@@ -489,45 +488,39 @@
                             </tr>
                         </thead>
                         <tbody>
-            `;
+                            ${visibleDocs.map(doc => {
+                                const scoreNum = parseFloat(doc.score) || 0;
+                                const scoreColor = scoreNum >= 85 ? 'var(--success)' : 'var(--danger)';
+                                const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
 
-            visibleDocs.forEach(doc => {
-                const scoreNum = parseFloat(doc.score) || 0;
-                const scoreColor = scoreNum >= 85 ? 'var(--success)' : 'var(--danger)';
-                const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
+                                const badge = isCompleted
+                                    ? '<span class="status-badge badge-completed">✔ Completed</span>'
+                                    : '<span class="status-badge badge-pending">⏳ Pending Acknowledgment</span>';
 
-                const badge = isCompleted
-                    ? '<span class="status-badge badge-completed">✔ Completed</span>'
-                    : '<span class="status-badge badge-pending">⏳ Pending Acknowledgment</span>';
-
-                html += `
-                    <tr>
-                        <td style="font-weight: 600;">${doc.date || 'N/A'}</td>
-                        <td style="font-weight: 700;">${doc.agent || 'N/A'}</td>
-                        <td>${doc.qaStyle || 'Quality Evaluation'}</td>
-                        <td>
-                            <span style="color: ${scoreColor}; font-weight: 800; font-size: 1.05rem; font-variant-numeric: tabular-nums;">
-                                ${doc.score || '0'}%
-                            </span>
-                        </td>
-                        <td>${badge}</td>
-                        <td style="color: var(--text-muted); font-size: 0.85rem;">${doc.evaluator || 'Supervisor'}</td>
-                        <td style="text-align: right;">
-                            <button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;" onclick="viewQAFormHistorical(${doc.id})">
-                                ${(!isCompleted && !isManagement) ? '✍️ Sign & Respond' : '👁️ View Form'}
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            html += `
+                                return `
+                                    <tr>
+                                        <td style="font-weight: 600;">${doc.date || 'N/A'}</td>
+                                        <td style="font-weight: 700;">${doc.agent || 'N/A'}</td>
+                                        <td>${doc.qaStyle || 'Quality Evaluation'}</td>
+                                        <td>
+                                            <span style="color: ${scoreColor}; font-weight: 800; font-size: 1.05rem; font-variant-numeric: tabular-nums;">
+                                                ${doc.score || '0'}%
+                                            </span>
+                                        </td>
+                                        <td>${badge}</td>
+                                        <td style="color: var(--text-muted); font-size: 0.85rem;">${doc.evaluator || 'Supervisor'}</td>
+                                        <td style="text-align: right;">
+                                            <button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;" onclick="viewQAFormHistorical(${doc.id})">
+                                                ${(!isCompleted && !isManagement) ? '✍️ Sign & Respond' : '👁️ View Form'}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
             `;
-
-            container.innerHTML = html;
         }
 
         function renderPendingEvaluations() {
@@ -542,7 +535,7 @@
             const pendingList = globalDocs.filter(doc => {
                 const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
                 if (!isManagement) {
-                    return !isCompleted && doc.agent && doc.agent.toLowerCase() === currentUser.toLowerCase();
+                    return !isCompleted && doc.agent && doc.agent.toLowerCase().trim() === currentUser.toLowerCase().trim();
                 }
                 return !isCompleted;
             });
@@ -602,7 +595,6 @@
             if (btnTicket) btnTicket.style.display = isManagement ? "inline-flex" : "none";
             if (supBlock) supBlock.style.display = isManagement ? "flex" : "none";
 
-            // 1. HOME DASHBOARD: AGENTS ONLY SEE OWN STATS; MANAGERS SEE TEAM TOTALS
             if (homeKpiArea) {
                 if (!isManagement) {
                     if (homeHeaderTitle) homeHeaderTitle.innerText = `📊 My Performance KPIs (${currentUser})`;
@@ -622,7 +614,6 @@
                 }
             }
 
-            // 2. STATS TAB
             const statsKpiArea = document.getElementById("kpiDisplayArea");
             if (statsKpiArea) {
                 const statsScope = document.getElementById("timeframeTypeFilter") ? document.getElementById("timeframeTypeFilter").value : "Daily";
