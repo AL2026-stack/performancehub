@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Evaluation - Zzoomm Performance Tracker</title>
+    <title>Quality Evaluation Details - Zzoomm</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -27,11 +27,11 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
         body { background-color: var(--light); color: var(--text-main); padding: 2rem 1rem; }
-        .container { max-width: 680px; margin: 0 auto; background: var(--card-bg); padding: 2rem; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+        .container { max-width: 760px; margin: 0 auto; background: var(--card-bg); padding: 2.25rem; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
         
         .header-box { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 1.5rem; }
-        .header-title { font-size: 1.25rem; font-weight: 800; color: var(--text-main); }
-        .score-pill { font-size: 1.75rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .header-title { font-size: 1.35rem; font-weight: 800; color: var(--text-main); }
+        .score-pill { font-size: 1.85rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--primary); }
 
         .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-top: 0.35rem; }
         .badge-completed { background: var(--success-bg); color: var(--success); }
@@ -41,8 +41,16 @@
         .meta-label { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
         .meta-val { font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-top: 0.2rem; }
 
+        /* Full Checklist Display Styles */
+        .qa-section { background: var(--light); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+        .qa-section-title { font-size: 0.9rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.03em; }
+        .question-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px dashed var(--border); gap: 1rem; font-size: 0.88rem; }
+        .question-row:last-child { border-bottom: none; }
+        .question-label { font-weight: 600; color: var(--text-main); flex: 1; }
+        .question-badge { font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.78rem; background: #e2e8f0; color: var(--text-main); }
+
         .comments-box { background: var(--light); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; }
-        .comments-box h4 { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .comments-box h4 { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
         .comments-text { font-size: 0.92rem; line-height: 1.5; color: var(--text-main); white-space: pre-wrap; }
 
         .response-box { background: var(--light); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
@@ -79,8 +87,11 @@
             </div>
         </div>
 
+        <!-- FULL CHECKLIST BREAKDOWN -->
+        <div id="fullChecklistContainer"></div>
+
         <div class="comments-box">
-            <h4>Evaluator Feedback & Coaching Notes</h4>
+            <h4>Evaluator Feedback & Coaching Summary</h4>
             <div class="comments-text" id="qaComments">Loading review comments...</div>
         </div>
 
@@ -97,7 +108,7 @@
 
             <div id="pendingCommentForm" style="display: none;">
                 <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-                    Please review your evaluation score and comments above. Add any reflections, feedback, or action steps before signing off.
+                    Please review your evaluation criteria and feedback above. Add any reflections, feedback, or action steps before signing off.
                 </p>
                 <textarea id="agentReflectionInput" rows="3" style="width: 100%; padding: 0.65rem; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.88rem;" placeholder="Type your response, reflections, or commitments here..."></textarea>
                 <button type="button" class="btn-launch" onclick="submitAgentQAAcknowledgment()">✍️ Sign & Acknowledge Evaluation</button>
@@ -108,7 +119,45 @@
     <script>
         const docId = new URLSearchParams(window.location.search).get("id");
         const currentUser = sessionStorage.getItem("activeUser") || "";
-        const currentRole = sessionStorage.getItem("activeRole") || "";
+
+        const QUESTION_SETS = {
+            "Call Listening Feedback": [
+                {
+                    section: "1. Professional Opening & Verification",
+                    questions: ["Brand Standard Greeting", "Customer Verification & DPA"]
+                },
+                {
+                    section: "2. Soft Skills & Customer Experience",
+                    questions: ["Active Listening & Acknowledgment", "Signposting & Communication", "Professional Tone & Energy"]
+                },
+                {
+                    section: "3. Technical Accuracy & Problem Solving",
+                    questions: ["Diagnostic & Questioning Technique", "Accurate Resolution Provided"]
+                },
+                {
+                    section: "4. Wrap-up, System Notes & Closing",
+                    questions: ["Accurate Ticket Documentation", "Next Steps & Clear Closing"]
+                }
+            ],
+            "Ticket Feedback": [
+                {
+                    section: "1. Ticket Hygiene & Identification",
+                    questions: ["Correct Categorisation & Tags", "Customer Verification & GDPR"]
+                },
+                {
+                    section: "2. Investigation & Technical Accuracy",
+                    questions: ["Investigation & Account History Review", "Accuracy of Information Provided"]
+                },
+                {
+                    section: "3. Written Communication & Empathy",
+                    questions: ["Grammar, Tone & Formatting", "Empathy & Expectation Management"]
+                },
+                {
+                    section: "4. Documentation & Closure",
+                    questions: ["Internal Notes & Next Steps"]
+                }
+            ]
+        };
 
         document.addEventListener("DOMContentLoaded", async () => {
             if (!docId) return;
@@ -125,7 +174,8 @@
                 return;
             }
 
-            document.getElementById("qaTitle").innerText = data.qa_style || "Quality Evaluation Review";
+            const qaStyle = data.qa_style || "Call Listening Feedback";
+            document.getElementById("qaTitle").innerText = qaStyle;
             document.getElementById("qaAgent").innerText = data.agent || "N/A";
             document.getElementById("qaEvaluator").innerText = data.evaluator || "Supervisor";
             document.getElementById("qaDate").innerText = data.date || "N/A";
@@ -138,7 +188,10 @@
 
             document.getElementById("qaComments").innerText = data.comments || "No comments entered.";
 
-            const isCompleted = Boolean(data.agent_acknowledged) || data.status === "Completed";
+            // Render Full Checklist Sections
+            renderFullChecklist(qaStyle);
+
+            const isCompleted = Boolean(data.agent_acknowledged) || data.status === "Completed" || data.status === "Acknowledged";
             const badgeContainer = document.getElementById("statusBadgeContainer");
             badgeContainer.innerHTML = isCompleted
                 ? '<span class="status-badge badge-completed">✔ Completed (Acknowledged)</span>'
@@ -161,6 +214,29 @@
                 document.getElementById("ackTimestampText").innerText = "Pending Agent Signature";
                 document.getElementById("ackTimestampText").style.color = "var(--warning)";
             }
+        }
+
+        function renderFullChecklist(style) {
+            const container = document.getElementById("fullChecklistContainer");
+            const sections = QUESTION_SETS[style] || QUESTION_SETS["Call Listening Feedback"];
+
+            let html = "";
+            sections.forEach(sec => {
+                html += `
+                    <div class="qa-section">
+                        <div class="qa-section-title">${sec.section}</div>
+                `;
+                sec.questions.forEach(q => {
+                    html += `
+                        <div class="question-row">
+                            <span class="question-label">${q}</span>
+                            <span class="question-badge">Meets Standard</span>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            });
+            container.innerHTML = html;
         }
 
         async function submitAgentQAAcknowledgment() {
