@@ -35,11 +35,13 @@
         body { background-color: var(--light); color: var(--text-main); min-height: 100vh; transition: background 0.2s, color 0.2s; }
         
         header { 
-            background-color: #0f172a; color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; 
+            background-color: #0f172a; color: white; padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-bottom: 1px solid var(--border); position: relative; z-index: 100;
         }
         
         .logo-container { display: flex; align-items: center; gap: 1rem; }
+        .header-logo { height: 42px; width: auto; object-fit: contain; display: block; }
+
         .user-profile-box { display: flex; align-items: center; gap: 0.75rem; }
         .user-tag { font-weight: 600; font-size: 0.95rem; background: rgba(255,255,255,0.1); padding: 0.4rem 0.8rem; border-radius: 6px; color: white; }
         
@@ -116,7 +118,9 @@
 <body>
     <header>
         <div class="logo-container">
-            <h1 style="font-size: 1.5rem; font-weight: 600; color: white;">Zzoomm Performance Tracker</h1>
+            <a href="index.html" style="display: flex; align-items: center; text-decoration: none;">
+                <img src="logo.png" alt="Zzoomm" class="header-logo">
+            </a>
         </div>
         <div class="user-profile-box">
             <div id="headerPendingBadge" class="pending-header-badge">
@@ -436,9 +440,8 @@
 
             const file = input.files[0];
 
-            // 1. Block Excel and non-csv extensions immediately
             if (!file.name.toLowerCase().endsWith('.csv')) {
-                alert("Invalid file format. Please upload a comma-separated CSV (.csv) file. If you are using Excel, use File > Save As > CSV (Comma delimited).");
+                alert("Invalid file format. Please upload a comma-separated CSV (.csv) file. If using Excel, use File > Save As > CSV (Comma delimited).");
                 resetStagedFile();
                 return;
             }
@@ -454,7 +457,6 @@
                     let contents = e.target.result;
                     if (!contents) { throw new Error("File is empty."); }
 
-                    // 2. Binary guard: check for ZIP/Excel signatures (PK) or null bytes
                     if (contents.includes('\0') || contents.slice(0, 4).indexOf('PK') === 0) {
                         throw new Error("This file appears to be a binary Excel spreadsheet (.xlsx). Please export or save it as a standard UTF-8 Comma-Separated Values (.csv) file.");
                     }
@@ -484,7 +486,6 @@
 
                         let name = cols[idxAgent].trim();
 
-                        // 3. String sanitation: reject corrupt characters, nulls, or unicode replacement characters
                         if (!name || name.length < 2) continue;
                         if (/[\x00-\x1F\x7F-\x9F\uFFFD]/.test(name)) continue;
                         if (name.toLowerCase().includes('total') || name.toLowerCase() === 'agent' || name.toLowerCase() === 'name') continue;
@@ -571,7 +572,6 @@
             handleTimeframeTypeChange();
         }
 
-        /* PERIOD & TIMESCALE FILTER GENERATORS */
         function handleHomeScopeChange() {
             const scopeSelect = document.getElementById("homeScopeFilter");
             if (!scopeSelect) return;
