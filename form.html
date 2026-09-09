@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submit Quality Evaluation - Zzoomm</title>
+    <title>Quality Evaluation Form - Zzoomm</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,64 +17,97 @@
             --light: #f8fafc;
             --card-bg: #ffffff;
             --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
             --text-main: #0f172a;
             --text-muted: #64748b;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
-        body { background: var(--light); color: var(--text-main); padding: 2rem 1.5rem; }
-        .form-card { max-width: 650px; margin: 0 auto; background: var(--card-bg); padding: 2rem; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
-        h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 0.25rem; color: var(--text-main); }
-        .sub { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; }
-        .form-group { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.1rem; }
+        body { background: var(--light); color: var(--text-main); padding: 2rem 1rem; }
+        .form-card { max-width: 760px; margin: 0 auto; background: var(--card-bg); padding: 2.25rem; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 6px 24px rgba(0,0,0,0.06); }
+        
+        .form-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+        h2 { font-size: 1.4rem; font-weight: 800; color: var(--text-main); }
+        .sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        .score-display-box { text-align: right; background: var(--light); border: 1px solid var(--border); padding: 0.65rem 1.25rem; border-radius: 12px; }
+        .score-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+        .score-val { font-size: 1.75rem; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
         label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-        input, select, textarea { padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; }
+        input, select, textarea { padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; background: var(--card-bg); color: var(--text-main); }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
-        .btn-submit { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 700; width: 100%; cursor: pointer; margin-top: 0.5rem; font-size: 0.95rem; transition: opacity 0.2s; }
+
+        /* QUESTIONNAIRE SECTION STYLES */
+        .qa-section { background: var(--light); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+        .qa-section-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.03em; }
+
+        .question-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px dashed var(--border); gap: 1rem; }
+        .question-item:last-child { border-bottom: none; }
+        .question-text { font-size: 0.88rem; font-weight: 600; color: var(--text-main); flex: 1; }
+        .question-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 400; margin-top: 0.15rem; }
+
+        .score-select { width: 140px; padding: 0.45rem; font-weight: 700; border-radius: 6px; }
+
+        .btn-submit { background: var(--primary-gradient); color: white; border: none; padding: 0.95rem; border-radius: 10px; font-weight: 800; width: 100%; cursor: pointer; margin-top: 1rem; font-size: 1rem; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: opacity 0.2s; }
         .btn-submit:hover { opacity: 0.95; }
     </style>
 </head>
 <body>
 
     <div class="form-card">
-        <h2 id="formHeading">Submit Quality Evaluation</h2>
-        <p class="sub">Fill out this evaluation. It will be sent to the agent's dashboard as Pending until acknowledged.</p>
+        <div class="form-header">
+            <div>
+                <h2>Quality Evaluation Form</h2>
+                <p class="sub">Complete all evaluation criteria. The form will be delivered to the agent's portal as Pending acknowledgment.</p>
+            </div>
+            <div class="score-display-box">
+                <div class="score-label">Total Score</div>
+                <div class="score-val" id="scoreDisplay">100%</div>
+            </div>
+        </div>
 
         <form id="evaluationForm" onsubmit="handleEvaluationSubmit(event)">
-            <div class="form-group">
-                <label>Evaluation Type</label>
-                <select id="qaStyle" required>
-                    <option value="Call Listening Feedback">Call Listening Feedback</option>
-                    <option value="Ticket Feedback">Ticket Feedback</option>
-                </select>
+            <!-- Top Metadata -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Evaluation Type</label>
+                    <select id="qaStyle" onchange="renderQuestionSet()" required>
+                        <option value="Call Listening Feedback">Call Listening Feedback</option>
+                        <option value="Ticket Feedback">Ticket Feedback</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Agent Name</label>
+                    <select id="agentSelect" required></select>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Agent Name</label>
-                <select id="agentSelect" required></select>
-            </div>
-
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <div class="form-group" style="flex: 1; min-width: 200px;">
+            <div class="form-grid">
+                <div class="form-group">
                     <label>Interaction Reference ID</label>
-                    <input type="text" id="interactionRef" placeholder="e.g. Call #48102 or Ticket #9201" required>
+                    <input type="text" id="interactionRef" placeholder="e.g. Call #10892 or Ticket #8291" required>
                 </div>
-                <div class="form-group" style="flex: 1; min-width: 200px;">
-                    <label>Score (%)</label>
-                    <input type="number" id="qaScore" min="0" max="100" placeholder="e.g. 92" required>
+                <div class="form-group">
+                    <label>Evaluation Date</label>
+                    <input type="date" id="evalDate" required>
                 </div>
             </div>
 
+            <!-- Dynamic Questionnaire Section -->
+            <div id="questionnaireContainer"></div>
+
+            <!-- Comments & Coaching Notes -->
             <div class="form-group">
-                <label>Evaluation Date</label>
-                <input type="date" id="evalDate" required>
+                <label>Evaluator Feedback & Coaching Summary</label>
+                <textarea id="qaComments" rows="4" placeholder="Highlight strengths, missed opportunities, and agreed development steps..." required></textarea>
             </div>
 
-            <div class="form-group">
-                <label>Evaluator Feedback & Coaching Notes</label>
-                <textarea id="qaComments" rows="5" placeholder="Provide detailed coaching feedback, strengths, and areas for improvement..." required></textarea>
-            </div>
-
-            <button type="submit" id="submitBtn" class="btn-submit">Submit QA Form to Agent</button>
+            <button type="submit" id="submitBtn" class="btn-submit">Submit QA Form to Agent (Pending)</button>
         </form>
     </div>
 
@@ -85,11 +118,78 @@
         const prefillType = urlParams.get('type');
         const prefillAgent = urlParams.get('agent');
 
+        /* EVALUATION QUESTIONNAIRE DEFINITIONS */
+        const QUESTION_SETS = {
+            "Call Listening Feedback": [
+                {
+                    section: "1. Professional Opening & Verification",
+                    questions: [
+                        { text: "Brand Standard Greeting", desc: "Used correct Zzoomm greeting, stated name, and offered assistance with warm tone.", points: 5 },
+                        { text: "Customer Verification & DPA", desc: "Completed required account authentication and verification checks correctly.", points: 10 }
+                    ]
+                },
+                {
+                    section: "2. Soft Skills & Customer Experience",
+                    questions: [
+                        { text: "Active Listening & Acknowledgment", desc: "Listened without interrupting; acknowledged the customer's issue with genuine empathy.", points: 15 },
+                        { text: "Signposting & Communication", desc: "Kept the caller informed before placing on hold; clearly explained steps taken.", points: 10 },
+                        { text: "Professional Tone & Energy", desc: "Maintained a positive, confident, and polite tone throughout the duration of the interaction.", points: 10 }
+                    ]
+                },
+                {
+                    section: "3. Technical Accuracy & Problem Solving",
+                    questions: [
+                        { text: "Diagnostic & Questioning Technique", desc: "Asked effective open/closed diagnostic questions to pinpoint root cause.", points: 20 },
+                        { text: "Accurate Resolution Provided", desc: "Provided correct procedural advice or technical troubleshoot according to knowledge base.", points: 20 }
+                    ]
+                },
+                {
+                    section: "4. Wrap-up, System Notes & Closing",
+                    questions: [
+                        { text: "Accurate Ticket Documentation", desc: "Documented comprehensive, clear notes and updated ticket status/tags correctly.", points: 10 },
+                        { text: "Next Steps & Clear Closing", desc: "Summarised agreed actions and closed professionally using standard sign-off.", points: 10 }
+                    ]
+                }
+            ],
+            "Ticket Feedback": [
+                {
+                    section: "1. Ticket Hygiene & Identification",
+                    questions: [
+                        { text: "Correct Categorisation & Tags", desc: "Ensured correct queue, ticket type, priority, and reason tags are selected.", points: 10 },
+                        { text: "Customer Verification & GDPR", desc: "Verified customer credentials and complied with data protection standards.", points: 10 }
+                    ]
+                },
+                {
+                    section: "2. Investigation & Technical Accuracy",
+                    questions: [
+                        { text: "Investigation & Account History Review", desc: "Reviewed previous tickets and network diagnostics before responding.", points: 20 },
+                        { text: "Accuracy of Information Provided", desc: "Provided correct technical guidance, troubleshooting, or billing advice.", points: 25 }
+                    ]
+                },
+                {
+                    section: "3. Written Communication & Empathy",
+                    questions: [
+                        { text: "Grammar, Tone & Formatting", desc: "Clear, professional formatting with correct spelling, grammar, and brand voice.", points: 15 },
+                        { text: "Empathy & Expectation Management", desc: "Addressed all customer questions; set realistic resolution timelines.", points: 10 }
+                    ]
+                },
+                {
+                    section: "4. Documentation & Closure",
+                    questions: [
+                        { text: "Internal Notes & Next Steps", desc: "Comprehensive internal notes logged for colleagues; tasks or escalations routed.", points: 10 }
+                    ]
+                }
+            ]
+        };
+
         document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("evalDate").value = new Date().toISOString().split('T')[0];
-            if (prefillType) document.getElementById("qaStyle").value = prefillType;
+            if (prefillType && QUESTION_SETS[prefillType]) {
+                document.getElementById("qaStyle").value = prefillType;
+            }
 
             await populateAgents();
+            renderQuestionSet();
         });
 
         async function populateAgents() {
@@ -97,7 +197,7 @@
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
 
             if (!client) return;
-            const { data, error } = await client.from('agent_stats').select('agent_name').order('agent_name');
+            const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
             if (data) {
                 data.forEach(row => {
                     const opt = document.createElement("option");
@@ -111,11 +211,83 @@
             }
         }
 
+        function renderQuestionSet() {
+            const style = document.getElementById("qaStyle").value;
+            const container = document.getElementById("questionnaireContainer");
+            const sections = QUESTION_SETS[style] || QUESTION_SETS["Call Listening Feedback"];
+
+            let html = "";
+            let questionIdx = 0;
+
+            sections.forEach(sec => {
+                html += `
+                    <div class="qa-section">
+                        <div class="qa-section-title">${sec.section}</div>
+                `;
+
+                sec.questions.forEach(q => {
+                    html += `
+                        <div class="question-item">
+                            <div>
+                                <div class="question-text">${q.text} <span style="color:var(--primary); font-size:0.8rem;">(${q.points} pts)</span></div>
+                                <div class="question-sub">${q.desc}</div>
+                            </div>
+                            <div>
+                                <select class="score-select" data-points="${q.points}" id="q_${questionIdx}" onchange="recalculateScore()">
+                                    <option value="1">Yes (100%)</option>
+                                    <option value="0.5">Partial (50%)</option>
+                                    <option value="0">No (0%)</option>
+                                    <option value="NA">N/A</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    questionIdx++;
+                });
+
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+            recalculateScore();
+        }
+
+        function recalculateScore() {
+            const selects = document.querySelectorAll(".score-select");
+            let earnedPoints = 0;
+            let availablePoints = 0;
+
+            selects.forEach(sel => {
+                const maxPts = parseFloat(sel.getAttribute("data-points")) || 0;
+                const val = sel.value;
+
+                if (val !== "NA") {
+                    availablePoints += maxPts;
+                    earnedPoints += (maxPts * parseFloat(val));
+                }
+            });
+
+            const finalScore = availablePoints > 0 ? Math.round((earnedPoints / availablePoints) * 100) : 100;
+            const scoreDisplay = document.getElementById("scoreDisplay");
+            scoreDisplay.innerText = `${finalScore}%`;
+            scoreDisplay.style.color = finalScore >= 85 ? "var(--success)" : (finalScore >= 70 ? "var(--warning)" : "var(--danger)");
+        }
+
         async function handleEvaluationSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById("submitBtn");
             btn.disabled = true;
-            btn.innerText = "Submitting to Agent...";
+            btn.innerText = "Submitting Evaluation...";
+
+            // Collect answer breakdown
+            const selects = document.querySelectorAll(".score-select");
+            const responses = [];
+            selects.forEach((sel, i) => {
+                const qText = sel.closest(".question-item").querySelector(".question-text").innerText;
+                responses.push({ question: qText, scoreSelected: sel.options[sel.selectedIndex].text });
+            });
+
+            const scoreNumber = parseFloat(document.getElementById("scoreDisplay").innerText.replace('%', ''));
 
             const formPayload = {
                 qa_style: document.getElementById("qaStyle").value,
@@ -123,26 +295,26 @@
                 evaluator: activeUser,
                 call_ref: document.getElementById("interactionRef").value.trim(),
                 ticket_ref: document.getElementById("interactionRef").value.trim(),
-                score: parseFloat(document.getElementById("qaScore").value),
+                score: scoreNumber,
                 date: document.getElementById("evalDate").value,
                 comments: document.getElementById("qaComments").value.trim(),
-                status: "Pending",
-                agent_acknowledged: false,
+                status: "Pending", // Sent as Pending to agent
+                agent_acknowledged: false, // Awaiting agent response
                 agent_comments: null
             };
 
-            const { data, error } = await client.from('feedback_docs').insert([formPayload]).select();
+            const { error } = await client.from('feedback_docs').insert([formPayload]);
 
             if (!error) {
-                alert("Evaluation logged! Sent to " + formPayload.agent + " for acknowledgment.");
+                alert(`Evaluation logged with a score of ${scoreNumber}%! It is now pending acknowledgment on ${formPayload.agent}'s dashboard.`);
                 if (window.opener && !window.opener.closed) {
                     window.opener.location.reload();
                 }
                 window.close();
             } else {
-                alert("Error submitting evaluation: " + error.message);
+                alert("Error saving evaluation: " + error.message);
                 btn.disabled = false;
-                btn.innerText = "Submit QA Form to Agent";
+                btn.innerText = "Submit QA Form to Agent (Pending)";
             }
         }
     </script>
