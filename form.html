@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quality Evaluation Form - Zzoomm</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Supabase SDK & Config -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <style>
@@ -32,6 +34,7 @@
         h2 { font-size: 1.4rem; font-weight: 800; color: var(--text-main); }
         .sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
 
+        /* Quality % at the top */
         .score-display-box { text-align: right; background: var(--light); border: 1px solid var(--border); padding: 0.65rem 1.25rem; border-radius: 12px; }
         .score-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
         .score-val { font-size: 1.75rem; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
@@ -42,7 +45,7 @@
         input, select, textarea { padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; background: var(--card-bg); color: var(--text-main); }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 
-        /* QUESTIONNAIRE SECTION STYLES */
+        /* Questions 1-4 Sections */
         .qa-section { background: var(--light); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
         .qa-section-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.03em; }
 
@@ -66,7 +69,7 @@
                 <p class="sub">Complete all evaluation criteria. The form will be delivered to the agent's portal as Pending acknowledgment.</p>
             </div>
             <div class="score-display-box">
-                <div class="score-label">Total Score</div>
+                <div class="score-label">Quality Score</div>
                 <div class="score-val" id="scoreDisplay">100%</div>
             </div>
         </div>
@@ -98,10 +101,10 @@
                 </div>
             </div>
 
-            <!-- Dynamic Questionnaire Section -->
+            <!-- Questions 1-4 Container -->
             <div id="questionnaireContainer"></div>
 
-            <!-- Comments & Coaching Notes -->
+            <!-- Evaluator Coaching Comments -->
             <div class="form-group">
                 <label>Evaluator Feedback & Coaching Summary</label>
                 <textarea id="qaComments" rows="4" placeholder="Highlight strengths, missed opportunities, and agreed development steps..." required></textarea>
@@ -118,7 +121,7 @@
         const prefillType = urlParams.get('type');
         const prefillAgent = urlParams.get('agent');
 
-        /* EVALUATION QUESTIONNAIRE DEFINITIONS */
+        /* QUESTIONS 1-4 CRITERIA */
         const QUESTION_SETS = {
             "Call Listening Feedback": [
                 {
@@ -133,7 +136,7 @@
                     questions: [
                         { text: "Active Listening & Acknowledgment", desc: "Listened without interrupting; acknowledged the customer's issue with genuine empathy.", points: 15 },
                         { text: "Signposting & Communication", desc: "Kept the caller informed before placing on hold; clearly explained steps taken.", points: 10 },
-                        { text: "Professional Tone & Energy", desc: "Maintained a positive, confident, and polite tone throughout the duration of the interaction.", points: 10 }
+                        { text: "Professional Tone & Energy", desc: "Maintained a positive, confident, and polite tone throughout the interaction.", points: 10 }
                     ]
                 },
                 {
@@ -279,14 +282,6 @@
             btn.disabled = true;
             btn.innerText = "Submitting Evaluation...";
 
-            // Collect answer breakdown
-            const selects = document.querySelectorAll(".score-select");
-            const responses = [];
-            selects.forEach((sel, i) => {
-                const qText = sel.closest(".question-item").querySelector(".question-text").innerText;
-                responses.push({ question: qText, scoreSelected: sel.options[sel.selectedIndex].text });
-            });
-
             const scoreNumber = parseFloat(document.getElementById("scoreDisplay").innerText.replace('%', ''));
 
             const formPayload = {
@@ -298,15 +293,15 @@
                 score: scoreNumber,
                 date: document.getElementById("evalDate").value,
                 comments: document.getElementById("qaComments").value.trim(),
-                status: "Pending", // Sent as Pending to agent
-                agent_acknowledged: false, // Awaiting agent response
+                status: "Pending",
+                agent_acknowledged: false,
                 agent_comments: null
             };
 
             const { error } = await client.from('feedback_docs').insert([formPayload]);
 
             if (!error) {
-                alert(`Evaluation logged with a score of ${scoreNumber}%! It is now pending acknowledgment on ${formPayload.agent}'s dashboard.`);
+                alert(`Evaluation logged with a quality score of ${scoreNumber}%! It is now pending acknowledgment on ${formPayload.agent}'s dashboard.`);
                 if (window.opener && !window.opener.closed) {
                     window.opener.location.reload();
                 }
