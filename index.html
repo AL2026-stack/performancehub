@@ -283,7 +283,8 @@
                             <span class="filter-label" id="valueFilterLabel">Target:</span>
                             <div id="timeframeSelectorContainer" style="display: inline-block;"></div>
 
-                            <div id="supervisorFilterBlock" style="display: none; display: flex; align-items: center; gap:0.5rem;">
+                            <!-- Dedicated Agent Filter Container (Hidden entirely for Agents) -->
+                            <div id="supervisorFilterBlock" style="display: none; align-items: center; gap: 0.5rem;">
                                 <span class="filter-label">Agent:</span>
                                 <select id="agentFilter" class="filter-select" onchange="renderDashboard()">
                                     <option value="All">-- All Personnel --</option>
@@ -479,6 +480,7 @@
             const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
 
             const agentFilterEl = document.getElementById("agentFilter");
+            // If manager, respect selection; if agent, force their own identity
             const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
 
             const btnCall = document.getElementById("btnShortCutCall");
@@ -487,9 +489,11 @@
 
             if (btnCall) btnCall.style.display = isManagement ? "inline-flex" : "none";
             if (btnTicket) btnTicket.style.display = isManagement ? "inline-flex" : "none";
+            
+            // Strictly hide supervisor filter dropdown for non-management agents
             if (supBlock) supBlock.style.display = isManagement ? "flex" : "none";
 
-            // 1. HOME DASHBOARD: AGENTS SEE OWN STATS; MANAGERS SEE TEAM SUMMARY
+            // 1. HOME DASHBOARD: AGENTS ONLY SEE OWN STATS; MANAGERS SEE TEAM SUMMARY
             if (homeKpiArea) {
                 if (!isManagement) {
                     if (homeHeaderTitle) homeHeaderTitle.innerText = `📊 My Performance KPIs (${currentUser})`;
