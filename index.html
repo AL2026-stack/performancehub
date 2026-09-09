@@ -48,7 +48,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
-        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; transition: background 0.25s ease, color 0.25s ease; }
+        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; transition: background 0.25s, color 0.25s; }
         
         header { 
             background: #0f172a; color: white; padding: 0.85rem 1.75rem; display: flex; justify-content: space-between; align-items: center; 
@@ -99,19 +99,16 @@
         .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
         .btn-launch:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(230, 0, 126, 0.35); }
         .btn-alt-color { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
-        .btn-alt-color:hover { border-color: rgba(255,255,255,0.25); }
 
         .card { background: var(--card-bg); padding: 1.75rem; border-radius: var(--card-radius); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); transition: box-shadow 0.2s; }
         .card:hover { box-shadow: var(--shadow-md); }
         .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
-        .card h2 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; letter-spacing: -0.01em; }
+        .card h2 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
         
         .filter-group { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
-        .filter-select, .calendar-input { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; transition: border-color 0.2s; }
-        .filter-select:focus, .calendar-input:focus { border-color: var(--primary); }
+        .filter-select, .calendar-input { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
         .filter-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
-        /* KPI CARD CONTAINERS & AMBIENT GLOWS */
         .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
         .kpi-box { 
             background: var(--card-bg); padding: 1.4rem; border-radius: 12px; border: 1px solid var(--border); 
@@ -128,7 +125,6 @@
         .kpi-bad { border-top: 4px solid var(--danger); background: linear-gradient(180deg, var(--danger-bg) 0%, transparent 45%); }
         .kpi-bad .kpi-val { color: var(--danger); }
 
-        /* SKELETON SHIMMER LOADER */
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
         .skeleton-card { height: 130px; border-radius: 12px; background: linear-gradient(90deg, rgba(226,232,240,0.6) 25%, rgba(241,245,249,0.9) 50%, rgba(226,232,240,0.6) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
@@ -137,10 +133,6 @@
         th, td { text-align: left; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
         th { background-color: var(--light); color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
         td { font-size: 0.9rem; }
-
-        .status-badge { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
-        .badge-normal { background: var(--success-bg); color: var(--success); }
-        .badge-reset { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
 
         .upload-section-container { background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: var(--card-radius); padding: 1.75rem; box-shadow: var(--shadow-sm); }
         .upload-row-flex { display: flex; gap: 1rem; align-items: stretch; margin-top: 1rem; flex-wrap: wrap; }
@@ -157,21 +149,9 @@
         .toast-notify { display: none; padding: 1rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm); }
         .toast-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
 
-        /* 1-TO-1 COACHING SUITE STYLES */
-        .agenda-box { background: var(--light); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-top: 1rem; }
-        .coaching-metric-pill { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1.2rem; flex: 1; min-width: 130px; text-align: center; }
-        .coaching-prompt-card { background: var(--card-bg); border-left: 4px solid var(--primary); border: 1px solid var(--border); border-left-width: 4px; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-
-        /* MODAL DIALOGS */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: var(--card-bg); color: var(--text-main); border-radius: 16px; padding: 2rem; max-width: 650px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-md); border: 1px solid var(--border); }
         .btn-modal-action { background: var(--primary-gradient); color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 700; cursor: pointer; }
-
-        @media print {
-            header, .sidebar, .action-button-grid, #newPlanCard, .btn-launch, .filter-group, #oneToOneGeneratorSelect { display: none !important; }
-            .main-workspace { padding: 0 !important; width: 100% !important; max-width: 100% !important; }
-            .card { box-shadow: none !important; border: 1px solid #ccc !important; }
-        }
     </style>
 </head>
 <body>
@@ -203,7 +183,7 @@
 
             <div class="sidebar-section-title">Quality & Coaching</div>
             <div class="nav-item" id="navQA" onclick="switchView('qaView')">📑 Completed Quality Forms</div>
-            <div class="nav-item" id="navCoaching" onclick="switchView('coachingView')">🎯 1-to-1 Action Plans</div>
+            <a href="coaching.html" class="nav-item">🎯 Coaching & 1-to-1s</a>
 
             <div id="teamOpsSidebarSection" style="display: none;">
                 <div class="sidebar-section-title">Team Operations</div>
@@ -334,67 +314,6 @@
                     <div id="feedbackContainer" style="margin-top: 1rem;"></div>
                 </div>
             </div>
-
-            <!-- VIEW 5: 1-TO-1 COACHING, GENERATION TOOL & ACTION PLANS -->
-            <div id="coachingView" class="page-view-section hidden">
-                
-                <!-- 1-TO-1 AUTOMATED GENERATION SUITE (SUPERVISORS / ADMINS) -->
-                <div class="card" id="oneToOneGeneratorCard" style="display: none;">
-                    <div class="card-header-flex">
-                        <h2>📋 1-to-1 Meeting Generator & Coaching Suite</h2>
-                        <div class="filter-group">
-                            <span class="filter-label">Select Agent:</span>
-                            <select id="oneToOneAgentSelector" class="filter-select" onchange="generateOneToOneBrief(this.value)"></select>
-                            <button class="btn-header" style="background:#0f172a;" onclick="window.print()">🖨️ Print / Save Agenda</button>
-                        </div>
-                    </div>
-                    
-                    <div id="oneToOneBriefContent" class="agenda-box">
-                        <p style="color:var(--text-muted); font-size: 0.9rem;">Select an agent to generate an automated 1-to-1 agenda with 30-day KPIs and coaching topics.</p>
-                    </div>
-                </div>
-
-                <!-- ASSIGN ACTION OBJECTIVES -->
-                <div class="card" id="newPlanCard" style="display: none;">
-                    <div class="card-header-flex">
-                        <h2>🎯 Assign SMART Action Objective</h2>
-                    </div>
-                    <form onsubmit="handleCreateCoachingPlan(event)">
-                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
-                            <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.35rem;">
-                                <label class="filter-label">Target Agent</label>
-                                <select id="planAgentSelect" class="filter-select" required></select>
-                            </div>
-                            <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.35rem;">
-                                <label class="filter-label">Key Focus Area</label>
-                                <select id="planFocusArea" class="filter-select">
-                                    <option value="AHT Management">AHT Management</option>
-                                    <option value="Wrap Time Reduction">Wrap Time Reduction</option>
-                                    <option value="First Contact Resolution (FCR)">First Contact Resolution (FCR)</option>
-                                    <option value="Quality & Customer Experience">Quality & Customer Experience</option>
-                                </select>
-                            </div>
-                            <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.35rem;">
-                                <label class="filter-label">Target Completion Date</label>
-                                <input type="date" id="planDeadline" class="calendar-input" required>
-                            </div>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.25rem;">
-                            <label class="filter-label">SMART Action Objective & Agreement</label>
-                            <textarea id="planObjective" rows="3" class="calendar-input" style="width: 100%;" placeholder="e.g. Reduce wrap time to under 02:45 by typing notes during calls and using pre-approved templates." required></textarea>
-                        </div>
-                        <button type="submit" class="btn-launch">Assign Action Objective</button>
-                    </form>
-                </div>
-
-                <!-- ACTIVE 1-TO-1 OBJECTIVES DIRECTORY -->
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>Active 1-to-1 Action Goals</h2>
-                    </div>
-                    <div id="coachingPlansList">Loading action plans...</div>
-                </div>
-            </div>
         </main>
     </div>
 
@@ -429,11 +348,7 @@
             const userTheme = localStorage.getItem(`theme_${currentUser.toLowerCase()}`) || 
                               localStorage.getItem('themePreference') || 
                               'light';
-            if (userTheme === 'dark') { 
-                document.body.classList.add('dark-mode'); 
-            } else {
-                document.body.classList.remove('dark-mode');
-            }
+            if (userTheme === 'dark') { document.body.classList.add('dark-mode'); }
 
             document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
             document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
@@ -451,18 +366,11 @@
             const teamOpsSection = document.getElementById("teamOpsSidebarSection");
             if (teamOpsSection) { teamOpsSection.style.display = isManagement ? "block" : "none"; }
 
-            const newPlanCard = document.getElementById("newPlanCard");
-            if (newPlanCard) { newPlanCard.style.display = isManagement ? "block" : "none"; }
-
-            const genCard = document.getElementById("oneToOneGeneratorCard");
-            if (genCard) { genCard.style.display = isManagement ? "block" : "none"; }
-
             await syncCloudData();
 
             populateAgentFilters();
             handleHomeScopeChange();
             handleTimeframeTypeChange(); 
-            loadCoachingPlans();
             renderPendingEvaluations();
         });
 
@@ -500,7 +408,6 @@
             } catch (err) { console.error("Cloud sync error:", err); }
         }
 
-        /* RENDER PENDING EVALUATIONS */
         function renderPendingEvaluations() {
             const container = document.getElementById("homePendingQaContainer");
             const badge = document.getElementById("homePendingCountBadge");
@@ -552,129 +459,6 @@
             `).join('');
         }
 
-        /* 1-TO-1 MEETING BRIEF GENERATOR & COACHING SUITE */
-        function generateOneToOneBrief(agentName) {
-            const container = document.getElementById("oneToOneBriefContent");
-            if (!agentName) {
-                container.innerHTML = `<p style="color:var(--text-muted); font-size: 0.9rem;">Select an agent above to build a 1-to-1 agenda.</p>`;
-                return;
-            }
-
-            const profile = getAgentProfile(globalStatsDb, agentName);
-            const dailyStats = profile && profile.Daily ? profile.Daily : {};
-            const dates = Object.keys(dailyStats).sort();
-            
-            let totalCalls = 0, totalAht = 0, totalWrap = 0, totalTrans = 0, count = 0;
-            dates.slice(-30).forEach(d => {
-                const day = dailyStats[d];
-                const calls = parseInt(day.calls) || 0;
-                totalCalls += calls;
-                totalAht += timeToSeconds(day.aht);
-                totalWrap += timeToSeconds(day.wrap);
-                totalTrans += parseFloat(day.transfer) || 0;
-                count++;
-            });
-
-            const avgAht = count > 0 ? secondsToTimeStr(Math.round(totalAht / count)) : "00:00:00";
-            const avgWrap = count > 0 ? secondsToTimeStr(Math.round(totalWrap / count)) : "00:00:00";
-            const avgTrans = count > 0 ? (totalTrans / count).toFixed(1) + "%" : "0.0%";
-
-            const agentQAs = globalDocs.filter(d => d.agent && d.agent.toLowerCase() === agentName.toLowerCase());
-            const avgScore = agentQAs.length > 0 ? Math.round(agentQAs.reduce((acc, q) => acc + (parseFloat(q.score) || 0), 0) / agentQAs.length) : "N/A";
-
-            const wrapSec = timeToSeconds(avgWrap);
-            const ahtSec = timeToSeconds(avgAht);
-            const transPct = parseFloat(avgTrans);
-
-            let prompts = [];
-            if (wrapSec > 180) {
-                prompts.push({
-                    title: "⏱️ Wrap Time Optimization",
-                    desc: `Recent wrap time averages ${avgWrap} (Target: ≤ 03:00).`,
-                    action: `Reduce wrap time to under 02:45 by typing notes during calls and utilizing pre-approved templates.`
-                });
-            }
-            if (transPct > 15) {
-                prompts.push({
-                    title: "🔄 First Contact Resolution (Transfers)",
-                    desc: `Transfer rate is elevated at ${avgTrans} (Target: ≤ 15%).`,
-                    action: `Review 5 recent transferred interactions together. Implement knowledge base verification before escalating.`
-                });
-            }
-            if (ahtSec > 480) {
-                prompts.push({
-                    title: "🗣️ Call Control & Signposting",
-                    desc: `AHT is currently ${avgAht} (Target: ≤ 08:00).`,
-                    action: `Work on customer signposting techniques to prevent conversational drift without rushing the resolution.`
-                });
-            }
-
-            container.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:1rem; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
-                    <div>
-                        <h3 style="font-size:1.15rem; font-weight:800;">1-to-1 Performance Agenda: ${agentName}</h3>
-                        <p style="font-size:0.8rem; color:var(--text-muted);">Session Lead: <strong>${currentUser}</strong> | Generated: ${new Date().toLocaleDateString('en-GB')}</p>
-                    </div>
-                    <span class="status-badge badge-normal">Active Performance Review</span>
-                </div>
-
-                <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem;">
-                    <div class="coaching-metric-pill">
-                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">CALLS ANSWERED</div>
-                        <div style="font-size:1.4rem; font-weight:800; color:var(--text-main); margin-top:0.25rem;">${totalCalls}</div>
-                    </div>
-                    <div class="coaching-metric-pill">
-                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">AVG AHT</div>
-                        <div style="font-size:1.4rem; font-weight:800; color:${ahtSec <= 480 ? 'var(--success)' : 'var(--danger)'}; margin-top:0.25rem;">${avgAht}</div>
-                    </div>
-                    <div class="coaching-metric-pill">
-                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">AVG WRAP</div>
-                        <div style="font-size:1.4rem; font-weight:800; color:${wrapSec <= 180 ? 'var(--success)' : 'var(--danger)'}; margin-top:0.25rem;">${avgWrap}</div>
-                    </div>
-                    <div class="coaching-metric-pill">
-                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">TRANSFERS</div>
-                        <div style="font-size:1.4rem; font-weight:800; color:${transPct <= 15 ? 'var(--success)' : 'var(--danger)'}; margin-top:0.25rem;">${avgTrans}</div>
-                    </div>
-                    <div class="coaching-metric-pill">
-                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">QA AVG</div>
-                        <div style="font-size:1.4rem; font-weight:800; color:var(--primary); margin-top:0.25rem;">${avgScore}${avgScore !== 'N/A' ? '%' : ''}</div>
-                    </div>
-                </div>
-
-                <h4 style="font-size:0.9rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.75rem;">Key Opportunities & 1-Click Goal Templates</h4>
-                ${prompts.length > 0 ? prompts.map(p => `
-                    <div class="coaching-prompt-card">
-                        <div>
-                            <strong style="color:var(--text-main); font-size:0.92rem;">${p.title}</strong>
-                            <p style="font-size:0.85rem; color:var(--danger); font-weight:600; margin:0.25rem 0;">${p.desc}</p>
-                            <p style="font-size:0.82rem; color:var(--text-muted);">Recommended Goal: <em>"${p.action}"</em></p>
-                        </div>
-                        <button type="button" class="btn-launch" style="padding:0.45rem 0.85rem; font-size:0.8rem; flex-shrink:0;" onclick="prefillCoachingObjective('${agentName}', '${p.action}')">
-                            ➕ Use Goal
-                        </button>
-                    </div>
-                `).join('') : `
-                    <div style="background:var(--success-bg); border:1px solid #a7f3d0; border-radius:10px; padding:1rem; color:#065f46; font-size:0.9rem; font-weight:600;">
-                        🌟 All metrics are within performance targets! Focus the 1-to-1 conversation on professional progression and personal feedback.
-                    </div>
-                `}
-            `;
-        }
-
-        function prefillCoachingObjective(agentName, suggestedText) {
-            document.getElementById("planAgentSelect").value = agentName;
-            document.getElementById("planObjective").value = suggestedText;
-            const targetDateInput = document.getElementById("planDeadline");
-            
-            const future = new Date();
-            future.setDate(future.getDate() + 14);
-            targetDateInput.value = future.toISOString().split('T')[0];
-
-            document.getElementById("newPlanCard").scrollIntoView({ behavior: 'smooth' });
-            triggerToast(`Prefilled 1-to-1 Action Objective for ${agentName}.`);
-        }
-
-        /* FUZZY SIMILARITY (LEVENSHTEIN) */
         function getSimilarity(s1, s2) {
             const longer = s1.length < s2.length ? s2.toLowerCase() : s1.toLowerCase();
             const shorter = s1.length < s2.length ? s1.toLowerCase() : s2.toLowerCase();
@@ -1024,114 +808,6 @@
             handleTimeframeTypeChange();
         }
 
-        /* 1-TO-1 COACHING ACTION PLANS */
-        async function handleCreateCoachingPlan(e) {
-            e.preventDefault();
-            const agent = document.getElementById("planAgentSelect").value;
-            const focus = document.getElementById("planFocusArea").value;
-            const deadline = document.getElementById("planDeadline").value;
-            const objective = document.getElementById("planObjective").value.trim();
-
-            const client = window.supabaseClient || window.supabase;
-            if (!client) return;
-
-            const { error } = await client.from('coaching_plans').insert([{
-                agent_name: agent,
-                supervisor_name: currentUser,
-                focus_area: focus,
-                smart_objective: objective,
-                deadline: deadline,
-                status: 'Open'
-            }]);
-
-            if (!error) {
-                triggerToast("1-to-1 Action Objective assigned successfully.");
-                document.getElementById("planObjective").value = "";
-                await loadCoachingPlans();
-            } else {
-                alert("Failed to create plan: " + error.message);
-            }
-        }
-
-        async function loadCoachingPlans() {
-            const container = document.getElementById("coachingPlansList");
-            const client = window.supabaseClient || window.supabase;
-            if (!container || !client) return;
-
-            let query = client.from('coaching_plans').select('*').order('created_at', { ascending: false });
-
-            if (currentRole === "Agent") {
-                query = query.eq('agent_name', currentUser);
-            }
-
-            const { data, error } = await query;
-            if (error || !data || data.length === 0) {
-                container.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem;">No active 1-to-1 plans on record.</p>`;
-                return;
-            }
-
-            container.innerHTML = data.map(plan => {
-                const isOwner = plan.agent_name.toLowerCase() === currentUser.toLowerCase();
-                const isMgmt = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
-
-                return `
-                    <div style="background:var(--light); border:1px solid var(--border); border-left:4px solid var(--primary); border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow: var(--shadow-sm);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong style="font-size: 0.95rem;">${plan.focus_area} — ${plan.agent_name}</strong>
-                            <span class="status-badge ${plan.status === 'Achieved' ? 'badge-normal' : 'badge-reset'}">${plan.status}</span>
-                        </div>
-                        <p style="font-size:0.88rem; color:var(--text-main); margin:0.6rem 0;">${plan.smart_objective}</p>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:0.5rem;">
-                            <span>Target Deadline: <strong>${plan.deadline}</strong> | Assigned by: ${plan.supervisor_name}</span>
-                            <div style="display:flex; gap:0.5rem; align-items: center;">
-                                ${isOwner && !plan.agent_acknowledged ? `
-                                    <button class="btn-launch" style="padding:0.35rem 0.75rem; font-size:0.75rem;" onclick="acknowledgePlan(${plan.id})">✍️ Sign & Acknowledge</button>
-                                ` : ''}
-                                ${isMgmt ? `
-                                    <select onchange="updatePlanStatus(${plan.id}, this.value)" style="padding:0.35rem 0.5rem; font-size:0.75rem; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-main);">
-                                        <option value="Open" ${plan.status === 'Open' ? 'selected' : ''}>Open</option>
-                                        <option value="In Progress" ${plan.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                        <option value="Achieved" ${plan.status === 'Achieved' ? 'selected' : ''}>Achieved</option>
-                                        <option value="Closed" ${plan.status === 'Closed' ? 'selected' : ''}>Closed</option>
-                                    </select>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        async function acknowledgePlan(planId) {
-            const client = window.supabaseClient || window.supabase;
-            if (!client) return;
-
-            const { error } = await client.from('coaching_plans').update({
-                agent_acknowledged: true,
-                status: 'In Progress'
-            }).eq('id', planId);
-
-            if (!error) {
-                triggerToast("Acknowledged action plan.");
-                await loadCoachingPlans();
-            }
-        }
-
-        async function updatePlanStatus(planId, newStatus) {
-            const client = window.supabaseClient || window.supabase;
-            if (!client) return;
-
-            const { error } = await client.from('coaching_plans').update({
-                status: newStatus
-            }).eq('id', planId);
-
-            if (!error) {
-                triggerToast("Plan status updated.");
-                await loadCoachingPlans();
-            }
-        }
-
-        /* TIMESCALE & KPI COMPUTATION */
         function handleHomeScopeChange() {
             const scopeSelect = document.getElementById("homeScopeFilter");
             if (!scopeSelect) return;
@@ -1365,13 +1041,11 @@
                 if (supBlock) supBlock.style.display = "flex";
             }
 
-            // 1. HOME DASHBOARD: PERMANENTLY TEAM PERFORMANCE KPIS
             if (homeKpiArea) {
                 const teamStats = calculateTeamAverageStats(globalStatsDb, homeScope, homeVal);
                 homeKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
             }
 
-            // 2. STATS TAB: INDIVIDUAL OR TEAM VIEW
             const statsKpiArea = document.getElementById("kpiDisplayArea");
             if (statsKpiArea) {
                 const statsScope = document.getElementById("timeframeTypeFilter") ? document.getElementById("timeframeTypeFilter").value : "Daily";
@@ -1401,39 +1075,21 @@
 
         function populateAgentFilters() {
             const select = document.getElementById("agentFilter");
-            const planSelect = document.getElementById("planAgentSelect");
-            const oneToOneSelect = document.getElementById("oneToOneAgentSelector");
-            
             if (select) {
                 select.innerHTML = '<option value="All">-- All Personnel --</option>';
                 Object.keys(globalStatsDb).sort().forEach(k => {
                     const o = document.createElement("option"); o.value = k; o.innerText = k; select.appendChild(o);
                 });
             }
-
-            if (planSelect) {
-                planSelect.innerHTML = '';
-                Object.keys(globalStatsDb).sort().forEach(k => {
-                    const o = document.createElement("option"); o.value = k; o.innerText = k; planSelect.appendChild(o);
-                });
-            }
-
-            if (oneToOneSelect) {
-                oneToOneSelect.innerHTML = '<option value="">-- Choose Agent --</option>';
-                Object.keys(globalStatsDb).sort().forEach(k => {
-                    const o = document.createElement("option"); o.value = k; o.innerText = k; oneToOneSelect.appendChild(o);
-                });
-            }
         }
 
         function switchView(viewId) {
-            const views = ['homeView', 'importView', 'statsView', 'qaView', 'coachingView'];
+            const views = ['homeView', 'importView', 'statsView', 'qaView'];
             const navMap = {
                 'homeView': 'navHome',
                 'importView': 'navImport',
                 'statsView': 'navStats',
-                'qaView': 'navQA',
-                'coachingView': 'navCoaching'
+                'qaView': 'navQA'
             };
 
             views.forEach(v => { 
@@ -1449,7 +1105,6 @@
             const activeNav = document.getElementById(navMap[viewId]);
             if (activeNav) activeNav.classList.add('active');
 
-            if (viewId === 'coachingView') loadCoachingPlans();
             renderDashboard();
         }
 
