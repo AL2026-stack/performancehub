@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zzoomm Performance Tracker - Coaching & 1-to-1 Suite</title>
+    <title>Zzoomm Performance Tracker - Coaching & 1-to-1s</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Supabase SDK & Config -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <style>
@@ -140,7 +142,7 @@
         <main class="main-workspace">
             <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
 
-            <!-- 1. 1-to-1 MEETING PREPARATION & GENERATION SUITE -->
+            <!-- 1. 1-to-1 MEETING PREPARATION & GENERATION SUITE (MANAGEMENT ONLY) -->
             <div class="card" id="oneToOneGeneratorCard" style="display: none;">
                 <div class="card-header-flex">
                     <h2>📋 Automated 1-to-1 Agenda & Performance Summary</h2>
@@ -156,7 +158,7 @@
                 </div>
             </div>
 
-            <!-- 2. ASSIGN SMART ACTION GOAL -->
+            <!-- 2. ASSIGN SMART ACTION GOAL (MANAGEMENT ONLY) -->
             <div class="card" id="newPlanCard" style="display: none;">
                 <div class="card-header-flex">
                     <h2>🎯 Assign SMART Action Objective</h2>
@@ -192,7 +194,7 @@
             <!-- 3. ACTIVE COACHING GOALS TRACKER -->
             <div class="card">
                 <div class="card-header-flex">
-                    <h2>Active 1-to-1 Action Goals</h2>
+                    <h2 id="goalsSectionTitle">Active 1-to-1 Action Goals</h2>
                 </div>
                 <div id="coachingPlansList">Loading action plans...</div>
             </div>
@@ -231,6 +233,10 @@
             const genCard = document.getElementById("oneToOneGeneratorCard");
             if (genCard) { genCard.style.display = isManagement ? "block" : "none"; }
 
+            if (!isManagement) {
+                document.getElementById("goalsSectionTitle").innerText = "🎯 My Assigned 1-to-1 Action Goals";
+            }
+
             await syncCloudData();
             populateAgentSelectors();
             loadCoachingPlans();
@@ -244,8 +250,15 @@
                 const { data: docsData } = await client.from('feedback_docs').select('*');
                 if (docsData) {
                     globalDocs = docsData.map(d => ({
-                        id: d.id, agent: d.agent, evaluator: d.evaluator, date: d.date, status: d.status,
-                        qaStyle: d.qa_style, score: d.score, callRef: d.call_ref, ticketRef: d.ticket_ref,
+                        id: d.id, 
+                        agent: d.agent, 
+                        evaluator: d.evaluator, 
+                        date: d.date, 
+                        status: d.status,
+                        qaStyle: d.qa_style, 
+                        score: d.score, 
+                        callRef: d.call_ref, 
+                        ticketRef: d.ticket_ref,
                         comments: d.comments
                     }));
                 }
@@ -322,7 +335,6 @@
             const agentQAs = globalDocs.filter(d => d.agent && d.agent.toLowerCase() === agentName.toLowerCase());
             const avgScore = agentQAs.length > 0 ? Math.round(agentQAs.reduce((acc, q) => acc + (parseFloat(q.score) || 0), 0) / agentQAs.length) : "N/A";
 
-            // Lowest 3 Evaluations for Deep-Linking
             const lowestQAs = [...agentQAs].sort((a,b) => (parseFloat(a.score)||0) - (parseFloat(b.score)||0)).slice(0, 3);
 
             const wrapSec = timeToSeconds(avgWrap);
@@ -390,7 +402,7 @@
                         ${lowestQAs.map(q => `
                             <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:0.65rem 1rem; display:flex; justify-content:space-between; align-items:center;">
                                 <span style="font-size:0.85rem;"><strong>${q.qaStyle || 'Quality Evaluation'}</strong> (${q.date}) — Score: <strong style="color:${(parseFloat(q.score)||0) >= 85 ? 'var(--success)' : 'var(--danger)'};">${q.score}%</strong></span>
-                                <button type="button" class="btn-header" style="background:#0f172a; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="window.open('view-qa.html?id=${q.id}', 'QAView', 'width=700,height=800')">Open Form ↗</button>
+                                <button type="button" class="btn-header" style="background:#0f172a; padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="window.open('view-qa.html?id=${q.id}', 'QAView', 'width=750,height=850')">Open Form ↗</button>
                             </div>
                         `).join('')}
                     </div>
@@ -465,12 +477,15 @@
         async function loadCoachingPlans() {
             const container = document.getElementById("coachingPlansList");
             const client = window.supabaseClient || window.supabase;
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+
             if (!container || !client) return;
 
             let query = client.from('coaching_plans').select('*').order('created_at', { ascending: false });
 
-            if (currentRole === "Agent") {
-                query = query.eq('agent_name', currentUser);
+            // Agents only fetch their personal plans
+            if (!isManagement) {
+                query = query.ilike('agent_name', currentUser);
             }
 
             const { data, error } = await query;
@@ -481,7 +496,6 @@
 
             container.innerHTML = data.map(plan => {
                 const isOwner = plan.agent_name.toLowerCase() === currentUser.toLowerCase();
-                const isMgmt = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
 
                 return `
                     <div style="background:var(--light); border:1px solid var(--border); border-left:4px solid var(--primary); border-radius:12px; padding:1.25rem; margin-bottom:1rem; box-shadow: var(--shadow-sm);">
@@ -489,14 +503,24 @@
                             <strong style="font-size: 0.95rem;">${plan.focus_area} — ${plan.agent_name}</strong>
                             <span class="status-badge ${plan.status === 'Achieved' ? 'badge-normal' : 'badge-reset'}">${plan.status}</span>
                         </div>
-                        <p style="font-size:0.88rem; color:var(--text-main); margin:0.6rem 0;">${plan.smart_objective}</p>
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:0.5rem;">
+                        <p style="font-size:0.88rem; color:var(--text-main); margin:0.6rem 0;"><strong>SMART Objective:</strong> ${plan.smart_objective}</p>
+                        
+                        ${plan.agent_reflection ? `
+                            <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.65rem 0.85rem; margin: 0.5rem 0; font-size: 0.85rem;">
+                                <strong>Agent Response:</strong> <span style="color: var(--text-muted); font-style: italic;">"${plan.agent_reflection}"</span>
+                            </div>
+                        ` : ''}
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--text-muted); flex-wrap:wrap; gap:0.5rem; margin-top: 0.5rem;">
                             <span>Target Deadline: <strong>${plan.deadline}</strong> | Assigned by: ${plan.supervisor_name}</span>
+                            
                             <div style="display:flex; gap:0.5rem; align-items: center;">
                                 ${isOwner && !plan.agent_acknowledged ? `
-                                    <button class="btn-launch" style="padding:0.35rem 0.75rem; font-size:0.75rem;" onclick="acknowledgePlan(${plan.id})">✍️ Sign & Acknowledge</button>
+                                    <button class="btn-launch" style="padding:0.35rem 0.75rem; font-size:0.78rem;" onclick="promptAgentPlanReflection(${plan.id})">
+                                        ✍️ Respond & Acknowledge
+                                    </button>
                                 ` : ''}
-                                ${isMgmt ? `
+                                ${isManagement ? `
                                     <select onchange="updatePlanStatus(${plan.id}, this.value)" style="padding:0.35rem 0.5rem; font-size:0.75rem; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-main);">
                                         <option value="Open" ${plan.status === 'Open' ? 'selected' : ''}>Open</option>
                                         <option value="In Progress" ${plan.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
@@ -511,18 +535,25 @@
             }).join('');
         }
 
-        async function acknowledgePlan(planId) {
+        async function promptAgentPlanReflection(planId) {
+            const reflection = prompt("Enter your commitment comment, plan of action, or response for this coaching objective:");
+            if (reflection === null) return;
+
             const client = window.supabaseClient || window.supabase;
             if (!client) return;
 
             const { error } = await client.from('coaching_plans').update({
                 agent_acknowledged: true,
-                status: 'In Progress'
+                agent_reflection: reflection.trim() || "Acknowledged by agent.",
+                status: 'In Progress',
+                acknowledged_at: new Date().toISOString()
             }).eq('id', planId);
 
             if (!error) {
-                triggerToast("Acknowledged action plan.");
+                triggerToast("Response saved and coaching plan acknowledged.");
                 await loadCoachingPlans();
+            } else {
+                alert("Failed to save response: " + error.message);
             }
         }
 
