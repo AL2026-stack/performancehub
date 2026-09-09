@@ -134,6 +134,10 @@
         th { background-color: var(--light); color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
         td { font-size: 0.9rem; }
 
+        .status-badge { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-completed { background: var(--success-bg); color: var(--success); }
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
         .upload-section-container { background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: var(--card-radius); padding: 1.75rem; box-shadow: var(--shadow-sm); }
         .upload-row-flex { display: flex; gap: 1rem; align-items: stretch; margin-top: 1rem; flex-wrap: wrap; }
         .upload-dropzone { background: var(--light); border: 2px dashed var(--border); border-radius: 12px; padding: 1.5rem; text-align: center; flex: 1; min-width: 250px; cursor: pointer; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: border-color 0.2s; }
@@ -303,19 +307,28 @@
                 </div>
             </div>
 
-            <!-- VIEW 4: COMPLETED QUALITY FORMS -->
+            <!-- VIEW 4: COMPLETED QUALITY FORMS (SHOWS BOTH PENDING & COMPLETED) -->
             <div id="qaView" class="page-view-section hidden">
                 <div class="card">
                     <div class="card-header-flex" style="margin-bottom: 0;">
                         <h2 id="listTitleHeader">Completed Quality Forms</h2>
-                        <div class="filter-group" id="qaAgentFilterWrap" style="display: none;">
-                            <span class="filter-label">Filter Agent:</span>
-                            <select id="qaListAgentFilter" class="filter-select" onchange="renderCompletedFeedbackList()">
-                                <option value="All">-- All Agents --</option>
+                        <div class="filter-group">
+                            <span class="filter-label">Status:</span>
+                            <select id="qaStatusFilter" class="filter-select" onchange="renderCompletedFeedbackList()">
+                                <option value="All">All Evaluations (Pending & Completed)</option>
+                                <option value="Pending">Pending Acknowledgment Only</option>
+                                <option value="Completed">Completed Only</option>
                             </select>
+
+                            <div id="qaAgentFilterWrap" style="display: none; align-items: center; gap: 0.5rem;">
+                                <span class="filter-label">Agent:</span>
+                                <select id="qaListAgentFilter" class="filter-select" onchange="renderCompletedFeedbackList()">
+                                    <option value="All">-- All Agents --</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div id="feedbackContainer" style="margin-top: 1rem;">Loading completed evaluations...</div>
+                    <div id="feedbackContainer" style="margin-top: 1rem;">Loading evaluations...</div>
                 </div>
             </div>
         </main>
@@ -378,8 +391,7 @@
             populateAgentFilters();
             handleHomeScopeChange();
             handleTimeframeTypeChange(); 
-            renderPendingEvaluations();
-            renderCompletedFeedbackList();
+            renderDashboard();
         });
 
         async function syncCloudData() {
@@ -394,14 +406,14 @@
                         agent: d.agent, 
                         evaluator: d.evaluator, 
                         date: d.date, 
-                        status: d.status,
+                        status: d.status || (d.agent_acknowledged ? "Completed" : "Pending"),
                         qaStyle: d.qa_style, 
                         score: d.score, 
                         callRef: d.call_ref, 
                         ticketRef: d.ticket_ref,
                         comments: d.comments, 
                         agentComments: d.agent_comments,
-                        agentAcknowledged: d.agent_acknowledged
+                        agentAcknowledged: Boolean(d.agent_acknowledged)
                     }));
                 }
 
@@ -425,30 +437,38 @@
             } catch (err) { console.error("Cloud sync error:", err); }
         }
 
-        /* POPULATE COMPLETED QUALITY FORMS TABLE */
+        /* POPULATE COMPLETED QUALITY FORMS TABLE (SHOWS BOTH PENDING & COMPLETED) */
         function renderCompletedFeedbackList() {
             const container = document.getElementById("feedbackContainer");
             if (!container) return;
 
             const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
             const filterDropdown = document.getElementById("qaListAgentFilter");
-            const selectedFilter = (isManagement && filterDropdown) ? filterDropdown.value : currentUser;
+            const statusDropdown = document.getElementById("qaStatusFilter");
 
-            // Agents only see their own forms; Managers can filter or view All
+            const selectedAgent = (isManagement && filterDropdown) ? filterDropdown.value : currentUser;
+            const selectedStatus = statusDropdown ? statusDropdown.value : "All";
+
+            // Filter by agent and acknowledgment status
             let visibleDocs = globalDocs.filter(doc => {
+                // Agent restriction
                 if (!isManagement) {
-                    return doc.agent && doc.agent.toLowerCase() === currentUser.toLowerCase();
+                    if (!doc.agent || doc.agent.toLowerCase() !== currentUser.toLowerCase()) return false;
+                } else if (selectedAgent !== "All") {
+                    if (!doc.agent || doc.agent.toLowerCase() !== selectedAgent.toLowerCase()) return false;
                 }
-                if (selectedFilter !== "All") {
-                    return doc.agent && doc.agent.toLowerCase() === selectedFilter.toLowerCase();
-                }
+
+                // Status filter (Pending vs Completed)
+                const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
+                if (selectedStatus === "Pending") return !isCompleted;
+                if (selectedStatus === "Completed") return isCompleted;
                 return true;
             });
 
             if (visibleDocs.length === 0) {
                 container.innerHTML = `
                     <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
-                        📄 No completed evaluations on record.
+                        📄 No evaluations found matching current filters.
                     </div>
                 `;
                 return;
@@ -463,7 +483,7 @@
                                 <th>Agent</th>
                                 <th>Type</th>
                                 <th>Score</th>
-                                <th>Status</th>
+                                <th>Lifecycle Status</th>
                                 <th>Evaluator</th>
                                 <th style="text-align: right;">Action</th>
                             </tr>
@@ -474,9 +494,11 @@
             visibleDocs.forEach(doc => {
                 const scoreNum = parseFloat(doc.score) || 0;
                 const scoreColor = scoreNum >= 85 ? 'var(--success)' : 'var(--danger)';
-                const ackBadge = doc.agentAcknowledged 
-                    ? '<span class="status-badge badge-normal">✔ Acknowledged</span>'
-                    : '<span class="status-badge badge-reset">⏳ Pending Ack</span>';
+                const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
+
+                const badge = isCompleted
+                    ? '<span class="status-badge badge-completed">✔ Completed</span>'
+                    : '<span class="status-badge badge-pending">⏳ Pending Acknowledgment</span>';
 
                 html += `
                     <tr>
@@ -488,11 +510,11 @@
                                 ${doc.score || '0'}%
                             </span>
                         </td>
-                        <td>${ackBadge}</td>
+                        <td>${badge}</td>
                         <td style="color: var(--text-muted); font-size: 0.85rem;">${doc.evaluator || 'Supervisor'}</td>
                         <td style="text-align: right;">
                             <button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;" onclick="viewQAFormHistorical(${doc.id})">
-                                👁️ View Form
+                                ${(!isCompleted && !isManagement) ? '✍️ Sign & Respond' : '👁️ View Form'}
                             </button>
                         </td>
                     </tr>
@@ -518,11 +540,11 @@
             if (!container) return;
 
             const pendingList = globalDocs.filter(doc => {
-                const needsAck = !doc.agentAcknowledged && doc.status !== "Closed";
+                const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
                 if (!isManagement) {
-                    return needsAck && doc.agent && doc.agent.toLowerCase() === currentUser.toLowerCase();
+                    return !isCompleted && doc.agent && doc.agent.toLowerCase() === currentUser.toLowerCase();
                 }
-                return needsAck;
+                return !isCompleted;
             });
 
             const pendingCount = pendingList.length;
@@ -554,7 +576,7 @@
                         </p>
                     </div>
                     <button class="btn-launch" style="padding: 0.45rem 1rem; font-size: 0.82rem; flex-shrink: 0;" onclick="viewQAFormHistorical(${doc.id})">
-                        ${!isManagement ? '✍️ Review & Respond ↗' : 'View Form ↗'}
+                        ${!isManagement ? '✍️ Review & Sign ↗' : 'View Form ↗'}
                     </button>
                 </div>
             `).join('');
@@ -580,7 +602,7 @@
             if (btnTicket) btnTicket.style.display = isManagement ? "inline-flex" : "none";
             if (supBlock) supBlock.style.display = isManagement ? "flex" : "none";
 
-            // 1. HOME DASHBOARD: AGENTS ONLY SEE OWN STATS; MANAGERS SEE TEAM SUMMARY
+            // 1. HOME DASHBOARD: AGENTS ONLY SEE OWN STATS; MANAGERS SEE TEAM TOTALS
             if (homeKpiArea) {
                 if (!isManagement) {
                     if (homeHeaderTitle) homeHeaderTitle.innerText = `📊 My Performance KPIs (${currentUser})`;
