@@ -29,14 +29,14 @@
         label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
         input, select, textarea { padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
-        .btn-submit { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 700; width: 100%; cursor: pointer; margin-top: 0.5rem; font-size: 0.95rem; }
+        .btn-submit { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 700; width: 100%; cursor: pointer; margin-top: 0.5rem; font-size: 0.95rem; transition: opacity 0.2s; }
         .btn-submit:hover { opacity: 0.95; }
     </style>
 </head>
 <body>
 
     <div class="form-card">
-        <h2 id="formHeading">Quality Evaluation Form</h2>
+        <h2 id="formHeading">Submit Quality Evaluation</h2>
         <p class="sub">Fill out this evaluation. It will be sent to the agent's dashboard as Pending until acknowledged.</p>
 
         <form id="evaluationForm" onsubmit="handleEvaluationSubmit(event)">
@@ -53,12 +53,12 @@
                 <select id="agentSelect" required></select>
             </div>
 
-            <div style="display: flex; gap: 1rem;">
-                <div class="form-group" style="flex: 1;">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
                     <label>Interaction Reference ID</label>
                     <input type="text" id="interactionRef" placeholder="e.g. Call #48102 or Ticket #9201" required>
                 </div>
-                <div class="form-group" style="flex: 1;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
                     <label>Score (%)</label>
                     <input type="number" id="qaScore" min="0" max="100" placeholder="e.g. 92" required>
                 </div>
@@ -96,7 +96,8 @@
             const select = document.getElementById("agentSelect");
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
 
-            const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
+            if (!client) return;
+            const { data, error } = await client.from('agent_stats').select('agent_name').order('agent_name');
             if (data) {
                 data.forEach(row => {
                     const opt = document.createElement("option");
@@ -125,12 +126,12 @@
                 score: parseFloat(document.getElementById("qaScore").value),
                 date: document.getElementById("evalDate").value,
                 comments: document.getElementById("qaComments").value.trim(),
-                status: "Pending", // Sent as Pending
-                agent_acknowledged: false, // Requires acknowledgment
+                status: "Pending",
+                agent_acknowledged: false,
                 agent_comments: null
             };
 
-            const { error } = await client.from('feedback_docs').insert([formPayload]);
+            const { data, error } = await client.from('feedback_docs').insert([formPayload]).select();
 
             if (!error) {
                 alert("Evaluation logged! Sent to " + formPayload.agent + " for acknowledgment.");
