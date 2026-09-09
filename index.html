@@ -150,7 +150,7 @@
         <main class="main-workspace">
             <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
 
-            <!-- VIEW 1: HOME VIEW (Import engine completely removed from here) -->
+            <!-- VIEW 1: HOME VIEW -->
             <div id="homeView" class="page-view-section">
                 <div class="action-button-grid">
                     <button id="btnShortCutCall" class="btn-launch" style="display:none;" onclick="openEvaluationWindow('Call Listening Feedback')">🎧 Submit New Call Quality</button>
@@ -190,7 +190,7 @@
                 </div>
             </div>
 
-            <!-- VIEW 2: DEDICATED 8x8 STATS IMPORT VIEW (Moved here) -->
+            <!-- VIEW 2: DEDICATED 8x8 STATS IMPORT VIEW -->
             <div id="importView" class="page-view-section hidden">
                 <div class="upload-section-container">
                     <h3 style="font-size: 1.15rem; border-left:4px solid var(--primary); padding-left:0.5rem; margin-bottom:0.35rem;">📊 8x8 Stats Import Engine</h3>
@@ -404,7 +404,7 @@
             return `${h}:${m}:${s}`;
         }
 
-        /* 8X8 CSV PARSER & UPLOAD HANDLERS */
+        /* 8X8 CSV PARSER & UPLOAD HANDLERS (HARDENED) */
         function stageCsvFile() {
             const input = document.getElementById("dashboardCsvInput");
             if (!input || !input.files || !input.files.length) return;
@@ -434,6 +434,15 @@
                 return;
             }
 
+            const file = input.files[0];
+
+            // 1. Block Excel and non-csv extensions immediately
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert("Invalid file format. Please upload a comma-separated CSV (.csv) file. If you are using Excel, use File > Save As > CSV (Comma delimited).");
+                resetStagedFile();
+                return;
+            }
+
             const reader = new FileReader();
             const dateInput = document.getElementById("uploadTargetDate");
             const targetDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
@@ -444,6 +453,11 @@
                 try {
                     let contents = e.target.result;
                     if (!contents) { throw new Error("File is empty."); }
+
+                    // 2. Binary guard: check for ZIP/Excel signatures (PK) or null bytes
+                    if (contents.includes('\0') || contents.slice(0, 4).indexOf('PK') === 0) {
+                        throw new Error("This file appears to be a binary Excel spreadsheet (.xlsx). Please export or save it as a standard UTF-8 Comma-Separated Values (.csv) file.");
+                    }
 
                     const rawLines = contents.split(/\r\n|\n|\r/).map(l => l.trim()).filter(l => l.length > 0);
                     if (rawLines.length < 2) { throw new Error("CSV file does not contain enough data rows."); }
@@ -468,8 +482,12 @@
                         const cols = parseCSVLineAdaptive(rawLines[i], separator);
                         if (!cols || cols.length <= idxAgent) continue;
 
-                        const name = cols[idxAgent];
-                        if (!name || name.toLowerCase().includes('total') || name.toLowerCase() === 'agent' || name.toLowerCase() === 'name') continue;
+                        let name = cols[idxAgent].trim();
+
+                        // 3. String sanitation: reject corrupt characters, nulls, or unicode replacement characters
+                        if (!name || name.length < 2) continue;
+                        if (/[\x00-\x1F\x7F-\x9F\uFFFD]/.test(name)) continue;
+                        if (name.toLowerCase().includes('total') || name.toLowerCase() === 'agent' || name.toLowerCase() === 'name') continue;
 
                         const callsVal = (idxAccepted !== -1 && cols[idxAccepted]) ? (parseInt(cols[idxAccepted]) || 0) : 0;
                         const ahtStr = (idxAHT !== -1 && cols[idxAHT]) ? cols[idxAHT] : "00:00:00";
@@ -500,23 +518,23 @@
                                 daily_stats: globalStatsDb[name]["Daily"],
                                 weekly_stats: globalStatsDb[name]["Weekly"],
                                 monthly_stats: globalStatsDb[name]["Monthly"]
-                            });
+                            }, { onConflict: 'agent_name' });
                         }
 
                         count++;
                     }
 
-                    triggerToast(`Successfully recorded 8x8 cloud system logs for ${count} agents.`);
+                    triggerToast(`Successfully recorded 8x8 metrics for ${count} agents.`);
                     handleHomeScopeChange();
                     handleTimeframeTypeChange();
                 } catch(err) { 
                     console.error("CSV Import Error:", err);
-                    alert("Parsing engine failed execution: " + err.message); 
+                    alert("Import Error: " + err.message); 
                 }
                 resetStagedFile(); 
                 populateAgentFilters();
             };
-            reader.readAsText(input.files[0]);
+            reader.readAsText(file, "UTF-8");
         }
 
         function resetStagedFile() {
@@ -663,7 +681,6 @@
             };
         }
 
-        /* TARGET THRESHOLD FORMATTER */
         function generateKpiCardsHTML(statsObj) {
             const targets = { calls: 30, ahtSec: 480, wrapSec: 180, transferPct: 15.0 };
 
@@ -701,7 +718,6 @@
             </div>`;
         }
 
-        /* COACHING ASSISTANT LOGIC */
         function generateCoachingGuide(agentName, statsObj) {
             const ahtSec = timeToSeconds(statsObj.aht);
             const wrapSec = timeToSeconds(statsObj.wrap);
@@ -748,7 +764,6 @@
                 `).join('')}`;
         }
 
-        /* RENDER PERFORMANCE TREND GRAPH */
         function renderTrendChart(agentName) {
             const ctx = document.getElementById('performanceTrendChart');
             if (!ctx) return;
