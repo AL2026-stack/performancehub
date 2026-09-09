@@ -15,9 +15,10 @@
             --danger: #ef4444; 
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: var(--dark); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        body { background-color: var(--dark); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1.5rem; }
         .login-card { background: white; color: var(--dark); padding: 2.5rem; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .login-card h2 { color: var(--primary); margin-bottom: 0.5rem; text-align: center; }
+        .login-logo { height: 50px; width: auto; object-fit: contain; margin-bottom: 0.75rem; }
+        .login-card h2 { color: var(--primary); margin-bottom: 0.35rem; text-align: center; font-size: 1.4rem; }
         .form-group { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
         label { font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; }
         input { padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; width: 100%; }
@@ -33,7 +34,10 @@
 <body>
 
     <div class="login-card">
-        <h2>Zzoomm Performance Tracker</h2>
+        <div style="text-align: center;">
+            <img src="logo.png" alt="Zzoomm" class="login-logo">
+        </div>
+        <h2>Performance Tracker</h2>
         <p style="text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Sign in to access your dashboard</p>
         
         <div id="loginError" class="error-msg">Incorrect username or password.</div>
@@ -133,7 +137,6 @@
                     return;
                 }
 
-                // If user doesn't exist
                 if (!data || data.length === 0) {
                     showError("Incorrect username or password.");
                     return;
@@ -141,7 +144,6 @@
 
                 const userRecord = data[0];
 
-                // Verify credentials against permanent or temp password
                 const matchesMain = Boolean(userRecord.password) && (userRecord.password === passVal);
                 const matchesTemp = Boolean(userRecord.temp_password) && (userRecord.temp_password === passVal);
 
