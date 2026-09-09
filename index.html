@@ -307,12 +307,15 @@
             <div id="qaView" class="page-view-section hidden">
                 <div class="card">
                     <div class="card-header-flex" style="margin-bottom: 0;">
-                        <h2 id="listTitleHeader">
-                            Completed Quality Forms 
-                            <span id="feedbackListPendingBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Action Required</span>
-                        </h2>
+                        <h2 id="listTitleHeader">Completed Quality Forms</h2>
+                        <div class="filter-group" id="qaAgentFilterWrap" style="display: none;">
+                            <span class="filter-label">Filter Agent:</span>
+                            <select id="qaListAgentFilter" class="filter-select" onchange="renderCompletedFeedbackList()">
+                                <option value="All">-- All Agents --</option>
+                            </select>
+                        </div>
                     </div>
-                    <div id="feedbackContainer" style="margin-top: 1rem;"></div>
+                    <div id="feedbackContainer" style="margin-top: 1rem;">Loading completed evaluations...</div>
                 </div>
             </div>
         </main>
@@ -367,12 +370,16 @@
             const teamOpsSection = document.getElementById("teamOpsSidebarSection");
             if (teamOpsSection) { teamOpsSection.style.display = isManagement ? "block" : "none"; }
 
+            const qaFilterWrap = document.getElementById("qaAgentFilterWrap");
+            if (qaFilterWrap) { qaFilterWrap.style.display = isManagement ? "flex" : "none"; }
+
             await syncCloudData();
 
             populateAgentFilters();
             handleHomeScopeChange();
             handleTimeframeTypeChange(); 
             renderPendingEvaluations();
+            renderCompletedFeedbackList();
         });
 
         async function syncCloudData() {
@@ -380,7 +387,7 @@
                 const client = window.supabaseClient || window.supabase;
                 if (!client || typeof client.from !== 'function') return;
 
-                const { data: docsData } = await client.from('feedback_docs').select('*');
+                const { data: docsData } = await client.from('feedback_docs').select('*').order('id', { ascending: false });
                 if (docsData) {
                     globalDocs = docsData.map(d => ({
                         id: d.id, 
@@ -416,6 +423,89 @@
                     aliasData.forEach(a => { globalAliases[a.csv_raw_name.toLowerCase()] = a.matched_agent_name; });
                 }
             } catch (err) { console.error("Cloud sync error:", err); }
+        }
+
+        /* POPULATE COMPLETED QUALITY FORMS TABLE */
+        function renderCompletedFeedbackList() {
+            const container = document.getElementById("feedbackContainer");
+            if (!container) return;
+
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            const filterDropdown = document.getElementById("qaListAgentFilter");
+            const selectedFilter = (isManagement && filterDropdown) ? filterDropdown.value : currentUser;
+
+            // Agents only see their own forms; Managers can filter or view All
+            let visibleDocs = globalDocs.filter(doc => {
+                if (!isManagement) {
+                    return doc.agent && doc.agent.toLowerCase() === currentUser.toLowerCase();
+                }
+                if (selectedFilter !== "All") {
+                    return doc.agent && doc.agent.toLowerCase() === selectedFilter.toLowerCase();
+                }
+                return true;
+            });
+
+            if (visibleDocs.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                        📄 No completed evaluations on record.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Agent</th>
+                                <th>Type</th>
+                                <th>Score</th>
+                                <th>Status</th>
+                                <th>Evaluator</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            visibleDocs.forEach(doc => {
+                const scoreNum = parseFloat(doc.score) || 0;
+                const scoreColor = scoreNum >= 85 ? 'var(--success)' : 'var(--danger)';
+                const ackBadge = doc.agentAcknowledged 
+                    ? '<span class="status-badge badge-normal">✔ Acknowledged</span>'
+                    : '<span class="status-badge badge-reset">⏳ Pending Ack</span>';
+
+                html += `
+                    <tr>
+                        <td style="font-weight: 600;">${doc.date || 'N/A'}</td>
+                        <td style="font-weight: 700;">${doc.agent || 'N/A'}</td>
+                        <td>${doc.qaStyle || 'Quality Evaluation'}</td>
+                        <td>
+                            <span style="color: ${scoreColor}; font-weight: 800; font-size: 1.05rem; font-variant-numeric: tabular-nums;">
+                                ${doc.score || '0'}%
+                            </span>
+                        </td>
+                        <td>${ackBadge}</td>
+                        <td style="color: var(--text-muted); font-size: 0.85rem;">${doc.evaluator || 'Supervisor'}</td>
+                        <td style="text-align: right;">
+                            <button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;" onclick="viewQAFormHistorical(${doc.id})">
+                                👁️ View Form
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
         }
 
         function renderPendingEvaluations() {
@@ -480,7 +570,6 @@
             const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
 
             const agentFilterEl = document.getElementById("agentFilter");
-            // If manager, respect selection; if agent, force their own identity
             const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
 
             const btnCall = document.getElementById("btnShortCutCall");
@@ -489,8 +578,6 @@
 
             if (btnCall) btnCall.style.display = isManagement ? "inline-flex" : "none";
             if (btnTicket) btnTicket.style.display = isManagement ? "inline-flex" : "none";
-            
-            // Strictly hide supervisor filter dropdown for non-management agents
             if (supBlock) supBlock.style.display = isManagement ? "flex" : "none";
 
             // 1. HOME DASHBOARD: AGENTS ONLY SEE OWN STATS; MANAGERS SEE TEAM SUMMARY
@@ -540,6 +627,7 @@
 
             renderTrendChart(!isManagement ? currentUser : (selectedAgent !== "All" ? selectedAgent : currentUser));
             renderPendingEvaluations();
+            renderCompletedFeedbackList();
         }
 
         function getSimilarity(s1, s2) {
@@ -1105,10 +1193,20 @@
 
         function populateAgentFilters() {
             const select = document.getElementById("agentFilter");
+            const qaListSelect = document.getElementById("qaListAgentFilter");
+            const names = Object.keys(globalStatsDb).sort();
+
             if (select) {
                 select.innerHTML = '<option value="All">-- All Personnel --</option>';
-                Object.keys(globalStatsDb).sort().forEach(k => {
+                names.forEach(k => {
                     const o = document.createElement("option"); o.value = k; o.innerText = k; select.appendChild(o);
+                });
+            }
+
+            if (qaListSelect) {
+                qaListSelect.innerHTML = '<option value="All">-- All Agents --</option>';
+                names.forEach(k => {
+                    const o = document.createElement("option"); o.value = k; o.innerText = k; qaListSelect.appendChild(o);
                 });
             }
         }
@@ -1134,6 +1232,10 @@
 
             const activeNav = document.getElementById(navMap[viewId]);
             if (activeNav) activeNav.classList.add('active');
+
+            if (viewId === 'qaView') {
+                renderCompletedFeedbackList();
+            }
 
             renderDashboard();
         }
