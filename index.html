@@ -105,9 +105,6 @@
         th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
         th { background-color: var(--light); color: #64748b; font-size: 0.9rem; }
 
-        .coaching-card { background: var(--card-bg); border-left: 4px solid var(--primary); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); }
-        .coaching-item { margin-top: 0.75rem; padding: 0.85rem; background: var(--light); border-radius: 6px; border: 1px solid var(--border); }
-
         .toast-notify { display: none; padding: 1rem; border-radius: 8px; font-weight: 600; margin-bottom: 1.5rem; }
         .toast-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
 
@@ -171,7 +168,7 @@
 
                 <div class="card">
                     <div class="card-header-flex">
-                        <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
+                        <h2>📊 Team Performance KPIs</h2>
                         <div class="filter-group">
                             <span class="filter-label">Timescale:</span>
                             <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
@@ -186,9 +183,6 @@
                     </div>
                     <div id="homeKpiDisplayArea">Loading cloud metrics...</div>
                 </div>
-
-                <!-- COACHING ASSISTANT PANEL -->
-                <div id="coachingAssistantPanel" class="coaching-card" style="display:none;"></div>
 
                 <div class="card">
                     <div class="card-header-flex">
@@ -597,7 +591,6 @@
                             if (!isNaN(parsedT)) rawTransfer = parsedT;
                         }
 
-                        // Determine mapped name via alias cache or exact match
                         let mappedName = globalAliases[rawName.toLowerCase()] || rawName;
                         const isKnown = existingNames.some(n => n.toLowerCase() === mappedName.toLowerCase());
 
@@ -803,7 +796,6 @@
 
             let query = client.from('coaching_plans').select('*').order('created_at', { ascending: false });
 
-            // Agents only see their personal plans
             if (currentRole === "Agent") {
                 query = query.eq('agent_name', currentUser);
             }
@@ -885,19 +877,21 @@
             let optionsSet = new Set();
 
             const lookupType = scope === "MTD" ? "Daily" : scope;
-            Object.values(globalStatsDb).forEach(o => { if (o && o[lookupType]) Object.keys(o[lookupType]).forEach(k => optionsSet.add(k)); });
+            Object.values(globalStatsDb).forEach(o => { 
+                if (o && o[lookupType]) Object.keys(o[lookupType]).forEach(k => optionsSet.add(k)); 
+            });
 
             const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : new Date().toISOString().split('T')[0];
 
             if (scope === "Daily" || scope === "MTD") {
                 if (label) label.innerText = scope === "MTD" ? "Through Date:" : "Select Day:";
-                if (container) container.innerHTML = `<input type="date" id="homeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
+                if (container) container.innerHTML = `<input type="date" id="homeValueFilter" class="calendar-input" value="${targetDate}" oninput="renderDashboard()" onchange="renderDashboard()">`;
             } else {
                 if (label) label.innerText = scope === "Weekly" ? "Select Week:" : "Select Month:";
                 let html = `<select id="homeValueFilter" class="filter-select" onchange="renderDashboard()">`;
                 if (optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
                 else {
-                    Array.from(optionsSet).sort().forEach(v => html += `<option value="${v}">${v}</option>`);
+                    Array.from(optionsSet).sort().reverse().forEach(v => html += `<option value="${v}">${v}</option>`);
                 }
                 html += `</select>`;
                 if (container) container.innerHTML = html;
@@ -1022,52 +1016,6 @@
             </div>`;
         }
 
-        function generateCoachingGuide(agentName, statsObj) {
-            const ahtSec = timeToSeconds(statsObj.aht);
-            const wrapSec = timeToSeconds(statsObj.wrap);
-            const transPct = parseFloat(statsObj.transfer) || 0;
-
-            let insights = [];
-
-            if (wrapSec > 180) {
-                insights.push({
-                    topic: "⏱️ Wrap Time Reduction Strategies",
-                    issue: `Wrap time is ${statsObj.wrap} (Target: ≤ 03:00).`,
-                    guidance: "Guide the agent to utilize standard ticket templates and type summary notes during active listening rather than holding off until call completion."
-                });
-            }
-
-            if (transPct > 15) {
-                insights.push({
-                    topic: "🔄 First Contact Resolution & Transfers",
-                    issue: `Transfer rate is ${statsObj.transfer} (Target: ≤ 15%).`,
-                    guidance: "Review recent transferred calls together. Check knowledge base lookup tools to ensure queries are handled locally wherever possible."
-                });
-            }
-
-            if (ahtSec > 480 && wrapSec <= 180) {
-                insights.push({
-                    topic: "🗣️ Conversation Signposting & Call Control",
-                    issue: `AHT is ${statsObj.aht} (Target: ≤ 08:00).`,
-                    guidance: "Focus coaching on signposting techniques to keep callers focused on resolution steps without silent holds."
-                });
-            }
-
-            if (insights.length === 0) {
-                return `<h3 style="color:var(--success);">🌟 Outstanding Performance</h3>
-                        <p style="font-size:0.9rem; color:#475569; margin-top:0.25rem;">${agentName} is hitting all operational targets! Focus 1-on-1 time on positive reinforcement and personal growth.</p>`;
-            }
-
-            return `<h3>📋 Automated Coaching Guide for ${agentName}</h3>
-                ${insights.map(item => `
-                    <div class="coaching-item">
-                        <strong style="color:var(--primary); font-size:0.95rem;">${item.topic}</strong>
-                        <p style="font-size:0.85rem; color:var(--danger); font-weight:600; margin:0.25rem 0;">⚠️ ${item.issue}</p>
-                        <p style="font-size:0.85rem; color:#334155;"><strong>Supervisor Action Plan:</strong> ${item.guidance}</p>
-                    </div>
-                `).join('')}`;
-        }
-
         function renderTrendChart(agentName) {
             const ctx = document.getElementById('performanceTrendChart');
             if (!ctx) return;
@@ -1134,9 +1082,6 @@
 
         function renderDashboard() {
             const homeKpiArea = document.getElementById("homeKpiDisplayArea");
-            const headerTitle = document.getElementById("homeKpiHeaderTitle");
-            const coachingPanel = document.getElementById("coachingAssistantPanel");
-            
             const homeScope = document.getElementById("homeScopeFilter") ? document.getElementById("homeScopeFilter").value : "Daily";
             const homeValEl = document.getElementById("homeValueFilter");
             const homeVal = homeValEl ? homeValEl.value : (document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "");
@@ -1156,37 +1101,33 @@
                 if (supBlock) supBlock.style.display = "flex";
             }
 
+            // 1. HOME DASHBOARD: ALWAYS TEAM METRICS
             if (homeKpiArea) {
-                if (isManagement && selectedAgent === "All") {
-                    if (headerTitle) headerTitle.innerText = "📊 Team Performance KPIs";
-                    if (coachingPanel) coachingPanel.style.display = "none";
-                    const teamStats = calculateTeamAverageStats(globalStatsDb, homeScope, homeVal);
-                    homeKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
+                const teamStats = calculateTeamAverageStats(globalStatsDb, homeScope, homeVal);
+                homeKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
+            }
+
+            // 2. STATS TAB: INDIVIDUAL / AGENT FILTER METRICS
+            const statsKpiArea = document.getElementById("kpiDisplayArea");
+            if (statsKpiArea) {
+                const statsScope = document.getElementById("timeframeTypeFilter") ? document.getElementById("timeframeTypeFilter").value : "Daily";
+                const statsValEl = document.getElementById("timeframeValueFilter");
+                const statsVal = statsValEl ? statsValEl.value : homeVal;
+
+                if (selectedAgent === "All") {
+                    const teamStats = calculateTeamAverageStats(globalStatsDb, statsScope, statsVal);
+                    statsKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
                 } else {
-                    if (headerTitle) headerTitle.innerText = isManagement ? `📊 Performance KPIs (${selectedAgent})` : "📊 My Performance KPIs";
-                    
                     const personalProfile = getAgentProfile(globalStatsDb, selectedAgent);
                     let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
 
-                    if (homeScope === "MTD") {
-                        personalStats = calculateMtdStats(personalProfile, homeVal);
-                    } else if (personalProfile && personalProfile[homeScope]) {
-                        if (personalProfile[homeScope][homeVal]) {
-                            personalStats = personalProfile[homeScope][homeVal];
-                        } else {
-                            const dates = Object.keys(personalProfile[homeScope]).sort();
-                            if (dates.length > 0) personalStats = personalProfile[homeScope][dates[dates.length - 1]];
-                        }
+                    if (statsScope === "MTD") {
+                        personalStats = calculateMtdStats(personalProfile, statsVal);
+                    } else if (personalProfile && personalProfile[statsScope] && personalProfile[statsScope][statsVal]) {
+                        personalStats = personalProfile[statsScope][statsVal];
                     }
 
-                    homeKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
-
-                    if (isManagement && selectedAgent !== "All" && coachingPanel) {
-                        coachingPanel.innerHTML = generateCoachingGuide(selectedAgent, personalStats);
-                        coachingPanel.style.display = "block";
-                    } else if (coachingPanel) {
-                        coachingPanel.style.display = "none";
-                    }
+                    statsKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
                 }
             }
 
@@ -1242,6 +1183,10 @@
         function openEvaluationWindow(type) { 
             const agentVal = document.getElementById("agentFilter") ? document.getElementById("agentFilter").value : "All";
             window.open(`form.html?type=${encodeURIComponent(type)}&agent=${encodeURIComponent(agentVal !== "All" ? agentVal : "")}`, 'FormWindow', 'width=750,height=700'); 
+        }
+
+        function viewQAFormHistorical(docId) { 
+            window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=700,height=800'); 
         }
 
         function triggerToast(msg) {
