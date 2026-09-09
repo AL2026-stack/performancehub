@@ -52,6 +52,8 @@
         .btn-action { padding: 0.35rem 0.65rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); }
         .btn-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
         .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-danger-solid { background: var(--danger); color: white; border: none; padding: 0.55rem 1rem; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.85rem; }
+        .btn-danger-solid:hover { opacity: 0.9; }
         .btn-warning { background: transparent; color: var(--warning); border-color: var(--warning); }
         .btn-warning:hover { background: var(--warning); color: white; }
 
@@ -64,6 +66,8 @@
         .badge-reset { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
 
         .toast-notify { display: none; padding: 1rem; border-radius: 8px; font-weight: 600; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; margin-bottom: 1rem; }
+        
+        .bulk-actions-toolbar { display: flex; justify-content: space-between; align-items: center; background: var(--light); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; margin-top: 1rem; }
     </style>
 </head>
 <body>
@@ -115,7 +119,7 @@
         <!-- 3. USER MANAGEMENT PANEL (SUPERUSERS ONLY) -->
         <div id="superuserManagementCard" class="card" style="display: none;">
             <h2>👥 Team Directory & Access Control</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Create accounts individually or in bulk, assign role tiers, enforce password changes, and issue temporary credentials.</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Create and remove accounts individually or in bulk, assign role tiers, enforce password changes, and issue temporary credentials.</p>
 
             <!-- A. SINGLE USER CREATION -->
             <form onsubmit="handleCreateUser(event)" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
@@ -151,8 +155,8 @@
                 </p>
 
                 <div class="form-group" style="margin-bottom: 0.75rem;">
-                    <label>Personnel List</label>
-                    <textarea id="bulkUserTextarea" rows="5" style="width: 100%; font-family: monospace;" placeholder="Alex Morgan&#10;Chris Evans, Admin&#10;Sam Taylor, Agent, Welcome2026!"></textarea>
+                    <label>Personnel Creation List</label>
+                    <textarea id="bulkUserTextarea" rows="4" style="width: 100%; font-family: monospace;" placeholder="Alex Morgan&#10;Chris Evans, Admin&#10;Sam Taylor, Agent, Welcome2026!"></textarea>
                 </div>
 
                 <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
@@ -176,11 +180,38 @@
                 </div>
             </div>
 
-            <!-- C. USER DIRECTORY & MAINTENANCE TABLE -->
-            <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">📋 Managed Accounts Directory</h3>
+            <!-- C. BULK USER REMOVAL VIA TEXT -->
+            <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                <h3 style="font-size: 1rem; margin-bottom: 0.35rem; color: var(--danger);">🗑️ Bulk Remove Personnel</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                    Paste usernames to remove (one per line). Profiles and their associated stats records will be permanently deleted.
+                </p>
+
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <label>Usernames to Remove</label>
+                    <textarea id="bulkDeleteTextarea" rows="3" style="width: 100%; font-family: monospace;" placeholder="Alex Morgan&#10;Chris Evans"></textarea>
+                </div>
+
+                <button type="button" class="btn-danger-solid" onclick="handleBulkDeleteByList()">⚠️ Delete Listed Accounts</button>
+            </div>
+
+            <!-- D. DIRECTORY TABLE WITH SELECTION TOOLBAR -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 1rem;">
+                <h3 style="font-size: 1rem;">📋 Managed Accounts Directory</h3>
+            </div>
+
+            <!-- Toolbar when users are checked -->
+            <div id="bulkTableToolbar" class="bulk-actions-toolbar" style="display: none;">
+                <span style="font-size: 0.85rem; font-weight: 600;"><span id="selectedUserCount">0</span> accounts selected</span>
+                <button type="button" class="btn-danger-solid" onclick="handleDeleteSelectedCheckboxes()">🗑️ Delete Selected</button>
+            </div>
+
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 40px; text-align: center;">
+                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllUsers(this.checked)">
+                        </th>
                         <th>Account Name</th>
                         <th>Role Tier</th>
                         <th>Security Status</th>
@@ -188,7 +219,7 @@
                     </tr>
                 </thead>
                 <tbody id="userDirectoryTable">
-                    <tr><td colspan="4" style="color:var(--text-muted);">Loading system directory...</td></tr>
+                    <tr><td colspan="5" style="color:var(--text-muted);">Loading system directory...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -246,7 +277,7 @@
             return null;
         }
 
-        /* CHANGE OWN PASSWORD */
+        /* CHANGE PERSONAL PASSWORD */
         async function handlePersonalPasswordUpdate(e) {
             e.preventDefault();
             const newPwd = document.getElementById("selfNewPassword").value;
@@ -289,6 +320,10 @@
             const tbody = document.getElementById("userDirectoryTable");
             const client = window.supabaseClient || window.supabase;
 
+            // Reset selection tools
+            document.getElementById("selectAllCheckbox").checked = false;
+            updateCheckboxToolbar();
+
             if (!client || typeof client.from !== 'function') return;
 
             const { data, error } = await client
@@ -296,7 +331,12 @@
                 .select('agent_name, role, must_change_password, temp_password');
 
             if (error || !data) {
-                tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger);">Failed to load directory.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger);">Failed to load directory.</td></tr>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="color:var(--text-muted);">No registered user accounts found.</td></tr>`;
                 return;
             }
 
@@ -307,8 +347,13 @@
                     ? `<span class="status-badge badge-reset">🔒 Reset on Next Login</span>` 
                     : `<span class="status-badge badge-normal">🟢 Active</span>`;
 
+                const isSelf = row.agent_name.toLowerCase() === currentUser.toLowerCase();
+
                 return `
                     <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="user-row-checkbox" value="${row.agent_name}" ${isSelf ? 'disabled title="Cannot delete your active account"' : 'onchange="updateCheckboxToolbar()"'} >
+                        </td>
                         <td><strong>${row.agent_name}</strong></td>
                         <td>
                             <select onchange="updateUserRole('${row.agent_name}', this.value)" style="padding:0.25rem 0.5rem; font-size:0.85rem;">
@@ -325,13 +370,91 @@
                             <button class="btn-action" onclick="issueTemporaryPassword('${row.agent_name}')">
                                 🔑 Set Temp Pwd
                             </button>
-                            <button class="btn-action btn-danger" onclick="deleteUserAccount('${row.agent_name}')">
+                            <button class="btn-action btn-danger" ${isSelf ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : `onclick="deleteUserAccount('${row.agent_name}')"`}>
                                 🗑️ Delete
                             </button>
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        /* CHECKBOX SELECTION HELPERS */
+        function toggleSelectAllUsers(isChecked) {
+            const boxes = document.querySelectorAll('.user-row-checkbox:not(:disabled)');
+            boxes.forEach(cb => cb.checked = isChecked);
+            updateCheckboxToolbar();
+        }
+
+        function updateCheckboxToolbar() {
+            const checked = document.querySelectorAll('.user-row-checkbox:checked');
+            const toolbar = document.getElementById("bulkTableToolbar");
+            const countLabel = document.getElementById("selectedUserCount");
+
+            if (checked.length > 0) {
+                toolbar.style.display = "flex";
+                countLabel.innerText = checked.length;
+            } else {
+                toolbar.style.display = "none";
+            }
+        }
+
+        /* BULK DELETE VIA CHECKBOXES */
+        async function handleDeleteSelectedCheckboxes() {
+            const checkedBoxes = Array.from(document.querySelectorAll('.user-row-checkbox:checked'));
+            const namesToDelete = checkedBoxes.map(cb => cb.value);
+
+            if (namesToDelete.length === 0) return;
+
+            if (!confirm(`Are you sure you want to permanently delete these ${namesToDelete.length} accounts?\n\n- ` + namesToDelete.join("\n- "))) {
+                return;
+            }
+
+            await executeBatchDelete(namesToDelete);
+        }
+
+        /* BULK DELETE VIA TEXTAREA */
+        async function handleBulkDeleteByList() {
+            const rawText = document.getElementById("bulkDeleteTextarea").value.trim();
+            if (!rawText) {
+                alert("Please paste at least one username into the delete box.");
+                return;
+            }
+
+            const names = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            
+            // Protect current active user
+            const filteredNames = names.filter(n => n.toLowerCase() !== currentUser.toLowerCase());
+            
+            if (filteredNames.length === 0) {
+                alert("No valid external usernames found to delete (your own account cannot be deleted).");
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to permanently delete these ${filteredNames.length} accounts?\n\n- ` + filteredNames.join("\n- "))) {
+                return;
+            }
+
+            await executeBatchDelete(filteredNames);
+            document.getElementById("bulkDeleteTextarea").value = "";
+        }
+
+        /* SHARED BATCH DELETE FUNCTION */
+        async function executeBatchDelete(namesArray) {
+            const client = window.supabaseClient || window.supabase;
+            if (!client || typeof client.from !== 'function') return;
+
+            const { error } = await client
+                .from('agent_stats')
+                .delete()
+                .in('agent_name', namesArray);
+
+            if (error) {
+                alert("Failed to delete accounts: " + error.message);
+            } else {
+                triggerToast(`Successfully removed ${namesArray.length} accounts.`);
+                await loadUserDirectory();
+            }
         }
 
         /* CREATE SINGLE USER */
@@ -469,7 +592,7 @@
             }
         }
 
-        /* REMOVE USER */
+        /* REMOVE INDIVIDUAL USER */
         async function deleteUserAccount(agentName) {
             if (!confirm(`Permanently remove ${agentName} and wipe their profile?`)) return;
 
