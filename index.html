@@ -95,8 +95,8 @@
         .page-view-section.hidden { display: none !important; }
         @keyframes viewFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
+        .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; }
+        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
         .btn-launch:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(230, 0, 126, 0.35); }
         .btn-alt-color { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
 
@@ -178,20 +178,22 @@
 
     <div class="app-body">
         <nav class="sidebar">
-            <div class="sidebar-section-title">Navigation Hub</div>
             <div class="nav-item active" id="navHome" onclick="switchView('homeView')">🏠 Home Dashboard</div>
             
-            <div class="sidebar-section-title">Performance Analytics</div>
+            <div class="sidebar-section-title">Stats Overview</div>
             <div class="nav-item" id="navStats" onclick="switchView('statsView')">📊 Performance Stats Overview</div>
-            <div class="nav-item" id="navImport" onclick="switchView('importView')">📥 8x8 Stats Import</div>
+            <div class="nav-item" id="navImport" style="display: none;" onclick="switchView('importView')">📥 8x8 Stats Import</div>
 
             <div class="sidebar-section-title">Quality & Coaching</div>
             <div class="nav-item" id="navQA" onclick="switchView('qaView')">📑 Completed Quality Forms</div>
             <a href="coaching.html" class="nav-item">🎯 Coaching & 1-to-1s</a>
 
+            <div class="sidebar-section-title">Sickness and Absence</div>
+            <a href="sickness.html" class="nav-item">🏥 Sickness & Absence</a>
+
             <div id="teamOpsSidebarSection" style="display: none;">
-                <div class="sidebar-section-title">Team Operations</div>
-                <a href="tiers.html" class="nav-item">🏆 Team Performance Tiers & Insights</a>
+                <div class="sidebar-section-title">Team Performance & Rankings</div>
+                <a href="tiers.html" class="nav-item">🏆 Team Performance Rankings</a>
             </div>
         </nav>
 
@@ -201,8 +203,9 @@
             <!-- VIEW 1: HOME VIEW -->
             <div id="homeView" class="page-view-section">
                 <div class="action-button-grid">
-                    <button id="btnShortCutCall" class="btn-launch" style="display:none;" onclick="openEvaluationWindow('Call Listening Feedback')">🎧 Submit New Call Quality</button>
-                    <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit New Ticket Feedback</button>
+                    <button id="btnShortCutCall" class="btn-launch" style="display:none;" onclick="openEvaluationWindow('Call Listening Feedback')">🎧 Submit Call Quality</button>
+                    <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit Ticket Feedback</button>
+                    <button id="btnShortCutInterim" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Interim Feedback')">💬 Submit Interim Feedback</button>
                 </div>
 
                 <div class="card">
@@ -287,7 +290,6 @@
                             <span class="filter-label" id="valueFilterLabel">Target:</span>
                             <div id="timeframeSelectorContainer" style="display: inline-block;"></div>
 
-                            <!-- Dedicated Agent Filter Container (Hidden entirely for Agents) -->
                             <div id="supervisorFilterBlock" style="display: none; align-items: center; gap: 0.5rem;">
                                 <span class="filter-label">Agent:</span>
                                 <select id="agentFilter" class="filter-select" onchange="renderDashboard()">
@@ -307,7 +309,7 @@
                 </div>
             </div>
 
-            <!-- VIEW 4: COMPLETED QUALITY FORMS (SHOWS BOTH PENDING & COMPLETED) -->
+            <!-- VIEW 4: COMPLETED QUALITY FORMS -->
             <div id="qaView" class="page-view-section hidden">
                 <div class="card">
                     <div class="card-header-flex" style="margin-bottom: 0;">
@@ -376,9 +378,10 @@
             }
 
             const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            const isSuperuserOnly = (currentRole === "Superuser" || currentRole === "Admin");
             
             const navImportEl = document.getElementById("navImport");
-            if (navImportEl) { navImportEl.style.display = isManagement ? "flex" : "none"; }
+            if (navImportEl) { navImportEl.style.display = isSuperuserOnly ? "flex" : "none"; }
 
             const teamOpsSection = document.getElementById("teamOpsSidebarSection");
             if (teamOpsSection) { teamOpsSection.style.display = isManagement ? "block" : "none"; }
@@ -439,7 +442,6 @@
             } catch (err) { console.error("Cloud sync error:", err); }
         }
 
-        /* POPULATE COMPLETED QUALITY FORMS TABLE (SHOWS BOTH PENDING & COMPLETED) */
         function renderCompletedFeedbackList() {
             const container = document.getElementById("feedbackContainer");
             if (!container) return;
@@ -589,10 +591,12 @@
 
             const btnCall = document.getElementById("btnShortCutCall");
             const btnTicket = document.getElementById("btnShortCutTicket");
+            const btnInterim = document.getElementById("btnShortCutInterim");
             const supBlock = document.getElementById("supervisorFilterBlock");
 
             if (btnCall) btnCall.style.display = isManagement ? "inline-flex" : "none";
             if (btnTicket) btnTicket.style.display = isManagement ? "inline-flex" : "none";
+            if (btnInterim) btnInterim.style.display = isManagement ? "inline-flex" : "none";
             if (supBlock) supBlock.style.display = isManagement ? "flex" : "none";
 
             if (homeKpiArea) {
@@ -767,22 +771,11 @@
             }
 
             const file = input.files[0];
-
-            if (!file.name.toLowerCase().endsWith('.csv')) {
-                alert("Invalid file format. Please upload a comma-separated CSV (.csv) file.");
-                resetStagedFile();
-                return;
-            }
-
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
                     let contents = e.target.result;
                     if (!contents) throw new Error("File is empty.");
-
-                    if (contents.includes('\0') || contents.slice(0, 4).indexOf('PK') === 0) {
-                        throw new Error("This file appears to be a binary Excel workbook (.xlsx). Please export it as a standard CSV.");
-                    }
 
                     const rawLines = contents.split(/\r\n|\n|\r/).map(l => l.trim()).filter(l => l.length > 0);
                     if (rawLines.length < 2) throw new Error("CSV does not contain enough data rows.");
@@ -810,7 +803,7 @@
                         if (!cols || cols.length <= idxAgent) continue;
 
                         let rawName = cols[idxAgent].trim();
-                        if (!rawName || rawName.length < 2 || /[\x00-\x1F\x7F-\x9F\uFFFD]/.test(rawName)) continue;
+                        if (!rawName || rawName.length < 2) continue;
                         if (rawName.toLowerCase().includes('total') || rawName.toLowerCase() === 'agent') continue;
 
                         const callsVal = (idxAccepted !== -1 && cols[idxAccepted]) ? (parseInt(cols[idxAccepted]) || 0) : 0;
@@ -866,8 +859,7 @@
                 let optionsHtml = `<option value="__NEW__">➕ Create as New User ("${rawName}")</option>`;
                 existingNames.forEach(name => {
                     const selected = (bestMatchData.match === name && bestMatchData.score >= 50) ? 'selected' : '';
-                    const confidence = (bestMatchData.match === name) ? ` (${bestMatchData.score}% match)` : '';
-                    optionsHtml += `<option value="${name}" ${selected}>Map to: ${name}${confidence}</option>`;
+                    optionsHtml += `<option value="${name}" ${selected}>Map to: ${name}</option>`;
                 });
 
                 row.innerHTML = `
