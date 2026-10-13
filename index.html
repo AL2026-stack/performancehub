@@ -89,17 +89,16 @@
         .nav-item:hover { background: rgba(255,255,255,0.06); color: white; transform: translateX(3px); }
         .nav-item.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.35); }
 
-        /* Full width utilization without max-width constriction */
         .main-workspace { flex: 1; padding: 2.25rem; width: 100%; max-width: none; display: flex; flex-direction: column; gap: 1.75rem; }
         
         .page-view-section { display: flex; flex-direction: column; gap: 1.75rem; animation: viewFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
         .page-view-section.hidden { display: none !important; }
         @keyframes viewFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Balanced Asymmetric Dashboard Grid */
+        /* 50/50 Split Dashboard Grid */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1.6fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 1.75rem;
             align-items: start;
         }
@@ -107,12 +106,12 @@
             .dashboard-grid { grid-template-columns: 1fr; }
         }
 
-        .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
-        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.95rem 1.5rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
+        .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
         .btn-launch:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(230, 0, 126, 0.35); }
         .btn-alt-color { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
 
-        .card { background: var(--card-bg); padding: 1.85rem; border-radius: var(--card-radius); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); transition: box-shadow 0.2s; }
+        .card { background: var(--card-bg); padding: 1.75rem; border-radius: var(--card-radius); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); transition: box-shadow 0.2s; }
         .card:hover { box-shadow: var(--shadow-md); }
         .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
         .card h2 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
@@ -121,15 +120,15 @@
         .filter-select, .calendar-input { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
         .filter-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
-        .kpi-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1rem; }
+        .kpi-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
         .kpi-box { 
-            background: var(--card-bg); padding: 1.35rem; border-radius: 12px; border: 1px solid var(--border); 
+            background: var(--card-bg); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border); 
             display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
             box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease; 
         }
         .kpi-box:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
         .kpi-title { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.04em; }
-        .kpi-val { font-size: 1.95rem; font-weight: 800; margin: 0.4rem 0; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+        .kpi-val { font-size: 1.8rem; font-weight: 800; margin: 0.3rem 0; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
         .kpi-target-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
         
         .kpi-good { border-top: 4px solid var(--success); background: linear-gradient(180deg, var(--success-bg) 0%, transparent 45%); }
@@ -138,8 +137,8 @@
         .kpi-bad .kpi-val { color: var(--danger); }
 
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .skeleton-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1rem; }
-        .skeleton-card { height: 135px; border-radius: 12px; background: linear-gradient(90deg, rgba(226,232,240,0.6) 25%, rgba(241,245,249,0.9) 50%, rgba(226,232,240,0.6) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        .skeleton-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .skeleton-card { height: 125px; border-radius: 12px; background: linear-gradient(90deg, rgba(226,232,240,0.6) 25%, rgba(241,245,249,0.9) 50%, rgba(226,232,240,0.6) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
         th, td { text-align: left; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
@@ -219,7 +218,7 @@
                     <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit Ticket Feedback</button>
                 </div>
 
-                <!-- BALANCED DASHBOARD GRID -->
+                <!-- 50/50 SPLIT DASHBOARD GRID -->
                 <div class="dashboard-grid">
                     <!-- LEFT COLUMN: KPIs & Pending QAs -->
                     <div style="display: flex; flex-direction: column; gap: 1.75rem;">
@@ -267,7 +266,7 @@
                     <!-- RIGHT COLUMN: Announcements & Daily Brief -->
                     <div class="card" style="height: 100%;">
                         <div class="card-header-flex">
-                            <h2>📢 Announcements</h2>
+                            <h2>📢 Announcements & Daily Brief</h2>
                             <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openAnnouncementModal()">+ Post</button>
                         </div>
                         <div id="announcementsContainer">Loading announcements...</div>
