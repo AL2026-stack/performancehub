@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sickness & Attendance Reviews - Zzoomm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <style>
+        :root {
+            --primary: #e6007e;
+            --primary-gradient: linear-gradient(135deg, #e6007e 0%, #ff1a8c 100%);
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        body { background: var(--light); color: var(--text-main); padding: 2rem 1.5rem; }
+        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        .header-box { background: var(--card-bg); padding: 2rem; border-radius: 16px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { text-align: left; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        th { background: var(--light); color: var(--text-muted); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+
+        .btn-action { background: var(--primary-gradient); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; text-decoration: none; }
+        .btn-action:hover { opacity: 0.95; }
+        .filter-select { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-box">
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: 800;">🏥 Sickness & Absence Management</h1>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Track staff absences and return-to-work review records.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <a href="index.html" class="btn-action" style="background: #0f172a;">🏠 Back to Dashboard</a>
+                <button class="btn-action" onclick="openSicknessModal()">＋ Log New Sickness Review</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                <h2 style="font-size: 1.15rem; font-weight: 800;">All Sickness Records</h2>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Filter Agent:</label>
+                    <select id="sicknessAgentFilter" class="filter-select" onchange="loadAllSicknessRecords()">
+                        <option value="All">-- All Agents --</option>
+                    </select>
+                </div>
+            </div>
+            <div id="sicknessTableContainer">Loading records...</div>
+        </div>
+    </div>
+
+    <!-- Sickness Modal -->
+    <div id="sicknessModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:var(--card-bg); padding:2rem; border-radius:16px; width:90%; max-width:500px; border:1px solid var(--border);">
+            <h3 style="margin-bottom:1rem; font-weight:800;">Log Sickness Return-to-Work Review</h3>
+            <form onsubmit="submitSicknessReview(event)">
+                <div style="margin-bottom:0.75rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Agent Name</label>
+                    <select id="modalAgentSelect" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; margin-top:0.25rem; background: var(--card-bg);"></select>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">First Day of Absence</label>
+                    <input type="date" id="sickStart" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; margin-top:0.25rem;">
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Return to Work Date</label>
+                    <input type="date" id="sickReturn" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; margin-top:0.25rem;">
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Reason / Illness Category</label>
+                    <input type="text" id="sickReason" placeholder="e.g. Flu, Migraine, Injury" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; margin-top:0.25rem;">
+                </div>
+                <div style="margin-bottom:1.25rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Return-to-Work Discussion Notes</label>
+                    <textarea id="sickNotes" rows="3" placeholder="Notes from return to work discussion..." style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; margin-top:0.25rem; font-family:inherit;"></textarea>
+                </div>
+                <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+                    <button type="button" onclick="closeSicknessModal()" style="background:transparent; border:1px solid var(--border); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600;">Cancel</button>
+                    <button type="submit" class="btn-action">Save Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const client = window.supabaseClient || window.supabase;
+        let globalRecords = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await populateAgents();
+            await loadAllSicknessRecords();
+        });
+
+        async function populateAgents() {
+            if (!client) return;
+            const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
+            const filterSel = document.getElementById("sicknessAgentFilter");
+            const modalSel = document.getElementById("modalAgentSelect");
+
+            if (data) {
+                data.forEach(row => {
+                    const opt1 = document.createElement("option");
+                    opt1.value = row.agent_name; opt1.innerText = row.agent_name;
+                    filterSel.appendChild(opt1);
+
+                    const opt2 = document.createElement("option");
+                    opt2.value = row.agent_name; opt2.innerText = row.agent_name;
+                    modalSel.appendChild(opt2);
+                });
+            }
+        }
+
+        async function loadAllSicknessRecords() {
+            if (!client) return;
+            const filterAgent = document.getElementById("sicknessAgentFilter").value;
+
+            let query = client.from('sickness_reviews').select('*').order('absence_date', { ascending: false });
+            if (filterAgent !== "All") {
+                query = query.ilike('agent', filterAgent);
+            }
+
+            const { data, error } = await query;
+            const container = document.getElementById("sicknessTableContainer");
+
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding: 2rem;">No sickness records found.</p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Agent</th>
+                            <th>Absence Start</th>
+                            <th>Return Date</th>
+                            <th>Reason</th>
+                            <th>Reviewer</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(r => `
+                            <tr>
+                                <td style="font-weight: 700;">${r.agent}</td>
+                                <td>${r.absence_date}</td>
+                                <td>${r.return_date}</td>
+                                <td><strong>${r.reason}</strong></td>
+                                <td style="color:var(--text-muted);">${r.reviewer || 'Supervisor'}</td>
+                                <td>${r.notes || 'N/A'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function openSicknessModal() { document.getElementById("sicknessModal").style.display = "flex"; }
+        function closeSicknessModal() { document.getElementById("sicknessModal").style.display = "none"; }
+
+        async function submitSicknessReview(e) {
+            e.preventDefault();
+            const payload = {
+                agent: document.getElementById("modalAgentSelect").value,
+                reviewer: sessionStorage.getItem("activeUser") || "Supervisor",
+                absence_date: document.getElementById("sickStart").value,
+                return_date: document.getElementById("sickReturn").value,
+                reason: document.getElementById("sickReason").value.trim(),
+                notes: document.getElementById("sickNotes").value.trim()
+            };
+
+            const { error } = await client.from('sickness_reviews').insert([payload]);
+            if (!error) {
+                alert("Sickness review logged successfully!");
+                closeSicknessModal();
+                loadAllSicknessRecords();
+            } else {
+                alert("Error saving review: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
