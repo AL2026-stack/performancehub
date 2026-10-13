@@ -34,7 +34,6 @@
         h2 { font-size: 1.4rem; font-weight: 800; color: var(--text-main); }
         .sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
 
-        /* Quality % at the top */
         .score-display-box { text-align: right; background: var(--light); border: 1px solid var(--border); padding: 0.65rem 1.25rem; border-radius: 12px; }
         .score-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
         .score-val { font-size: 1.75rem; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
@@ -45,7 +44,6 @@
         input, select, textarea { padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; background: var(--card-bg); color: var(--text-main); }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 
-        /* Questions 1-4 Sections */
         .qa-section { background: var(--light); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
         .qa-section-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.03em; }
 
@@ -75,7 +73,6 @@
         </div>
 
         <form id="evaluationForm" onsubmit="handleEvaluationSubmit(event)">
-            <!-- Top Metadata -->
             <div class="form-grid">
                 <div class="form-group">
                     <label>Evaluation Type</label>
@@ -101,10 +98,8 @@
                 </div>
             </div>
 
-            <!-- Questions 1-4 Container -->
             <div id="questionnaireContainer"></div>
 
-            <!-- Evaluator Coaching Comments -->
             <div class="form-group">
                 <label>Evaluator Feedback & Coaching Summary</label>
                 <textarea id="qaComments" rows="4" placeholder="Highlight strengths, missed opportunities, and agreed development steps..." required></textarea>
@@ -121,7 +116,6 @@
         const prefillType = urlParams.get('type');
         const prefillAgent = urlParams.get('agent');
 
-        /* QUESTIONS 1-4 CRITERIA */
         const QUESTION_SETS = {
             "Call Listening Feedback": [
                 {
@@ -282,6 +276,17 @@
             btn.disabled = true;
             btn.innerText = "Submitting Evaluation...";
 
+            const selects = document.querySelectorAll(".score-select");
+            const questionBreakdown = [];
+            selects.forEach((sel) => {
+                const qText = sel.closest(".question-item").querySelector(".question-text").innerText;
+                questionBreakdown.push({
+                    question: qText.split('(')[0].trim(),
+                    scoreGiven: sel.options[sel.selectedIndex].text,
+                    value: sel.value
+                });
+            });
+
             const scoreNumber = parseFloat(document.getElementById("scoreDisplay").innerText.replace('%', ''));
 
             const formPayload = {
@@ -295,7 +300,8 @@
                 comments: document.getElementById("qaComments").value.trim(),
                 status: "Pending",
                 agent_acknowledged: false,
-                agent_comments: null
+                agent_comments: null,
+                question_breakdown: questionBreakdown
             };
 
             const { error } = await client.from('feedback_docs').insert([formPayload]);
