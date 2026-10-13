@@ -95,8 +95,8 @@
         .page-view-section.hidden { display: none !important; }
         @keyframes viewFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; }
-        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
+        .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
         .btn-launch:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(230, 0, 126, 0.35); }
         .btn-alt-color { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
 
@@ -205,7 +205,6 @@
                 <div class="action-button-grid">
                     <button id="btnShortCutCall" class="btn-launch" style="display:none;" onclick="openEvaluationWindow('Call Listening Feedback')">🎧 Submit Call Quality</button>
                     <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit Ticket Feedback</button>
-                    <button id="btnShortCutInterim" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Interim Feedback')">💬 Submit Interim Feedback</button>
                 </div>
 
                 <div class="card">
@@ -591,12 +590,10 @@
 
             const btnCall = document.getElementById("btnShortCutCall");
             const btnTicket = document.getElementById("btnShortCutTicket");
-            const btnInterim = document.getElementById("btnShortCutInterim");
             const supBlock = document.getElementById("supervisorFilterBlock");
 
             if (btnCall) btnCall.style.display = isManagement ? "inline-flex" : "none";
             if (btnTicket) btnTicket.style.display = isManagement ? "inline-flex" : "none";
-            if (btnInterim) btnInterim.style.display = isManagement ? "inline-flex" : "none";
             if (supBlock) supBlock.style.display = isManagement ? "flex" : "none";
 
             if (homeKpiArea) {
