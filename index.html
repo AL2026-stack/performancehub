@@ -89,13 +89,14 @@
         .nav-item:hover { background: rgba(255,255,255,0.06); color: white; transform: translateX(3px); }
         .nav-item.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.35); }
 
-        .main-workspace { flex: 1; padding: 2.25rem; max-width: 1500px; width: 100%; display: flex; flex-direction: column; gap: 1.75rem; }
+        /* Full width utilization without max-width constriction */
+        .main-workspace { flex: 1; padding: 2.25rem; width: 100%; max-width: none; display: flex; flex-direction: column; gap: 1.75rem; }
         
         .page-view-section { display: flex; flex-direction: column; gap: 1.75rem; animation: viewFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
         .page-view-section.hidden { display: none !important; }
         @keyframes viewFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Balanced Asymmetric Dashboard Grid (Removes cramped feeling & excessive whitespace) */
+        /* Balanced Asymmetric Dashboard Grid */
         .dashboard-grid {
             display: grid;
             grid-template-columns: 1.6fr 1fr;
@@ -218,7 +219,7 @@
                     <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit Ticket Feedback</button>
                 </div>
 
-                <!-- BALANCED ASYMMETRIC DASHBOARD GRID -->
+                <!-- BALANCED DASHBOARD GRID -->
                 <div class="dashboard-grid">
                     <!-- LEFT COLUMN: KPIs & Pending QAs -->
                     <div style="display: flex; flex-direction: column; gap: 1.75rem;">
