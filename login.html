@@ -3,226 +3,1265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zzoomm Performance Tracker - Login</title>
+    <title>Zzoomm Performance Tracker</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Supabase SDK, Chart.js & Config -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="config.js"></script>
     <style>
         :root { 
             --primary: #e6007e; 
+            --primary-light: #ff2a9d;
+            --primary-gradient: linear-gradient(135deg, #e6007e 0%, #ff1a8c 100%);
             --dark: #0f172a; 
             --light: #f8fafc; 
-            --border: #cbd5e1; 
+            --card-bg: #ffffff; 
+            --border: #e2e8f0; 
+            --border-subtle: rgba(226, 232, 240, 0.8);
+            --success: #10b981; 
+            --success-bg: rgba(16, 185, 129, 0.12);
             --danger: #ef4444; 
+            --danger-bg: rgba(239, 68, 68, 0.12);
+            --warning: #f59e0b;
+            --text-main: #0f172a; 
+            --text-muted: #64748b;
+            --sidebar-width: 260px;
+            --card-radius: 16px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px -2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 10px 24px -4px rgba(0,0,0,0.08);
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: var(--dark); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1.5rem; }
-        .login-card { background: white; color: var(--dark); padding: 2.5rem; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .login-logo { height: 50px; width: auto; object-fit: contain; margin-bottom: 0.75rem; }
-        .login-card h2 { color: var(--primary); margin-bottom: 0.35rem; text-align: center; font-size: 1.4rem; }
-        .form-group { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
-        label { font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; }
-        input { padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; width: 100%; }
-        .btn-submit { background: var(--primary); color: white; border: none; padding: 0.85rem; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 0.5rem; }
-        .btn-submit:hover { opacity: 0.95; }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-        .error-msg { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; display: none; margin-bottom: 1rem; }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-body { background: white; color: var(--dark); padding: 2rem; border-radius: 10px; max-width: 400px; width: 90%; }
-        .rule-list { font-size: 0.8rem; color: #64748b; margin: 0.5rem 0 1rem 1rem; }
+        
+        body.dark-mode { 
+            --light: #0b1329; 
+            --dark: #f8fafc; 
+            --card-bg: #1e293b; 
+            --border: #334155; 
+            --border-subtle: rgba(51, 65, 85, 0.8);
+            --text-main: #f1f5f9; 
+            --text-muted: #94a3b8;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.2), 0 4px 12px -2px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.25), 0 10px 24px -4px rgba(0,0,0,0.4);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; transition: background 0.25s, color 0.25s; }
+        
+        header { 
+            background: #0f172a; color: white; padding: 0.85rem 1.75rem; display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-bottom: 1px solid rgba(255,255,255,0.08); position: relative; z-index: 100;
+        }
+        
+        .logo-container { display: flex; align-items: center; gap: 1rem; }
+        .header-logo { height: 40px; width: auto; object-fit: contain; display: block; }
+
+        .user-profile-box { display: flex; align-items: center; gap: 0.85rem; }
+        .user-avatar-badge {
+            width: 34px; height: 34px; border-radius: 50%; background: var(--primary-gradient);
+            color: white; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center;
+            justify-content: center; box-shadow: 0 2px 8px rgba(230, 0, 126, 0.35); text-transform: uppercase;
+        }
+        .user-tag { font-weight: 600; font-size: 0.9rem; background: rgba(255,255,255,0.08); padding: 0.4rem 0.85rem; border-radius: 8px; color: white; border: 1px solid rgba(255,255,255,0.12); }
+        
+        .pending-header-badge {
+            background-color: var(--danger); color: white; font-size: 0.75rem; font-weight: 700;
+            padding: 0.3rem 0.65rem; border-radius: 20px; display: none; align-items: center; gap: 0.35rem;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-header { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.45rem 0.9rem; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; }
+        .btn-header:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3); }
+        .btn-logout { background: transparent; color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.45rem 0.9rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
+        .btn-logout:hover { background: var(--danger); color: white; }
+
+        .app-body { display: flex; min-height: calc(100vh - 66px); }
+
+        .sidebar {
+            width: var(--sidebar-width); background: #0f172a; color: white; padding: 1.75rem 1rem;
+            display: flex; flex-direction: column; gap: 0.4rem; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+        }
+
+        .sidebar-section-title { font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin: 1.25rem 0.65rem 0.4rem 0.65rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.88rem; font-weight: 600; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; }
+        .nav-item:hover { background: rgba(255,255,255,0.06); color: white; transform: translateX(3px); }
+        .nav-item.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.35); }
+
+        .main-workspace { flex: 1; padding: 2.25rem; max-width: 1240px; width: 100%; display: flex; flex-direction: column; gap: 1.75rem; }
+        
+        .page-view-section { display: flex; flex-direction: column; gap: 1.75rem; animation: viewFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+        .page-view-section.hidden { display: none !important; }
+        @keyframes viewFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; }
+        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
+        .btn-launch:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(230, 0, 126, 0.35); }
+        .btn-alt-color { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+
+        .card { background: var(--card-bg); padding: 1.75rem; border-radius: var(--card-radius); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); transition: box-shadow 0.2s; }
+        .card:hover { box-shadow: var(--shadow-md); }
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
+        .card h2 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
+        
+        .filter-group { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+        .filter-select, .calendar-input { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
+        .filter-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
+        .kpi-box { 
+            background: var(--card-bg); padding: 1.4rem; border-radius: 12px; border: 1px solid var(--border); 
+            display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
+            box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease; 
+        }
+        .kpi-box:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .kpi-title { font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.04em; }
+        .kpi-val { font-size: 2rem; font-weight: 800; margin: 0.4rem 0; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+        .kpi-target-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+        
+        .kpi-good { border-top: 4px solid var(--success); background: linear-gradient(180deg, var(--success-bg) 0%, transparent 45%); }
+        .kpi-good .kpi-val { color: var(--success); }
+        .kpi-bad { border-top: 4px solid var(--danger); background: linear-gradient(180deg, var(--danger-bg) 0%, transparent 45%); }
+        .kpi-bad .kpi-val { color: var(--danger); }
+
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
+        .skeleton-card { height: 130px; border-radius: 12px; background: linear-gradient(90deg, rgba(226,232,240,0.6) 25%, rgba(241,245,249,0.9) 50%, rgba(226,232,240,0.6) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        th, td { text-align: left; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
+        th { background-color: var(--light); color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+        td { font-size: 0.9rem; }
+
+        .status-badge { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-completed { background: var(--success-bg); color: var(--success); }
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
+        .upload-section-container { background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: var(--card-radius); padding: 1.75rem; box-shadow: var(--shadow-sm); }
+        .upload-row-flex { display: flex; gap: 1rem; align-items: stretch; margin-top: 1rem; flex-wrap: wrap; }
+        .upload-dropzone { background: var(--light); border: 2px dashed var(--border); border-radius: 12px; padding: 1.5rem; text-align: center; flex: 1; min-width: 250px; cursor: pointer; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: border-color 0.2s; }
+        .upload-dropzone:hover { border-color: var(--primary); }
+        .file-hidden-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+        .confirm-wrapper { display: none; flex-direction: column; gap: 0.5rem; min-width: 220px; justify-content: flex-end; }
+        .btn-confirm-upload { background-color: var(--success); color: white; border: none; padding: 0.75rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; }
+        .btn-cancel-upload { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 0.45rem; border-radius: 8px; cursor: pointer; }
+        .btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.55rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; }
+        .btn-danger-outline:hover { background: var(--danger); color: white; }
+
+        .toast-notify { display: none; padding: 1rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm); }
+        .toast-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); color: var(--text-main); border-radius: 16px; padding: 2rem; max-width: 650px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-md); border: 1px solid var(--border); }
+        .btn-modal-action { background: var(--primary-gradient); color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 700; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div class="login-card">
-        <div style="text-align: center;">
-            <img src="logo.png" alt="Zzoomm" class="login-logo">
+    <header>
+        <div class="logo-container">
+            <a href="index.html" style="display: flex; align-items: center; text-decoration: none;">
+                <img src="logo.png" alt="Zzoomm" class="header-logo" onerror="this.style.display='none';">
+            </a>
         </div>
-        <h2>Performance Tracker</h2>
-        <p style="text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Sign in to access your dashboard</p>
-        
-        <div id="loginError" class="error-msg">Incorrect username or password.</div>
+        <div class="user-profile-box">
+            <div id="headerPendingBadge" class="pending-header-badge">
+                🔔 <span id="pendingBadgeCount">0</span> Pending QA
+            </div>
+            <div class="user-avatar-badge" id="displayUserAvatar">U</div>
+            <span class="user-tag" id="displayUserName">User</span>
+            <a href="settings.html" class="btn-header">⚙️ Settings</a>
+            <button class="btn-logout" onclick="logoutUser()">Sign Out</button>
+        </div>
+    </header>
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="loginUser" required autocomplete="username" placeholder="e.g. Anthony">
+    <div class="app-body">
+        <nav class="sidebar">
+            <div class="sidebar-section-title">Navigation Hub</div>
+            <div class="nav-item active" id="navHome" onclick="switchView('homeView')">🏠 Home Dashboard</div>
+            
+            <div class="sidebar-section-title">Performance Analytics</div>
+            <div class="nav-item" id="navStats" onclick="switchView('statsView')">📊 Performance Stats Overview</div>
+            <div class="nav-item" id="navImport" onclick="switchView('importView')">📥 8x8 Stats Import</div>
+
+            <div class="sidebar-section-title">Quality & Coaching</div>
+            <div class="nav-item" id="navQA" onclick="switchView('qaView')">📑 Completed Quality Forms</div>
+            <a href="coaching.html" class="nav-item">🎯 Coaching & 1-to-1s</a>
+            <a href="sickness.html" class="nav-item">🏥 Sickness & Absence</a>
+
+            <div id="teamOpsSidebarSection" style="display: none;">
+                <div class="sidebar-section-title">Team Operations</div>
+                <a href="tiers.html" class="nav-item">🏆 Team Performance Tiers & Insights</a>
             </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="••••••••">
+        </nav>
+
+        <main class="main-workspace">
+            <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
+
+            <!-- VIEW 1: HOME VIEW -->
+            <div id="homeView" class="page-view-section">
+                <div class="action-button-grid">
+                    <button id="btnShortCutCall" class="btn-launch" style="display:none;" onclick="openEvaluationWindow('Call Listening Feedback')">🎧 Submit Call Quality</button>
+                    <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit Ticket Feedback</button>
+                    <button id="btnShortCutInterim" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Interim Feedback')">💬 Submit Interim Feedback</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
+                        <div class="filter-group">
+                            <span class="filter-label">Timescale:</span>
+                            <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
+                                <option value="Daily">Daily</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Monthly">Monthly</option>
+                                <option value="MTD">Month to Date (MTD)</option>
+                            </select>
+                            <span class="filter-label" id="homeValueFilterLabel">Target:</span>
+                            <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
+                        </div>
+                    </div>
+                    <div id="homeKpiDisplayArea">
+                        <div class="skeleton-grid">
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2>
+                            ⏳ QAs Pending Agent Acknowledgment
+                            <span id="homePendingCountBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Pending</span>
+                        </h2>
+                        <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
+                    </div>
+                    <div id="homePendingQaContainer">
+                        <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                            🎉 No Pending QA Forms to be Completed
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button type="submit" id="submitBtn" class="btn-submit">Sign In</button>
-        </form>
+
+            <!-- VIEW 2: DEDICATED 8x8 STATS IMPORT VIEW -->
+            <div id="importView" class="page-view-section hidden">
+                <div class="upload-section-container">
+                    <h3 style="font-size: 1.15rem; border-left:4px solid var(--primary); padding-left:0.5rem; margin-bottom:0.35rem;">📊 8x8 Stats Import Engine</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Upload daily raw call metrics CSV file to parse stats into the cloud matrix.</p>
+                    <div class="upload-row-flex">
+                        <div>
+                            <label class="filter-label" style="display:block; margin-bottom:0.35rem;">Target Logging Date:</label>
+                            <input type="date" id="uploadTargetDate" class="calendar-input" onchange="handleHomeScopeChange()">
+                        </div>
+                        <div class="upload-dropzone" id="dropzoneContainer">
+                            <p id="dropzoneText" style="font-size: 0.9rem; font-weight: 600;">Drag & Drop CSV File Here or Click to Browse</p>
+                            <input type="file" id="dashboardCsvInput" class="file-hidden-input" accept=".csv" onchange="stageCsvFile()">
+                        </div>
+                        <div class="confirm-wrapper" id="confirmActionWrapper">
+                            <button class="btn-confirm-upload" onclick="processStagedCsvFile()">Confirm Upload</button>
+                            <button class="btn-cancel-upload" onclick="resetStagedFile()">Cancel</button>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                            <button class="btn-danger-outline" onclick="purgeStatsBySelectedDate()">🗑️ Purge Date</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: PERFORMANCE STATS OVERVIEW -->
+            <div id="statsView" class="page-view-section hidden">
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2>Performance Stats Overview</h2>
+                        <div class="filter-group">
+                            <span class="filter-label">Scope:</span>
+                            <select id="timeframeTypeFilter" class="filter-select" onchange="handleTimeframeTypeChange()">
+                                <option value="Daily">Daily</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Monthly">Monthly</option>
+                            </select>
+
+                            <span class="filter-label" id="valueFilterLabel">Target:</span>
+                            <div id="timeframeSelectorContainer" style="display: inline-block;"></div>
+
+                            <div id="supervisorFilterBlock" style="display: none; align-items: center; gap: 0.5rem;">
+                                <span class="filter-label">Agent:</span>
+                                <select id="agentFilter" class="filter-select" onchange="renderDashboard()">
+                                    <option value="All">-- All Personnel --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="kpiDisplayArea"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2>📈 Performance Trends Over Time</h2>
+                    </div>
+                    <canvas id="performanceTrendChart" style="max-height: 320px; width: 100%;"></canvas>
+                </div>
+            </div>
+
+            <!-- VIEW 4: COMPLETED QUALITY FORMS -->
+            <div id="qaView" class="page-view-section hidden">
+                <div class="card">
+                    <div class="card-header-flex" style="margin-bottom: 0;">
+                        <h2 id="listTitleHeader">Completed Quality Forms</h2>
+                        <div class="filter-group">
+                            <span class="filter-label">Status:</span>
+                            <select id="qaStatusFilter" class="filter-select" onchange="renderCompletedFeedbackList()">
+                                <option value="All">All Evaluations (Pending & Completed)</option>
+                                <option value="Pending">Pending Acknowledgment Only</option>
+                                <option value="Completed">Completed Only</option>
+                            </select>
+
+                            <div id="qaAgentFilterWrap" style="display: none; align-items: center; gap: 0.5rem;">
+                                <span class="filter-label">Agent:</span>
+                                <select id="qaListAgentFilter" class="filter-select" onchange="renderCompletedFeedbackList()">
+                                    <option value="All">-- All Agents --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="feedbackContainer" style="margin-top: 1rem;">Loading evaluations...</div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <!-- Mandatory Password Reset Modal -->
-    <div id="passwordResetModal" class="modal-overlay">
-        <div class="modal-body">
-            <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Password Change Required</h3>
-            <p style="font-size: 0.85rem; color: #475569;">Your account requires a new password before you can proceed.</p>
-            
-            <div id="modalError" class="error-msg" style="margin-top: 0.75rem;"></div>
-
-            <ul class="rule-list">
-                <li>At least 8 characters long</li>
-                <li>At least one capital letter (A-Z)</li>
-                <li>At least one number (0-9)</li>
-                <li>At least one special character (!@#$%^&*)</li>
-            </ul>
-
-            <div class="form-group">
-                <label>New Password</label>
-                <input type="password" id="newPasswordInput" placeholder="••••••••">
+    <!-- MODAL: FUZZY AGENT MAPPING MODAL -->
+    <div id="agentMappingModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color: var(--primary); margin-bottom: 0.5rem; font-size: 1.25rem;">🔍 Unmatched CSV Agents Review</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                The following names from your 8x8 CSV do not directly match an existing user account. Match them to an existing user or confirm them as new accounts:
+            </p>
+            <div id="unmatchedAgentsContainer"></div>
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+                <button type="button" class="btn-cancel-upload" onclick="closeMappingModal()">Cancel</button>
+                <button type="button" class="btn-modal-action" onclick="commitResolvedMappings()">Apply Mappings & Import</button>
             </div>
-            <div class="form-group">
-                <label>Confirm Password</label>
-                <input type="password" id="confirmPasswordInput" placeholder="••••••••">
-            </div>
-            <button class="btn-submit" onclick="submitPasswordChange()">Update Password & Continue</button>
         </div>
     </div>
 
     <script>
-        let pendingUserObj = null;
+        const currentUser = sessionStorage.getItem("activeUser");
+        const currentRole = sessionStorage.getItem("activeRole");
 
-        function showError(msg) {
-            const errDiv = document.getElementById("loginError");
-            errDiv.innerText = msg;
-            errDiv.style.display = "block";
-        }
+        if (!currentUser) { window.location.href = "login.html"; }
 
-        function validatePasswordComplexity(pwd) {
-            if (pwd.length < 8) return "Password must be at least 8 characters long.";
-            if (!/[A-Z]/.test(pwd)) return "Password must contain at least one uppercase letter.";
-            if (!/[0-9]/.test(pwd)) return "Password must contain at least one number.";
-            if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) return "Password must contain at least one special character.";
-            return null;
-        }
+        let globalStatsDb = {};
+        let globalDocs = [];
+        let globalAliases = {};
+        let pendingImportRows = [];
+        let trendChartInstance = null;
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            const errDiv = document.getElementById("loginError");
-            errDiv.style.display = "none";
+        document.addEventListener("DOMContentLoaded", async () => {
+            const userTheme = localStorage.getItem(`theme_${currentUser.toLowerCase()}`) || 
+                              localStorage.getItem('themePreference') || 
+                              'light';
+            if (userTheme === 'dark') { document.body.classList.add('dark-mode'); }
 
-            const userVal = document.getElementById("loginUser").value.trim();
-            const passVal = document.getElementById("loginPassword").value;
-            const submitBtn = document.getElementById("submitBtn");
-
-            if (!userVal || !passVal) {
-                showError("Please enter both username and password.");
-                return;
+            document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
+            document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
+            
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (document.getElementById("uploadTargetDate")) {
+                document.getElementById("uploadTargetDate").value = todayStr;
             }
 
-            const client = window.supabaseClient || window.supabase;
-            if (!client || typeof client.from !== 'function') {
-                showError("Database connection failed. Verify config.js is loaded.");
-                return;
-            }
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            
+            const navImportEl = document.getElementById("navImport");
+            if (navImportEl) { navImportEl.style.display = isManagement ? "flex" : "none"; }
 
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Verifying...";
+            const teamOpsSection = document.getElementById("teamOpsSidebarSection");
+            if (teamOpsSection) { teamOpsSection.style.display = isManagement ? "block" : "none"; }
 
+            const qaFilterWrap = document.getElementById("qaAgentFilterWrap");
+            if (qaFilterWrap) { qaFilterWrap.style.display = isManagement ? "flex" : "none"; }
+
+            await syncCloudData();
+
+            populateAgentFilters();
+            handleHomeScopeChange();
+            handleTimeframeTypeChange(); 
+            renderDashboard();
+        });
+
+        async function syncCloudData() {
             try {
-                const { data, error } = await client
-                    .from('agent_stats')
-                    .select('agent_name, role, password, temp_password, must_change_password, theme_preference')
-                    .ilike('agent_name', userVal);
+                const client = window.supabaseClient || window.supabase;
+                if (!client || typeof client.from !== 'function') return;
 
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Sign In";
-
-                if (error) {
-                    console.error("Supabase Error:", error);
-                    showError("Database error: " + error.message);
-                    return;
+                const { data: docsData, error: docsErr } = await client.from('feedback_docs').select('*').order('id', { ascending: false });
+                if (docsErr) {
+                    console.error("Error fetching feedback_docs:", docsErr);
+                } else if (docsData) {
+                    globalDocs = docsData.map(d => ({
+                        id: d.id, 
+                        agent: d.agent || '', 
+                        evaluator: d.evaluator || 'Supervisor', 
+                        date: d.date || '', 
+                        status: d.status || (d.agent_acknowledged ? "Completed" : "Pending"),
+                        qaStyle: d.qa_style || 'Quality Evaluation', 
+                        score: d.score ?? 0, 
+                        callRef: d.call_ref || '', 
+                        ticketRef: d.ticket_ref || '',
+                        comments: d.comments || '', 
+                        agentComments: d.agent_comments || '',
+                        agentAcknowledged: Boolean(d.agent_acknowledged)
+                    }));
                 }
 
-                if (!data || data.length === 0) {
-                    showError("Incorrect username or password.");
-                    return;
+                const { data: statsData } = await client.from('agent_stats').select('*');
+                globalStatsDb = {};
+                if (statsData) {
+                    statsData.forEach(row => {
+                        globalStatsDb[row.agent_name] = {
+                            Daily: row.daily_stats || {},
+                            Weekly: row.weekly_stats || {},
+                            Monthly: row.monthly_stats || {}
+                        };
+                    });
                 }
 
-                const userRecord = data[0];
+                const { data: aliasData } = await client.from('agent_aliases').select('*');
+                globalAliases = {};
+                if (aliasData) {
+                    aliasData.forEach(a => { globalAliases[a.csv_raw_name.toLowerCase()] = a.matched_agent_name; });
+                }
+            } catch (err) { console.error("Cloud sync error:", err); }
+        }
 
-                const matchesMain = Boolean(userRecord.password) && (userRecord.password === passVal);
-                const matchesTemp = Boolean(userRecord.temp_password) && (userRecord.temp_password === passVal);
+        function renderCompletedFeedbackList() {
+            const container = document.getElementById("feedbackContainer");
+            if (!container) return;
 
-                if (!matchesMain && !matchesTemp) {
-                    showError("Incorrect username or password.");
-                    return;
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            const filterDropdown = document.getElementById("qaListAgentFilter");
+            const statusDropdown = document.getElementById("qaStatusFilter");
+
+            const selectedAgent = (isManagement && filterDropdown) ? filterDropdown.value : currentUser;
+            const selectedStatus = statusDropdown ? statusDropdown.value : "All";
+
+            let visibleDocs = globalDocs.filter(doc => {
+                if (!isManagement) {
+                    if (!doc.agent || doc.agent.toLowerCase().trim() !== currentUser.toLowerCase().trim()) return false;
+                } else if (selectedAgent !== "All") {
+                    if (!doc.agent || doc.agent.toLowerCase().trim() !== selectedAgent.toLowerCase().trim()) return false;
                 }
 
-                const userRole = userRecord.role || "Agent";
-                const userTheme = userRecord.theme_preference || "light";
-                const requiresReset = Boolean(userRecord.must_change_password) || Boolean(matchesTemp);
+                const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
+                if (selectedStatus === "Pending") return !isCompleted;
+                if (selectedStatus === "Completed") return isCompleted;
+                return true;
+            });
 
-                pendingUserObj = { 
-                    user: userRecord.agent_name, 
-                    role: userRole,
-                    theme: userTheme
+            if (visibleDocs.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                        📄 No evaluations found matching current filters.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Agent</th>
+                                <th>Type</th>
+                                <th>Score</th>
+                                <th>Lifecycle Status</th>
+                                <th>Evaluator</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${visibleDocs.map(doc => {
+                                const scoreNum = parseFloat(doc.score) || 0;
+                                const scoreColor = scoreNum >= 85 ? 'var(--success)' : 'var(--danger)';
+                                const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
+
+                                const badge = isCompleted
+                                    ? '<span class="status-badge badge-completed">✔ Completed</span>'
+                                    : '<span class="status-badge badge-pending">⏳ Pending Acknowledgment</span>';
+
+                                return `
+                                    <tr>
+                                        <td style="font-weight: 600;">${doc.date || 'N/A'}</td>
+                                        <td style="font-weight: 700;">${doc.agent || 'N/A'}</td>
+                                        <td>${doc.qaStyle || 'Quality Evaluation'}</td>
+                                        <td>
+                                            <span style="color: ${scoreColor}; font-weight: 800; font-size: 1.05rem; font-variant-numeric: tabular-nums;">
+                                                ${doc.score || '0'}%
+                                            </span>
+                                        </td>
+                                        <td>${badge}</td>
+                                        <td style="color: var(--text-muted); font-size: 0.85rem;">${doc.evaluator || 'Supervisor'}</td>
+                                        <td style="text-align: right;">
+                                            <button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;" onclick="viewQAFormHistorical(${doc.id})">
+                                                ${(!isCompleted && !isManagement) ? '✍️ Sign & Respond' : '👁️ View Form'}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderPendingEvaluations() {
+            const container = document.getElementById("homePendingQaContainer");
+            const badge = document.getElementById("homePendingCountBadge");
+            const headerBadge = document.getElementById("headerPendingBadge");
+            const headerBadgeCount = document.getElementById("pendingBadgeCount");
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            
+            if (!container) return;
+
+            const pendingList = globalDocs.filter(doc => {
+                const isCompleted = doc.agentAcknowledged || doc.status === "Completed" || doc.status === "Acknowledged";
+                if (!isManagement) {
+                    return !isCompleted && doc.agent && doc.agent.toLowerCase().trim() === currentUser.toLowerCase().trim();
+                }
+                return !isCompleted;
+            });
+
+            const pendingCount = pendingList.length;
+
+            if (badge) {
+                badge.innerText = `${pendingCount} Pending`;
+                badge.style.display = pendingCount > 0 ? "inline-block" : "none";
+            }
+            if (headerBadge && headerBadgeCount) {
+                headerBadgeCount.innerText = pendingCount;
+                headerBadge.style.display = pendingCount > 0 ? "inline-flex" : "none";
+            }
+
+            if (pendingCount === 0) {
+                container.innerHTML = `
+                    <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                        🎉 No Pending QA Forms to be Completed
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pendingList.map(doc => `
+                <div style="background: var(--light); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                    <div>
+                        <strong style="font-size: 0.95rem;">${doc.agent || 'Unknown'} — ${doc.qaStyle || 'Quality Evaluation'}</strong>
+                        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">
+                            Date: ${doc.date || 'N/A'} | Score: <strong style="color: ${parseFloat(doc.score) >= 85 ? 'var(--success)' : 'var(--danger)'};">${doc.score || '0'}%</strong> | Evaluator: ${doc.evaluator || 'Supervisor'}
+                        </p>
+                    </div>
+                    <button class="btn-launch" style="padding: 0.45rem 1rem; font-size: 0.82rem; flex-shrink: 0;" onclick="viewQAFormHistorical(${doc.id})">
+                        ${!isManagement ? '✍️ Review & Sign ↗' : 'View Form ↗'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderDashboard() {
+            const homeKpiArea = document.getElementById("homeKpiDisplayArea");
+            const homeHeaderTitle = document.getElementById("homeKpiHeaderTitle");
+            const homeScope = document.getElementById("homeScopeFilter") ? document.getElementById("homeScopeFilter").value : "Daily";
+            const homeValEl = document.getElementById("homeValueFilter");
+            const homeVal = homeValEl ? homeValEl.value : (document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "");
+            
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+
+            const agentFilterEl = document.getElementById("agentFilter");
+            const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
+
+            const btnCall = document.getElementById("btnShortCutCall");
+            const btnTicket = document.getElementById("btnShortCutTicket");
+            const btnInterim = document.getElementById("btnShortCutInterim");
+            const supBlock = document.getElementById("supervisorFilterBlock");
+
+            if (btnCall) btnCall.style.display = isManagement ? "inline-flex" : "none";
+            if (btnTicket) btnTicket.style.display = isManagement ? "inline-flex" : "none";
+            if (btnInterim) btnInterim.style.display = isManagement ? "inline-flex" : "none";
+            if (supBlock) supBlock.style.display = isManagement ? "flex" : "none";
+
+            if (homeKpiArea) {
+                if (!isManagement) {
+                    if (homeHeaderTitle) homeHeaderTitle.innerText = `📊 My Performance KPIs (${currentUser})`;
+                    const personalProfile = getAgentProfile(globalStatsDb, currentUser);
+                    let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+                    if (homeScope === "MTD") {
+                        personalStats = calculateMtdStats(personalProfile, homeVal);
+                    } else if (personalProfile && personalProfile[homeScope] && personalProfile[homeScope][homeVal]) {
+                        personalStats = personalProfile[homeScope][homeVal];
+                    }
+                    homeKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
+                } else {
+                    if (homeHeaderTitle) homeHeaderTitle.innerText = "📊 Team Performance KPIs";
+                    const teamStats = calculateTeamAverageStats(globalStatsDb, homeScope, homeVal);
+                    homeKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
+                }
+            }
+
+            const statsKpiArea = document.getElementById("kpiDisplayArea");
+            if (statsKpiArea) {
+                const statsScope = document.getElementById("timeframeTypeFilter") ? document.getElementById("timeframeTypeFilter").value : "Daily";
+                const statsValEl = document.getElementById("timeframeValueFilter");
+                const statsVal = statsValEl ? statsValEl.value : homeVal;
+
+                const targetAgent = isManagement ? selectedAgent : currentUser;
+
+                if (targetAgent === "All") {
+                    const teamStats = calculateTeamAverageStats(globalStatsDb, statsScope, statsVal);
+                    statsKpiArea.innerHTML = generateKpiCardsHTML(teamStats);
+                } else {
+                    const personalProfile = getAgentProfile(globalStatsDb, targetAgent);
+                    let personalStats = { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+                    if (statsScope === "MTD") {
+                        personalStats = calculateMtdStats(personalProfile, statsVal);
+                    } else if (personalProfile && personalProfile[statsScope] && personalProfile[statsScope][statsVal]) {
+                        personalStats = personalProfile[statsScope][statsVal];
+                    }
+                    statsKpiArea.innerHTML = generateKpiCardsHTML(personalStats);
+                }
+            }
+
+            renderTrendChart(!isManagement ? currentUser : (selectedAgent !== "All" ? selectedAgent : currentUser));
+            renderPendingEvaluations();
+            renderCompletedFeedbackList();
+        }
+
+        function getSimilarity(s1, s2) {
+            const longer = s1.length < s2.length ? s2.toLowerCase() : s1.toLowerCase();
+            const shorter = s1.length < s2.length ? s1.toLowerCase() : s2.toLowerCase();
+            const longerLength = longer.length;
+            if (longerLength === 0) return 1.0;
+            
+            const costs = [];
+            for (let i = 0; i <= longer.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= shorter.length; j++) {
+                    if (i === 0) costs[j] = j;
+                    else {
+                        if (j > 0) {
+                            let newValue = costs[j - 1];
+                            if (longer.charAt(i - 1) !== shorter.charAt(j - 1)) {
+                                newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                            }
+                            costs[j - 1] = lastValue;
+                            lastValue = newValue;
+                        }
+                    }
+                }
+                if (i > 0) costs[shorter.length] = lastValue;
+            }
+            return (longerLength - costs[shorter.length]) / parseFloat(longerLength);
+        }
+
+        function findBestAgentMatch(rawName, existingNames) {
+            let bestMatch = null;
+            let highestScore = 0;
+
+            for (const name of existingNames) {
+                const score = getSimilarity(rawName, name);
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = name;
+                }
+            }
+            return { match: bestMatch, score: Math.round(highestScore * 100) };
+        }
+
+        function getAgentProfile(db, targetName) {
+            if (!targetName || !db) return {};
+            if (db[targetName]) return db[targetName];
+
+            const tokenize = (str) => str.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+            const targetTokens = tokenize(targetName);
+            if (targetTokens.length === 0) return {};
+
+            const matchedKey = Object.keys(db).find(dbName => {
+                const dbTokens = tokenize(dbName);
+                return targetTokens.every(t => dbTokens.includes(t)) || dbTokens.every(t => targetTokens.includes(t));
+            });
+
+            return matchedKey ? db[matchedKey] : {};
+        }
+
+        function getWeekNumber(dateStr) {
+            if (!dateStr) return "W/C: Unknown";
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return "W/C: Unknown";
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+            const monday = new Date(d.setDate(diff));
+            const yyyy = monday.getFullYear();
+            const mm = String(monday.getMonth() + 1).padStart(2, '0');
+            const dd = String(monday.getDate()).padStart(2, '0');
+            return `W/C: ${yyyy}-${mm}-${dd}`;
+        }
+
+        function getMonthName(dateStr) {
+            if (!dateStr) return "Unknown";
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return "Unknown";
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            return `${months[d.getMonth()]} ${d.getFullYear()}`;
+        }
+
+        function timeToSeconds(timeStr) {
+            if (!timeStr || timeStr === "N/A" || typeof timeStr !== 'string') return 0;
+            const parts = timeStr.trim().split(':');
+            if (parts.length === 3) return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+            if (parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+            return 0;
+        }
+
+        function secondsToTimeStr(totalSeconds) {
+            if (isNaN(totalSeconds) || totalSeconds <= 0) return "00:00:00";
+            const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+            const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function stageCsvFile() {
+            const input = document.getElementById("dashboardCsvInput");
+            if (!input || !input.files || !input.files.length) return;
+            const dropTxt = document.getElementById("dropzoneText");
+            if (dropTxt) dropTxt.innerHTML = `📄 Staged: <strong>${input.files[0].name}</strong>`;
+            const confirmWrap = document.getElementById("confirmActionWrapper");
+            if (confirmWrap) confirmWrap.style.display = "flex";
+        }
+
+        function parseCSVLineAdaptive(lineText, delimiter) {
+            const tokens = []; let cell = ''; let insideQuote = false;
+            for (let i = 0; i < lineText.length; i++) {
+                const ch = lineText.charAt(i);
+                if (ch === '"') { insideQuote = !insideQuote; } 
+                else if (ch === delimiter && !insideQuote) {
+                    tokens.push(cell.trim().replace(/^["']|["']$/g, '').trim()); cell = '';
+                } else { cell += ch; }
+            }
+            tokens.push(cell.trim().replace(/^["']|["']$/g, '').trim());
+            return tokens;
+        }
+
+        async function processStagedCsvFile() {
+            const input = document.getElementById("dashboardCsvInput");
+            if (!input || !input.files || !input.files.length) {
+                alert("Please select a valid CSV file first.");
+                return;
+            }
+
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    let contents = e.target.result;
+                    if (!contents) throw new Error("File is empty.");
+
+                    const rawLines = contents.split(/\r\n|\n|\r/).map(l => l.trim()).filter(l => l.length > 0);
+                    if (rawLines.length < 2) throw new Error("CSV does not contain enough data rows.");
+
+                    const separator = rawLines[0].indexOf(';') !== -1 ? ';' : ',';
+                    const headers = parseCSVLineAdaptive(rawLines[0], separator).map(h => h.toLowerCase());
+                    
+                    let idxAgent = headers.findIndex(h => h.includes('agent') || h.includes('name') || h.includes('user'));
+                    let idxAccepted = headers.findIndex(h => h.includes('accepted') || h.includes('answered') || h.includes('calls') || h.includes('inbound'));
+                    let idxAHT = headers.findIndex(h => h.includes('aht') || h.includes('handling') || h.includes('handle') || h.includes('talk'));
+                    let idxWrap = headers.findIndex(h => h.includes('wrap') || h.includes('post') || h.includes('work'));
+                    let idxTransfers = headers.findIndex(h => h.includes('transfer'));
+
+                    if (idxAgent === -1) idxAgent = 0; 
+                    if (idxAccepted === -1) idxAccepted = 1;
+                    if (idxAHT === -1) idxAHT = 2; 
+                    if (idxWrap === -1) idxWrap = 3;
+
+                    pendingImportRows = [];
+                    const existingNames = Object.keys(globalStatsDb);
+                    const unmatched = new Map();
+
+                    for (let i = 1; i < rawLines.length; i++) {
+                        const cols = parseCSVLineAdaptive(rawLines[i], separator);
+                        if (!cols || cols.length <= idxAgent) continue;
+
+                        let rawName = cols[idxAgent].trim();
+                        if (!rawName || rawName.length < 2) continue;
+                        if (rawName.toLowerCase().includes('total') || rawName.toLowerCase() === 'agent') continue;
+
+                        const callsVal = (idxAccepted !== -1 && cols[idxAccepted]) ? (parseInt(cols[idxAccepted]) || 0) : 0;
+                        const ahtStr = (idxAHT !== -1 && cols[idxAHT]) ? cols[idxAHT] : "00:00:00";
+                        const wrapStr = (idxWrap !== -1 && cols[idxWrap]) ? cols[idxWrap] : "00:00:00";
+                        
+                        let rawTransfer = 0;
+                        if (idxTransfers !== -1 && cols[idxTransfers]) {
+                            const parsedT = parseFloat(cols[idxTransfers].replace('%', ''));
+                            if (!isNaN(parsedT)) rawTransfer = parsedT;
+                        }
+
+                        let mappedName = globalAliases[rawName.toLowerCase()] || rawName;
+                        const isKnown = existingNames.some(n => n.toLowerCase() === mappedName.toLowerCase());
+
+                        if (!isKnown && !globalAliases[rawName.toLowerCase()]) {
+                            if (!unmatched.has(rawName)) {
+                                unmatched.set(rawName, findBestAgentMatch(rawName, existingNames));
+                            }
+                        }
+
+                        pendingImportRows.push({
+                            rawName,
+                            resolvedName: mappedName,
+                            calls: callsVal,
+                            aht: ahtStr,
+                            wrap: wrapStr,
+                            transfer: rawTransfer
+                        });
+                    }
+
+                    if (unmatched.size > 0) {
+                        displayMappingModal(unmatched, existingNames);
+                    } else {
+                        await executeStatsBatchUpload();
+                    }
+                } catch(err) { 
+                    alert("Import Error: " + err.message); 
+                    resetStagedFile();
+                }
+            };
+            reader.readAsText(file, "UTF-8");
+        }
+
+        function displayMappingModal(unmatchedMap, existingNames) {
+            const container = document.getElementById("unmatchedAgentsContainer");
+            container.innerHTML = "";
+
+            unmatchedMap.forEach((bestMatchData, rawName) => {
+                const row = document.createElement("div");
+                row.style.cssText = "display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; background: var(--light); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border);";
+                
+                let optionsHtml = `<option value="__NEW__">➕ Create as New User ("${rawName}")</option>`;
+                existingNames.forEach(name => {
+                    const selected = (bestMatchData.match === name && bestMatchData.score >= 50) ? 'selected' : '';
+                    optionsHtml += `<option value="${name}" ${selected}>Map to: ${name}</option>`;
+                });
+
+                row.innerHTML = `
+                    <div style="flex: 1; font-weight: 700; font-size: 0.9rem;">${rawName}</div>
+                    <div style="flex: 1.5;">
+                        <select class="filter-select mapping-select" data-raw="${rawName}" style="width: 100%;">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            document.getElementById("agentMappingModal").style.display = "flex";
+        }
+
+        function closeMappingModal() {
+            document.getElementById("agentMappingModal").style.display = "none";
+            resetStagedFile();
+        }
+
+        async function commitResolvedMappings() {
+            const selects = document.querySelectorAll(".mapping-select");
+            const client = window.supabaseClient || window.supabase;
+            const newAliasesToSave = [];
+
+            selects.forEach(sel => {
+                const rawName = sel.getAttribute("data-raw");
+                const target = sel.value;
+
+                if (target !== "__NEW__") {
+                    globalAliases[rawName.toLowerCase()] = target;
+                    newAliasesToSave.push({ csv_raw_name: rawName, matched_agent_name: target });
+                    
+                    pendingImportRows.forEach(row => {
+                        if (row.rawName === rawName) row.resolvedName = target;
+                    });
+                }
+            });
+
+            if (newAliasesToSave.length > 0 && client) {
+                await client.from('agent_aliases').upsert(newAliasesToSave, { onConflict: 'csv_raw_name' });
+            }
+
+            document.getElementById("agentMappingModal").style.display = "none";
+            await executeStatsBatchUpload();
+        }
+
+        async function executeStatsBatchUpload() {
+            const dateInput = document.getElementById("uploadTargetDate");
+            const targetDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+            const targetWeek = getWeekNumber(targetDate);
+            const targetMonth = getMonthName(targetDate);
+            const client = window.supabaseClient || window.supabase;
+
+            let count = 0;
+
+            for (const row of pendingImportRows) {
+                const name = row.resolvedName;
+
+                if (!globalStatsDb[name]) globalStatsDb[name] = { Daily: {}, Weekly: {}, Monthly: {} };
+
+                globalStatsDb[name]["Daily"][targetDate] = {
+                    calls: row.calls.toString(),
+                    aht: row.aht,
+                    wrap: row.wrap,
+                    transfer: (row.transfer * (row.transfer <= 1 && row.transfer > 0 ? 100 : 1)).toFixed(1) + "%"
                 };
 
-                if (requiresReset) {
-                    document.getElementById("passwordResetModal").style.display = "flex";
-                } else {
-                    completeLoginSession(userRecord.agent_name, userRole, userTheme);
+                globalStatsDb[name]["Weekly"][targetWeek] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getWeekNumber(d) === targetWeek);
+                globalStatsDb[name]["Monthly"][targetMonth] = recalculateAggregates(globalStatsDb[name]["Daily"], d => getMonthName(d) === targetMonth);
+
+                if (client && typeof client.from === 'function') {
+                    await client.from('agent_stats').upsert({
+                        agent_name: name,
+                        daily_stats: globalStatsDb[name]["Daily"],
+                        weekly_stats: globalStatsDb[name]["Weekly"],
+                        monthly_stats: globalStatsDb[name]["Monthly"]
+                    }, { onConflict: 'agent_name' });
                 }
-            } catch (err) {
-                console.error("Login failure:", err);
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Sign In";
-                showError("Unexpected error during login.");
+                count++;
             }
+
+            triggerToast(`Successfully recorded metrics for ${count} agents.`);
+            resetStagedFile();
+            populateAgentFilters();
+            handleHomeScopeChange();
+            handleTimeframeTypeChange();
         }
 
-        async function submitPasswordChange() {
-            const newPwd = document.getElementById("newPasswordInput").value;
-            const confirmPwd = document.getElementById("confirmPasswordInput").value;
-            const modalErr = document.getElementById("modalError");
+        function resetStagedFile() {
+            const input = document.getElementById("dashboardCsvInput");
+            if (input) input.value = "";
+            const dropTxt = document.getElementById("dropzoneText");
+            if (dropTxt) dropTxt.innerText = "Drag & Drop CSV File Here or Click to Browse";
+            const confirmWrap = document.getElementById("confirmActionWrapper");
+            if (confirmWrap) confirmWrap.style.display = "none";
+        }
 
-            modalErr.style.display = "none";
-
-            if (newPwd !== confirmPwd) {
-                modalErr.innerText = "Passwords do not match.";
-                modalErr.style.display = "block";
-                return;
-            }
-
-            const ruleError = validatePasswordComplexity(newPwd);
-            if (ruleError) {
-                modalErr.innerText = ruleError;
-                modalErr.style.display = "block";
-                return;
-            }
+        async function purgeStatsBySelectedDate() {
+            const date = document.getElementById("uploadTargetDate").value;
+            if(!confirm(`Purge 8x8 data production for ${date}?`)) return;
 
             const client = window.supabaseClient || window.supabase;
-            if (client && typeof client.from === 'function' && pendingUserObj) {
-                const { error } = await client
-                    .from('agent_stats')
-                    .update({ 
-                        password: newPwd,
-                        temp_password: null,
-                        must_change_password: false 
-                    })
-                    .eq('agent_name', pendingUserObj.user);
 
-                if (error) {
-                    modalErr.innerText = "Failed to update password: " + error.message;
-                    modalErr.style.display = "block";
-                    return;
+            for (const name of Object.keys(globalStatsDb)) {
+                if (globalStatsDb[name]["Daily"] && globalStatsDb[name]["Daily"][date]) {
+                    delete globalStatsDb[name]["Daily"][date];
+                    if (client && typeof client.from === 'function') {
+                        await client.from('agent_stats').upsert({
+                            agent_name: name,
+                            daily_stats: globalStatsDb[name]["Daily"],
+                            weekly_stats: globalStatsDb[name]["Weekly"],
+                            monthly_stats: globalStatsDb[name]["Monthly"]
+                        });
+                    }
                 }
             }
 
-            completeLoginSession(pendingUserObj.user, pendingUserObj.role, pendingUserObj.theme);
+            triggerToast("Target date context wiped from cloud database.");
+            handleHomeScopeChange();
+            handleTimeframeTypeChange();
         }
 
-        function completeLoginSession(user, role, theme) {
-            const chosenTheme = theme || 'light';
-            sessionStorage.setItem("activeUser", user);
-            sessionStorage.setItem("activeRole", role);
-            localStorage.setItem("themePreference", chosenTheme);
-            localStorage.setItem(`theme_${user.toLowerCase()}`, chosenTheme);
-            window.location.href = "index.html";
+        function handleHomeScopeChange() {
+            const scopeSelect = document.getElementById("homeScopeFilter");
+            if (!scopeSelect) return;
+            const scope = scopeSelect.value;
+            const container = document.getElementById("homePeriodSelectorContainer");
+            const label = document.getElementById("homeValueFilterLabel");
+            let optionsSet = new Set();
+
+            const lookupType = scope === "MTD" ? "Daily" : scope;
+            Object.values(globalStatsDb).forEach(o => { 
+                if (o && o[lookupType]) Object.keys(o[lookupType]).forEach(k => optionsSet.add(k)); 
+            });
+
+            const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : new Date().toISOString().split('T')[0];
+
+            if (scope === "Daily" || scope === "MTD") {
+                if (label) label.innerText = scope === "MTD" ? "Through Date:" : "Select Day:";
+                if (container) container.innerHTML = `<input type="date" id="homeValueFilter" class="calendar-input" value="${targetDate}" oninput="renderDashboard()" onchange="renderDashboard()">`;
+            } else {
+                if (label) label.innerText = scope === "Weekly" ? "Select Week:" : "Select Month:";
+                let html = `<select id="homeValueFilter" class="filter-select" onchange="renderDashboard()">`;
+                if (optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
+                else {
+                    Array.from(optionsSet).sort().reverse().forEach(v => html += `<option value="${v}">${v}</option>`);
+                }
+                html += `</select>`;
+                if (container) container.innerHTML = html;
+            }
+            renderDashboard();
+        }
+
+        function handleTimeframeTypeChange() {
+            const typeSelect = document.getElementById("timeframeTypeFilter");
+            if (!typeSelect) return;
+            const type = typeSelect.value;
+            const container = document.getElementById("timeframeSelectorContainer");
+            const label = document.getElementById("valueFilterLabel");
+            let optionsSet = new Set();
+            Object.values(globalStatsDb).forEach(o => { if(o && o[type]) Object.keys(o[type]).forEach(k => optionsSet.add(k)); });
+
+            if (type === "Daily") {
+                if (label) label.innerText = "Select Day:";
+                const targetDate = document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : new Date().toISOString().split('T')[0];
+                if (container) container.innerHTML = `<input type="date" id="timeframeValueFilter" class="calendar-input" value="${targetDate}" onchange="renderDashboard()">`;
+            } else {
+                if (label) label.innerText = type === "Weekly" ? "Select Week:" : "Select Month:";
+                let html = `<select id="timeframeValueFilter" class="filter-select" onchange="renderDashboard()">`;
+                if(optionsSet.size === 0) html += `<option value="">No Uploads Found</option>`;
+                else {
+                    Array.from(optionsSet).sort().reverse().forEach(v => html += `<option value="${v}">${v}</option>`);
+                }
+                html += `</select>`; 
+                if (container) container.innerHTML = html;
+            }
+            renderDashboard();
+        }
+
+        function recalculateAggregates(dailyDb, filterCondition) {
+            if (!dailyDb) return null;
+            let calls = 0, aht = 0, wrap = 0, trans = 0, count = 0;
+            Object.keys(dailyDb).forEach(k => {
+                if (dailyDb[k] && filterCondition(k)) {
+                    calls += parseInt(dailyDb[k].calls) || 0;
+                    aht += timeToSeconds(dailyDb[k].aht);
+                    wrap += timeToSeconds(dailyDb[k].wrap);
+                    trans += parseFloat(dailyDb[k].transfer) || 0;
+                    count++;
+                }
+            });
+            if(count === 0) return null;
+            return {
+                calls: calls.toString(), 
+                aht: secondsToTimeStr(Math.round(aht / count)), 
+                wrap: secondsToTimeStr(Math.round(wrap / count)), 
+                transfer: (trans / count).toFixed(1) + "%"
+            };
+        }
+
+        function calculateMtdStats(profileData, throughDateStr) {
+            if (!profileData || !profileData["Daily"]) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+            const dailyMap = profileData["Daily"];
+            const targetDate = new Date(throughDateStr);
+            if (isNaN(targetDate.getTime())) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+            const targetMonth = targetDate.getMonth();
+            const targetYear = targetDate.getFullYear();
+
+            let calls = 0, aht = 0, wrap = 0, trans = 0, count = 0;
+
+            Object.keys(dailyMap).forEach(dStr => {
+                const d = new Date(dStr);
+                if (!isNaN(d.getTime()) && d.getFullYear() === targetYear && d.getMonth() === targetMonth && d <= targetDate) {
+                    const entry = dailyMap[dStr];
+                    calls += parseInt(entry.calls) || 0;
+                    aht += timeToSeconds(entry.aht);
+                    wrap += timeToSeconds(entry.wrap);
+                    trans += parseFloat(entry.transfer) || 0;
+                    count++;
+                }
+            });
+
+            if (count === 0) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+            return {
+                calls: calls.toString(),
+                aht: secondsToTimeStr(Math.round(aht / count)),
+                wrap: secondsToTimeStr(Math.round(wrap / count)),
+                transfer: (trans / count).toFixed(1) + "%"
+            };
+        }
+
+        function generateKpiCardsHTML(statsObj) {
+            const targets = { calls: 30, ahtSec: 480, wrapSec: 180, transferPct: 15.0 };
+
+            const callsVal = parseInt(statsObj.calls.toString().replace(/,/g, '')) || 0;
+            const ahtSec = timeToSeconds(statsObj.aht);
+            const wrapSec = timeToSeconds(statsObj.wrap);
+            const transPct = parseFloat(statsObj.transfer) || 0;
+
+            const callsGood = callsVal >= targets.calls;
+            const ahtGood = ahtSec > 0 && ahtSec <= targets.ahtSec;
+            const wrapGood = wrapSec > 0 && wrapSec <= targets.wrapSec;
+            const transGood = transPct <= targets.transferPct;
+
+            return `<div class="kpi-container">
+                <div class="kpi-box ${callsGood ? 'kpi-good' : 'kpi-bad'}">
+                    <div class="kpi-title">Calls Answered</div>
+                    <div class="kpi-val">${statsObj.calls}</div>
+                    <div class="kpi-target-label">Target: 30+ calls</div>
+                </div>
+                <div class="kpi-box ${ahtGood ? 'kpi-good' : 'kpi-bad'}">
+                    <div class="kpi-title">Average Handling Time</div>
+                    <div class="kpi-val">${statsObj.aht}</div>
+                    <div class="kpi-target-label">Target: &le; 08:00</div>
+                </div>
+                <div class="kpi-box ${wrapGood ? 'kpi-good' : 'kpi-bad'}">
+                    <div class="kpi-title">Average Wrap Time</div>
+                    <div class="kpi-val">${statsObj.wrap}</div>
+                    <div class="kpi-target-label">Target: &le; 03:00</div>
+                </div>
+                <div class="kpi-box ${transGood ? 'kpi-good' : 'kpi-bad'}">
+                    <div class="kpi-title">Transfer %</div>
+                    <div class="kpi-val">${statsObj.transfer || '0%'}</div>
+                    <div class="kpi-target-label">Target: &le; 15%</div>
+                </div>
+            </div>`;
+        }
+
+        function renderTrendChart(agentName) {
+            const ctx = document.getElementById('performanceTrendChart');
+            if (!ctx) return;
+
+            const profile = getAgentProfile(globalStatsDb, agentName);
+            if (!profile || !profile.Daily) return;
+
+            const dates = Object.keys(profile.Daily).sort();
+            const ahtData = dates.map(d => (timeToSeconds(profile.Daily[d].aht) / 60).toFixed(1));
+            const transData = dates.map(d => parseFloat(profile.Daily[d].transfer) || 0);
+
+            if (trendChartInstance) { trendChartInstance.destroy(); }
+
+            trendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        { label: 'AHT (Minutes)', data: ahtData, borderColor: '#e6007e', backgroundColor: 'rgba(230,0,126,0.08)', fill: true, tension: 0.35, borderWidth: 2 },
+                        { label: 'Transfer %', data: transData, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)', fill: true, tension: 0.35, borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'top', labels: { font: { family: 'Plus Jakarta Sans', weight: 600 } } } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function calculateTeamAverageStats(statsDb, scope, value) {
+            let totalCalls = 0, totalAht = 0, totalWrap = 0, totalTrans = 0;
+
+            Object.keys(statsDb).forEach(agentName => {
+                const profile = statsDb[agentName];
+                let stats = null;
+
+                if (scope === "MTD") {
+                    stats = calculateMtdStats(profile, value);
+                } else if (profile && profile[scope] && profile[scope][value]) {
+                    stats = profile[scope][value];
+                }
+
+                if (stats) {
+                    const calls = parseInt(stats.calls) || 0;
+                    if (calls > 0) {
+                        totalCalls += calls;
+                        totalAht += (timeToSeconds(stats.aht) * calls);
+                        totalWrap += (timeToSeconds(stats.wrap) * calls);
+                        totalTrans += ((parseFloat(stats.transfer) || 0) * calls);
+                    }
+                }
+            });
+
+            if (totalCalls === 0) return { calls: "0", aht: "N/A", wrap: "N/A", transfer: "0%" };
+
+            return {
+                calls: totalCalls.toLocaleString(),
+                aht: secondsToTimeStr(Math.round(totalAht / totalCalls)),
+                wrap: secondsToTimeStr(Math.round(totalWrap / totalCalls)),
+                transfer: (totalTrans / totalCalls).toFixed(1) + "%"
+            };
+        }
+
+        function populateAgentFilters() {
+            const select = document.getElementById("agentFilter");
+            const qaListSelect = document.getElementById("qaListAgentFilter");
+            const names = Object.keys(globalStatsDb).sort();
+
+            if (select) {
+                select.innerHTML = '<option value="All">-- All Personnel --</option>';
+                names.forEach(k => {
+                    const o = document.createElement("option"); o.value = k; o.innerText = k; select.appendChild(o);
+                });
+            }
+
+            if (qaListSelect) {
+                qaListSelect.innerHTML = '<option value="All">-- All Agents --</option>';
+                names.forEach(k => {
+                    const o = document.createElement("option"); o.value = k; o.innerText = k; qaListSelect.appendChild(o);
+                });
+            }
+        }
+
+        function switchView(viewId) {
+            const views = ['homeView', 'importView', 'statsView', 'qaView'];
+            const navMap = {
+                'homeView': 'navHome',
+                'importView': 'navImport',
+                'statsView': 'navStats',
+                'qaView': 'navQA'
+            };
+
+            views.forEach(v => { 
+                const el = document.getElementById(v); 
+                if (el) el.classList.add('hidden'); 
+            });
+
+            document.querySelectorAll('.sidebar .nav-item').forEach(el => el.classList.remove('active'));
+
+            const targetView = document.getElementById(viewId);
+            if (targetView) targetView.classList.remove('hidden');
+
+            const activeNav = document.getElementById(navMap[viewId]);
+            if (activeNav) activeNav.classList.add('active');
+
+            if (viewId === 'qaView') {
+                renderCompletedFeedbackList();
+            }
+
+            renderDashboard();
+        }
+
+        function openEvaluationWindow(type) { 
+            const agentVal = document.getElementById("agentFilter") ? document.getElementById("agentFilter").value : "All";
+            window.open(`form.html?type=${encodeURIComponent(type)}&agent=${encodeURIComponent(agentVal !== "All" ? agentVal : "")}`, 'FormWindow', 'width=750,height=700'); 
+        }
+
+        function viewQAFormHistorical(docId) { 
+            window.open(`view-qa.html?id=${docId}`, `QAView_${docId}`, 'width=750,height=850'); 
+        }
+
+        function triggerToast(msg) {
+            const t = document.getElementById("toastNotification"); 
+            if (!t) return;
+            t.innerText = msg; t.className = "toast-notify toast-success"; t.style.display = "block";
+            setTimeout(() => t.style.display = "none", 4000);
+        }
+
+        function logoutUser() { 
+            sessionStorage.clear(); 
+            window.location.href = "login.html"; 
         }
     </script>
 </body>
