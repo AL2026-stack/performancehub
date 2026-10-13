@@ -232,6 +232,15 @@
                     </div>
                 </div>
 
+                <!-- ANNOUNCEMENTS / DAILY BRIEF CARD -->
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2>📢 Announcements & Daily Brief</h2>
+                        <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.45rem 0.9rem; font-size: 0.8rem;" onclick="openAnnouncementModal()">+ Post Announcement</button>
+                    </div>
+                    <div id="announcementsContainer">Loading announcements...</div>
+                </div>
+
                 <div class="card">
                     <div class="card-header-flex">
                         <h2>
@@ -350,6 +359,27 @@
         </div>
     </div>
 
+    <!-- POST ANNOUNCEMENT MODAL (Managers Only) -->
+    <div id="announcementModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color: var(--primary); margin-bottom: 0.75rem; font-size: 1.15rem;">Post New Announcement</h3>
+            <form onsubmit="submitNewAnnouncement(event)">
+                <div style="margin-bottom: 0.75rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Title</label>
+                    <input type="text" id="announcementTitle" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);">
+                </div>
+                <div style="margin-bottom: 1.25rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Brief / Content</label>
+                    <textarea id="announcementContent" rows="4" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main); font-family: inherit;"></textarea>
+                </div>
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" class="btn-cancel-upload" onclick="closeAnnouncementModal()">Cancel</button>
+                    <button type="submit" class="btn-modal-action">Publish Announcement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const currentUser = sessionStorage.getItem("activeUser");
         const currentRole = sessionStorage.getItem("activeRole");
@@ -359,6 +389,7 @@
         let globalStatsDb = {};
         let globalDocs = [];
         let globalAliases = {};
+        let globalAnnouncements = [];
         let pendingImportRows = [];
         let trendChartInstance = null;
 
@@ -394,6 +425,7 @@
             handleHomeScopeChange();
             handleTimeframeTypeChange(); 
             renderDashboard();
+            loadAnnouncements();
         });
 
         async function syncCloudData() {
@@ -439,6 +471,87 @@
                     aliasData.forEach(a => { globalAliases[a.csv_raw_name.toLowerCase()] = a.matched_agent_name; });
                 }
             } catch (err) { console.error("Cloud sync error:", err); }
+        }
+
+        async function loadAnnouncements() {
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const { data } = await client.from('announcements').select('*').eq('archived', false).order('id', { ascending: false });
+            globalAnnouncements = data || [];
+
+            const container = document.getElementById("announcementsContainer");
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            
+            const btnAdd = document.getElementById("btnAddAnnouncement");
+            if (btnAdd) btnAdd.style.display = isManagement ? "inline-flex" : "none";
+
+            if (globalAnnouncements.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1rem;">No active announcements at this time.</p>`;
+                return;
+            }
+
+            container.innerHTML = globalAnnouncements.map(item => {
+                const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+                return `
+                    <div style="background: var(--light); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                            <div>
+                                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">${item.title}</h4>
+                                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem;">Posted by ${item.author || 'Manager'} on ${dateStr}</p>
+                            </div>
+                            ${isManagement ? `<button onclick="archiveAnnouncement(${item.id})" style="background: transparent; border: none; color: var(--danger); font-size: 0.78rem; font-weight: 700; cursor: pointer;">Archive</button>` : ''}
+                        </div>
+                        <p style="font-size: 0.88rem; color: var(--text-main); margin-top: 0.5rem; line-height: 1.4; white-space: pre-wrap;">${item.content}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openAnnouncementModal() {
+            document.getElementById("announcementModal").style.display = "flex";
+        }
+
+        function closeAnnouncementModal() {
+            document.getElementById("announcementModal").style.display = "none";
+            document.getElementById("announcementTitle").value = "";
+            document.getElementById("announcementContent").value = "";
+        }
+
+        async function submitNewAnnouncement(e) {
+            e.preventDefault();
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const payload = {
+                title: document.getElementById("announcementTitle").value.trim(),
+                content: document.getElementById("announcementContent").value.trim(),
+                author: currentUser || "Manager",
+                archived: false
+            };
+
+            const { error } = await client.from('announcements').insert([payload]);
+            if (!error) {
+                triggerToast("Announcement published successfully.");
+                closeAnnouncementModal();
+                loadAnnouncements();
+            } else {
+                alert("Error publishing announcement: " + error.message);
+            }
+        }
+
+        async function archiveAnnouncement(id) {
+            if (!confirm("Are you sure you want to archive this announcement?")) return;
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const { error } = await client.from('announcements').update({ archived: true }).eq('id', id);
+            if (!error) {
+                triggerToast("Announcement archived.");
+                loadAnnouncements();
+            } else {
+                alert("Error archiving: " + error.message);
+            }
         }
 
         function renderCompletedFeedbackList() {
