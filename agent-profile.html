@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Profile & History - Zzoomm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <style>
+        :root {
+            --primary: #e6007e;
+            --primary-gradient: linear-gradient(135deg, #e6007e 0%, #ff1a8c 100%);
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        body { background: var(--light); color: var(--text-main); padding: 2rem 1.5rem; }
+        .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        .profile-header { background: var(--card-bg); padding: 2rem; border-radius: 16px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+        .avatar-box { width: 56px; height: 56px; border-radius: 50%; background: var(--primary-gradient); color: white; font-weight: 800; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; }
+        
+        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+        .card h2 { font-size: 1.15rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        th, td { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        th { background: var(--light); color: var(--text-muted); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+
+        .btn-action { background: var(--primary-gradient); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; text-decoration: none; }
+        .btn-action:hover { opacity: 0.95; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="profile-header">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="avatar-box" id="agentAvatar">A</div>
+                <div>
+                    <h1 id="agentNameTitle" style="font-size: 1.5rem; font-weight: 800;">Agent Profile</h1>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Central Performance, QA, Feedback & Attendance Log</p>
+                </div>
+            </div>
+            <button class="btn-action" onclick="openSicknessModal()">＋ Log Sickness Review</button>
+        </div>
+
+        <!-- QA History Card -->
+        <div class="card">
+            <h2>📑 Quality Evaluations & Interim Feedback</h2>
+            <div id="agentQaContainer">Loading records...</div>
+        </div>
+
+        <!-- Sickness Reviews Card -->
+        <div class="card">
+            <h2>🏥 Sickness & Attendance Reviews</h2>
+            <div id="agentSicknessContainer">Loading attendance records...</div>
+        </div>
+    </div>
+
+    <!-- Sickness Modal -->
+    <div id="sicknessModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:var(--card-bg); padding:2rem; border-radius:16px; width:90%; max-width:500px; border:1px solid var(--border);">
+            <h3 style="margin-bottom:1rem; font-weight:800;">Log Sickness Return-to-Work Review</h3>
+            <form onsubmit="submitSicknessReview(event)">
+                <div style="margin-bottom:0.75rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">First Day of Absence</label>
+                    <input type="date" id="sickStart" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; margin-top:0.25rem;">
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Return to Work Date</label>
+                    <input type="date" id="sickReturn" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; margin-top:0.25rem;">
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Reason / Illness Category</label>
+                    <input type="text" id="sickReason" placeholder="e.g. Flu, Migraine, Injury" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; margin-top:0.25rem;">
+                </div>
+                <div style="margin-bottom:1.25rem;">
+                    <label style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Return-to-Work Discussion Notes</label>
+                    <textarea id="sickNotes" rows="3" placeholder="Notes from return to work discussion..." style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; margin-top:0.25rem; font-family:inherit;"></textarea>
+                </div>
+                <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+                    <button type="button" onclick="closeSicknessModal()" style="background:transparent; border:1px solid var(--border); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600;">Cancel</button>
+                    <button type="submit" class="btn-action">Save Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const client = window.supabaseClient || window.supabase;
+        const urlParams = new URLSearchParams(window.location.search);
+        const agentName = urlParams.get('name') || "Anthony";
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            document.getElementById("agentNameTitle").innerText = agentName;
+            document.getElementById("agentAvatar").innerText = agentName.charAt(0).toUpperCase();
+
+            await loadAgentData();
+        });
+
+        async function loadAgentData() {
+            if (!client) return;
+
+            // 1. Fetch QAs & Feedbacks
+            const { data: qaData } = await client.from('feedback_docs').select('*').ilike('agent', agentName).order('id', { ascending: false });
+            const qaContainer = document.getElementById("agentQaContainer");
+
+            if (!qaData || qaData.length === 0) {
+                qaContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem; padding:0.5rem 0;">No quality evaluations or feedback logged yet.</p>`;
+            } else {
+                qaContainer.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Score</th>
+                                <th>Status</th>
+                                <th style="text-align:right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${qaData.map(doc => `
+                                <tr>
+                                    <td>${doc.date || 'N/A'}</td>
+                                    <td><strong>${doc.qa_style || 'Evaluation'}</strong></td>
+                                    <td><span style="color:${(doc.score >= 85) ? 'var(--success)' : 'var(--danger)'}; font-weight:800;">${doc.score}%</span></td>
+                                    <td>${doc.agent_acknowledged ? '✔ Completed' : '⏳ Pending'}</td>
+                                    <td style="text-align:right;"><a href="view-qa.html?id=${doc.id}" target="_blank" class="btn-action">View</a></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            // 2. Fetch Sickness Reviews
+            const { data: sickData } = await client.from('sickness_reviews').select('*').ilike('agent', agentName).order('absence_date', { ascending: false });
+            const sickContainer = document.getElementById("agentSicknessContainer");
+
+            if (!sickData || sickData.length === 0) {
+                sickContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.9rem; padding:0.5rem 0;">No sickness reviews logged on record.</p>`;
+            } else {
+                sickContainer.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Absence Start</th>
+                                <th>Return Date</th>
+                                <th>Reason</th>
+                                <th>Review Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sickData.map(s => `
+                                <tr>
+                                    <td>${s.absence_date}</td>
+                                    <td>${s.return_date}</td>
+                                    <td><strong>${s.reason}</strong></td>
+                                    <td>${s.notes || 'N/A'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+
+        function openSicknessModal() { document.getElementById("sicknessModal").style.display = "flex"; }
+        function closeSicknessModal() { document.getElementById("sicknessModal").style.display = "none"; }
+
+        async function submitSicknessReview(e) {
+            e.preventDefault();
+            const payload = {
+                agent: agentName,
+                reviewer: sessionStorage.getItem("activeUser") || "Supervisor",
+                absence_date: document.getElementById("sickStart").value,
+                return_date: document.getElementById("sickReturn").value,
+                reason: document.getElementById("sickReason").value.trim(),
+                notes: document.getElementById("sickNotes").value.trim()
+            };
+
+            const { error } = await client.from('sickness_reviews').insert([payload]);
+            if (!error) {
+                alert("Sickness review logged successfully!");
+                closeSicknessModal();
+                loadAgentData();
+            } else {
+                alert("Error saving review: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
