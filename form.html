@@ -44,6 +44,8 @@
         input, select, textarea { padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; background: var(--card-bg); color: var(--text-main); }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 
+        .fixed-type-badge { background: var(--light); border: 1px solid var(--border); padding: 0.65rem 0.85rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; color: var(--primary); display: flex; align-items: center; }
+
         .qa-section { background: var(--light); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
         .qa-section-title { font-size: 0.95rem; font-weight: 800; color: var(--primary); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.03em; }
 
@@ -63,7 +65,7 @@
     <div class="form-card">
         <div class="form-header">
             <div>
-                <h2>Quality Evaluation Form</h2>
+                <h2 id="formMainTitle">Quality Evaluation Form</h2>
                 <p class="sub">Complete all evaluation criteria. The form will be delivered to the agent's portal as Pending acknowledgment.</p>
             </div>
             <div class="score-display-box">
@@ -76,10 +78,8 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label>Evaluation Type</label>
-                    <select id="qaStyle" onchange="renderQuestionSet()" required>
-                        <option value="Call Listening Feedback">Call Listening Feedback</option>
-                        <option value="Ticket Feedback">Ticket Feedback</option>
-                    </select>
+                    <div id="qaStyleDisplay" class="fixed-type-badge">Call Listening Feedback</div>
+                    <input type="hidden" id="qaStyle" value="Call Listening Feedback">
                 </div>
                 <div class="form-group">
                     <label>Agent Name</label>
@@ -113,8 +113,12 @@
         const client = window.supabaseClient || window.supabase;
         const activeUser = sessionStorage.getItem("activeUser") || "Supervisor";
         const urlParams = new URLSearchParams(window.location.search);
-        const prefillType = urlParams.get('type');
+        let selectedType = urlParams.get('type') || "Call Listening Feedback";
         const prefillAgent = urlParams.get('agent');
+
+        if (selectedType !== "Call Listening Feedback" && selectedType !== "Ticket Feedback") {
+            selectedType = "Call Listening Feedback";
+        }
 
         const QUESTION_SETS = {
             "Call Listening Feedback": [
@@ -181,9 +185,11 @@
 
         document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("evalDate").value = new Date().toISOString().split('T')[0];
-            if (prefillType && QUESTION_SETS[prefillType]) {
-                document.getElementById("qaStyle").value = prefillType;
-            }
+            
+            // Set fixed type
+            document.getElementById("qaStyle").value = selectedType;
+            document.getElementById("qaStyleDisplay").innerText = selectedType;
+            document.getElementById("formMainTitle").innerText = selectedType === "Ticket Feedback" ? "Ticket Feedback Evaluation" : "Call Quality Evaluation";
 
             await populateAgents();
             renderQuestionSet();
@@ -209,9 +215,8 @@
         }
 
         function renderQuestionSet() {
-            const style = document.getElementById("qaStyle").value;
             const container = document.getElementById("questionnaireContainer");
-            const sections = QUESTION_SETS[style] || QUESTION_SETS["Call Listening Feedback"];
+            const sections = QUESTION_SETS[selectedType] || QUESTION_SETS["Call Listening Feedback"];
 
             let html = "";
             let questionIdx = 0;
@@ -290,7 +295,7 @@
             const scoreNumber = parseFloat(document.getElementById("scoreDisplay").innerText.replace('%', ''));
 
             const formPayload = {
-                qa_style: document.getElementById("qaStyle").value,
+                qa_style: selectedType,
                 agent: document.getElementById("agentSelect").value,
                 evaluator: activeUser,
                 call_ref: document.getElementById("interactionRef").value.trim(),
