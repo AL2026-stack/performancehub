@@ -89,11 +89,21 @@
         .nav-item:hover { background: rgba(255,255,255,0.06); color: white; transform: translateX(3px); }
         .nav-item.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.35); }
 
-        .main-workspace { flex: 1; padding: 2.25rem; max-width: 1240px; width: 100%; display: flex; flex-direction: column; gap: 1.75rem; }
+        .main-workspace { flex: 1; padding: 2.25rem; max-width: 1400px; width: 100%; display: flex; flex-direction: column; gap: 1.75rem; }
         
         .page-view-section { display: flex; flex-direction: column; gap: 1.75rem; animation: viewFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
         .page-view-section.hidden { display: none !important; }
         @keyframes viewFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.75rem;
+            align-items: start;
+        }
+        @media (max-width: 1100px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
 
         .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
         .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
@@ -109,7 +119,7 @@
         .filter-select, .calendar-input { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
         .filter-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
-        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
+        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; }
         .kpi-box { 
             background: var(--card-bg); padding: 1.4rem; border-radius: 12px; border: 1px solid var(--border); 
             display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
@@ -117,7 +127,7 @@
         }
         .kpi-box:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
         .kpi-title { font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.04em; }
-        .kpi-val { font-size: 2rem; font-weight: 800; margin: 0.4rem 0; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+        .kpi-val { font-size: 1.85rem; font-weight: 800; margin: 0.4rem 0; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
         .kpi-target-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
         
         .kpi-good { border-top: 4px solid var(--success); background: linear-gradient(180deg, var(--success-bg) 0%, transparent 45%); }
@@ -126,7 +136,7 @@
         .kpi-bad .kpi-val { color: var(--danger); }
 
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
+        .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; }
         .skeleton-card { height: 130px; border-radius: 12px; background: linear-gradient(90deg, rgba(226,232,240,0.6) 25%, rgba(241,245,249,0.9) 50%, rgba(226,232,240,0.6) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
@@ -207,52 +217,58 @@
                     <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit Ticket Feedback</button>
                 </div>
 
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
-                        <div class="filter-group">
-                            <span class="filter-label">Timescale:</span>
-                            <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
-                                <option value="Daily">Daily</option>
-                                <option value="Weekly">Weekly</option>
-                                <option value="Monthly">Monthly</option>
-                                <option value="MTD">Month to Date (MTD)</option>
-                            </select>
-                            <span class="filter-label" id="homeValueFilterLabel">Target:</span>
-                            <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
+                <!-- 2-COLUMN DASHBOARD GRID -->
+                <div class="dashboard-grid">
+                    <!-- LEFT COLUMN: KPIs & Pending QAs -->
+                    <div style="display: flex; flex-direction: column; gap: 1.75rem;">
+                        <div class="card">
+                            <div class="card-header-flex">
+                                <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
+                                <div class="filter-group">
+                                    <span class="filter-label">Timescale:</span>
+                                    <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
+                                        <option value="Daily">Daily</option>
+                                        <option value="Weekly">Weekly</option>
+                                        <option value="Monthly">Monthly</option>
+                                        <option value="MTD">Month to Date (MTD)</option>
+                                    </select>
+                                    <span class="filter-label" id="homeValueFilterLabel">Target:</span>
+                                    <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
+                                </div>
+                            </div>
+                            <div id="homeKpiDisplayArea">
+                                <div class="skeleton-grid">
+                                    <div class="skeleton-card"></div>
+                                    <div class="skeleton-card"></div>
+                                    <div class="skeleton-card"></div>
+                                    <div class="skeleton-card"></div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div id="homeKpiDisplayArea">
-                        <div class="skeleton-grid">
-                            <div class="skeleton-card"></div>
-                            <div class="skeleton-card"></div>
-                            <div class="skeleton-card"></div>
-                            <div class="skeleton-card"></div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- ANNOUNCEMENTS / DAILY BRIEF CARD -->
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>📢 Announcements & Daily Brief</h2>
-                        <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.45rem 0.9rem; font-size: 0.8rem;" onclick="openAnnouncementModal()">+ Post Announcement</button>
-                    </div>
-                    <div id="announcementsContainer">Loading announcements...</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>
-                            ⏳ QAs Pending Agent Acknowledgment
-                            <span id="homePendingCountBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Pending</span>
-                        </h2>
-                        <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
-                    </div>
-                    <div id="homePendingQaContainer">
-                        <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
-                            🎉 No Pending QA Forms to be Completed
+                        <div class="card">
+                            <div class="card-header-flex">
+                                <h2>
+                                    ⏳ QAs Pending Agent Acknowledgment
+                                    <span id="homePendingCountBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Pending</span>
+                                </h2>
+                                <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
+                            </div>
+                            <div id="homePendingQaContainer">
+                                <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                                    🎉 No Pending QA Forms to be Completed
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Announcements & Daily Brief -->
+                    <div class="card">
+                        <div class="card-header-flex">
+                            <h2>📢 Announcements</h2>
+                            <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.75rem; font-size: 0.75rem;" onclick="openAnnouncementModal()">+ Post</button>
+                        </div>
+                        <div id="announcementsContainer">Loading announcements...</div>
                     </div>
                 </div>
             </div>
