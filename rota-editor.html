@@ -183,49 +183,49 @@
             populateAgentDropdown();
         });
 
-        // Queries agent_stats for agent_name with built-in team baseline fallback
+        // Exact Performance Stats Overview data-loading logic
         async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Loading Agents --</option>';
 
-            let agentNames = [
-                "Anthony", "Dave Dayao", "Donna Bernardo", "Elenita Abano", 
-                "James Igot", "Jay Dayao", "Jenny Rapanan", "Jewel Opiana", 
-                "Joshua Ababon", "Joy Tadiaman", "Joyce Adducul", "Lauriz Jose", 
-                "Lori Gallo", "Ma Bautista", "Marieber Villamor", "Reuben Dinaguit", 
-                "Roxanne Gan", "Tom Manlangit", "Zeri Prigoner"
-            ];
-
             const client = window.supabaseClient || window.supabase;
-            if (client) {
-                try {
-                    const { data, error } = await client
-                        .from('agent_stats')
-                        .select('agent_name')
-                        .order('agent_name', { ascending: true });
-
-                    if (!error && data && data.length > 0) {
-                        const dbAgents = data.map(row => row.agent_name).filter(Boolean);
-                        if (dbAgents.length > 0) {
-                            agentNames = [...new Set([...agentNames, ...dbAgents])].sort();
-                        }
-                    }
-                } catch (err) {
-                    console.log("Using standard team roster fallback");
-                }
+            if (!client) {
+                select.innerHTML = '<option value="">Supabase Error</option>';
+                return;
             }
 
-            select.innerHTML = '<option value="">-- Choose Agent --</option>';
-            agentNames.forEach(name => {
-                const opt = document.createElement("option");
-                opt.value = name;
-                opt.innerText = name;
-                select.appendChild(opt);
-            });
+            try {
+                const { data, error } = await client
+                    .from('agent_stats')
+                    .select('agent_name');
 
-            if (agentNames.length > 0) {
-                select.value = agentNames[0];
-                loadAgentWeeklySchedule();
+                if (error) throw error;
+
+                select.innerHTML = '<option value="">-- Choose Agent --</option>';
+
+                if (data && data.length > 0) {
+                    // Extract unique agent names and sort alphabetically, exactly like Performance Stats
+                    const uniqueAgents = [...new Set(data.map(item => item.agent_name))]
+                        .filter(Boolean)
+                        .sort((a, b) => a.localeCompare(b));
+
+                    uniqueAgents.forEach(name => {
+                        const opt = document.createElement("option");
+                        opt.value = name;
+                        opt.innerText = name;
+                        select.appendChild(opt);
+                    });
+
+                    if (uniqueAgents.length > 0) {
+                        select.value = uniqueAgents[0];
+                        loadAgentWeeklySchedule();
+                    }
+                } else {
+                    select.innerHTML = '<option value="">No agents found</option>';
+                }
+            } catch (err) {
+                console.error("Error loading agent dropdown:", err);
+                select.innerHTML = '<option value="">Error loading agents</option>';
             }
         }
 
