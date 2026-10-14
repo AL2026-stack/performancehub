@@ -237,19 +237,104 @@
             document.getElementById("rotaModal").style.display = "none";
         }
 
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const parts = timeStr.split(':');
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+
+        function minutesToTimeStr(totalMins) {
+            const h = Math.floor(totalMins / 60).toString().padStart(2, '0');
+            const m = (totalMins % 60).toString().padStart(2, '0');
+            return `${h}:${m}`;
+        }
+
         async function submitActivityAssignment(e) {
             e.preventDefault();
             const client = window.supabaseClient || window.supabase;
             if (!client) return;
 
             const shiftId = document.getElementById("editShiftId").value;
+            const agentName = document.getElementById("rotaAgentSelect").value;
+            const dateStr = document.getElementById("rotaDate").value;
+            const newStartStr = document.getElementById("rotaStart").value;
+            const newEndStr = document.getElementById("rotaEnd").value;
             const activity = document.getElementById("rotaActivityType").value;
 
+            const newStartMins = timeToMinutes(newStartStr);
+            const newEndMins = timeToMinutes(newEndStr);
+
+            // Fetch existing activities for this agent on this date to check for overlaps
+            const { data: existingShifts } = await client.from('agent_rota')
+                .select('*')
+                .eq('agent_name', agentName)
+                .eq('shift_date', dateStr);
+
+            let overlappingShift = null;
+            if (existingShifts) {
+                existingShifts.forEach(s => {
+                    if (shiftId && s.id == shiftId) return; // ignore current shift if editing
+                    const sStart = timeToMinutes(s.start_time);
+                    const sEnd = timeToMinutes(s.end_time);
+
+                    // Check if new activity falls strictly inside an existing shift
+                    if (newStartMins > sStart && newEndMins < sEnd) {
+                        overlappingShift = s;
+                    }
+                });
+            }
+
+            if (overlappingShift && activity === 'Lunch') {
+                // Smart Split Logic: Split existing shift into two and insert lunch in between
+                const origStartStr = overlappingShift.start_time.slice(0, 5);
+                const origEndStr = overlappingShift.end_time.slice(0, 5);
+                const origType = overlappingShift.activity_type || overlappingShift.shift_type || 'Inbound';
+
+                // 1. Delete original overlapping shift
+                await client.from('agent_rota').delete().eq('id', overlappingShift.id);
+
+                // 2. Insert First Half
+                await client.from('agent_rota').insert([{
+                    agent_name: agentName,
+                    shift_date: dateStr,
+                    start_time: origStartStr,
+                    end_time: newStartStr,
+                    activity_type: origType,
+                    shift_type: origType
+                }]);
+
+                // 3. Insert Lunch Activity
+                await client.from('agent_rota').insert([{
+                    agent_name: agentName,
+                    shift_date: dateStr,
+                    start_time: newStartStr,
+                    end_time: newEndStr,
+                    activity_type: 'Lunch',
+                    shift_type: 'Lunch'
+                }]);
+
+                // 4. Insert Second Half
+                await client.from('agent_rota').insert([{
+                    agent_name: agentName,
+                    shift_date: dateStr,
+                    start_time: newEndStr,
+                    end_time: origEndStr,
+                    activity_type: origType,
+                    shift_type: origType
+                }]);
+
+                closeRotaModal();
+                loadActivityTable();
+                showToast("Shift split successfully with lunch inserted.");
+                return;
+            }
+
+            // Normal Insert / Update
             const payload = {
-                agent_name: document.getElementById("rotaAgentSelect").value,
-                shift_date: document.getElementById("rotaDate").value,
-                start_time: document.getElementById("rotaStart").value,
-                end_time: document.getElementById("rotaEnd").value,
+                agent_name: agentName,
+                shift_date: dateStr,
+                start_time: newStartStr,
+                end_time: newEndStr,
                 activity_type: activity,
                 shift_type: activity
             };
