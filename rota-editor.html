@@ -173,51 +173,38 @@
         document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
-        document.addEventListener("DOMContentLoaded", async () => {
+        const agentTeamList = [
+            "Dave Dayao",
+            "Anthony",
+            "Sarah Jenkins",
+            "Mark Taylor",
+            "Emma Watson",
+            "Chris Evans"
+        ];
+
+        document.addEventListener("DOMContentLoaded", () => {
             const now = new Date();
             const day = now.getDay();
             const diff = now.getDate() - day + (day === 0 ? -6 : 1);
             const monday = new Date(now.setDate(diff)).toISOString().split('T')[0];
             document.getElementById("weekPicker").value = monday;
 
-            await populateAgentDropdown();
+            populateAgentDropdown();
         });
 
-        async function populateAgentDropdown() {
+        function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
-            let agentsList = [
-                "Dave Dayao",
-                "Anthony",
-                "Sarah Jenkins",
-                "Mark Taylor",
-                "Emma Watson",
-                "Chris Evans"
-            ];
-
-            try {
-                const client = window.supabaseClient || window.supabase;
-                if (client) {
-                    const { data: statsData } = await client.from('agent_stats').select('agent_name');
-                    if (statsData) statsData.forEach(row => { if (row.agent_name) agentsList.push(row.agent_name); });
-
-                    const { data: rotaData } = await client.from('agent_rota').select('agent_name');
-                    if (rotaData) rotaData.forEach(row => { if (row.agent_name) agentsList.push(row.agent_name); });
-                }
-            } catch (err) {
-                console.log("Supabase agent fetch notice:", err);
-            }
-
-            const uniqueAgents = Array.from(new Set(agentsList.filter(Boolean))).sort();
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
-            uniqueAgents.forEach(name => {
+
+            agentTeamList.forEach(name => {
                 const opt = document.createElement("option");
                 opt.value = name;
                 opt.innerText = name;
                 select.appendChild(opt);
             });
 
-            if (uniqueAgents.length > 0) {
-                select.value = uniqueAgents[0];
+            if (agentTeamList.length > 0) {
+                select.value = agentTeamList[0];
                 loadAgentWeeklySchedule();
             }
         }
