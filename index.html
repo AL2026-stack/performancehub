@@ -263,13 +263,23 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT COLUMN (25%): Announcements & Daily Brief -->
-                    <div class="card" style="height: 100%;">
-                        <div class="card-header-flex">
-                            <h2>📢 Announcements & Daily Brief</h2>
-                            <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openAnnouncementModal()">+ Post</button>
+                    <!-- RIGHT COLUMN (25%): Announcements & Rota Sidebar -->
+                    <div style="display: flex; flex-direction: column; gap: 1.75rem;">
+                        <div class="card">
+                            <div class="card-header-flex">
+                                <h2>📢 Announcements & Daily Brief</h2>
+                                <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openAnnouncementModal()">+ Post</button>
+                            </div>
+                            <div id="announcementsContainer">Loading announcements...</div>
                         </div>
-                        <div id="announcementsContainer">Loading announcements...</div>
+
+                        <div class="card">
+                            <div class="card-header-flex">
+                                <h2>📅 My Upcoming Rota</h2>
+                                <button id="btnAddShift" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openRotaModal()">+ Add Shift</button>
+                            </div>
+                            <div id="rotaContainer">Loading schedule...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -397,6 +407,41 @@
         </div>
     </div>
 
+    <!-- ADD SHIFT MODAL (Managers Only) -->
+    <div id="rotaModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color: var(--primary); margin-bottom: 0.75rem; font-size: 1.15rem;">Schedule Agent Shift</h3>
+            <form onsubmit="submitNewShift(event)">
+                <div style="margin-bottom: 0.75rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Agent Name</label>
+                    <select id="rotaAgentSelect" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);"></select>
+                </div>
+                <div style="margin-bottom: 0.75rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Date</label>
+                    <input type="date" id="rotaDate" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+                    <div style="flex: 1;">
+                        <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label>
+                        <input type="time" id="rotaStart" value="08:00" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);">
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label>
+                        <input type="time" id="rotaEnd" value="16:30" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);">
+                    </div>
+                </div>
+                <div style="margin-bottom: 1.25rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Type / Notes</label>
+                    <input type="text" id="rotaType" placeholder="e.g. Standard Shift, WFH, Early" value="Standard Shift" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);">
+                </div>
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button type="button" class="btn-cancel-upload" onclick="closeRotaModal()">Cancel</button>
+                    <button type="submit" class="btn-modal-action">Save Shift</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const currentUser = sessionStorage.getItem("activeUser");
         const currentRole = sessionStorage.getItem("activeRole");
@@ -407,6 +452,7 @@
         let globalDocs = [];
         let globalAliases = {};
         let globalAnnouncements = [];
+        let globalRotaData = [];
         let pendingImportRows = [];
         let trendChartInstance = null;
 
@@ -443,6 +489,7 @@
             handleTimeframeTypeChange(); 
             renderDashboard();
             loadAnnouncements();
+            loadAgentRota();
         });
 
         async function syncCloudData() {
@@ -525,6 +572,51 @@
             }).join('');
         }
 
+        async function loadAgentRota() {
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            const btnAddShift = document.getElementById("btnAddShift");
+            if (btnAddShift) btnAddShift.style.display = isManagement ? "inline-flex" : "none";
+
+            let query = client.from('agent_rota').select('*').order('shift_date', { ascending: true });
+            
+            if (!isManagement) {
+                query = query.ilike('agent_name', currentUser);
+            } else {
+                const today = new Date().toISOString().split('T')[0];
+                query = query.gte('shift_date', today).limit(5);
+            }
+
+            const { data } = await query;
+            globalRotaData = data || [];
+
+            const container = document.getElementById("rotaContainer");
+            if (!container) return;
+
+            if (globalRotaData.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 1rem;">No upcoming shifts found.</p>`;
+                return;
+            }
+
+            container.innerHTML = globalRotaData.map(shift => {
+                const dateFormatted = new Date(shift.shift_date).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+                return `
+                    <div style="background: var(--light); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.6rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            ${isManagement ? `<strong style="font-size: 0.82rem; display: block; color: var(--primary);">${shift.agent_name}</strong>` : ''}
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">${dateFormatted}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.85rem; font-weight: 800; color: var(--text-main);">${shift.start_time.slice(0,5)} - ${shift.end_time.slice(0,5)}</span>
+                            <span style="display: block; font-size: 0.72rem; color: var(--text-muted);">${shift.shift_type}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function openAnnouncementModal() {
             document.getElementById("announcementModal").style.display = "flex";
         }
@@ -568,6 +660,53 @@
                 loadAnnouncements();
             } else {
                 alert("Error archiving: " + error.message);
+            }
+        }
+
+        async function openRotaModal() {
+            const select = document.getElementById("rotaAgentSelect");
+            select.innerHTML = '<option value="">-- Choose Agent --</option>';
+            
+            const client = window.supabaseClient || window.supabase;
+            if (client) {
+                const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
+                if (data) {
+                    data.forEach(row => {
+                        const opt = document.createElement("option");
+                        opt.value = row.agent_name;
+                        opt.innerText = row.agent_name;
+                        select.appendChild(opt);
+                    });
+                }
+            }
+            document.getElementById("rotaDate").value = new Date().toISOString().split('T')[0];
+            document.getElementById("rotaModal").style.display = "flex";
+        }
+
+        function closeRotaModal() {
+            document.getElementById("rotaModal").style.display = "none";
+        }
+
+        async function submitNewShift(e) {
+            e.preventDefault();
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const payload = {
+                agent_name: document.getElementById("rotaAgentSelect").value,
+                shift_date: document.getElementById("rotaDate").value,
+                start_time: document.getElementById("rotaStart").value,
+                end_time: document.getElementById("rotaEnd").value,
+                shift_type: document.getElementById("rotaType").value.trim()
+            };
+
+            const { error } = await client.from('agent_rota').insert([payload]);
+            if (!error) {
+                triggerToast("Shift successfully scheduled.");
+                closeRotaModal();
+                loadAgentRota();
+            } else {
+                alert("Error saving shift: " + error.message);
             }
         }
 
