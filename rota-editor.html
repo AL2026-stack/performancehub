@@ -51,8 +51,10 @@
         
         .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.65rem 1.1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(230, 0, 126, 0.2); }
         
-        .toolbar-flex { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-        .calendar-input, .filter-select { padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
+        /* Side-by-side toolbar alignment */
+        .toolbar-flex { display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: wrap; }
+        .filter-field-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .calendar-input, .filter-select { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; min-width: 220px; }
         .filter-label { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
         /* Agent Weekly View Cards */
@@ -92,12 +94,19 @@
             <div class="card">
                 <div class="card-header-flex">
                     <h2>✏️ Agent Weekly Activity & Shift Editor</h2>
+                    
+                    <!-- Side-by-side toolbar filter controls -->
                     <div class="toolbar-flex">
-                        <span class="filter-label">Select Agent:</span>
-                        <select id="filterAgentSelect" class="filter-select" onchange="loadAgentWeeklySchedule()"></select>
-
-                        <span class="filter-label">Week Commencing:</span>
-                        <input type="date" id="weekPicker" class="calendar-input" onchange="loadAgentWeeklySchedule()">
+                        <div class="filter-field-group">
+                            <label class="filter-label" for="filterAgentSelect">Select Agent:</label>
+                            <select id="filterAgentSelect" class="filter-select" onchange="loadAgentWeeklySchedule()">
+                                <option value="">Loading agents...</option>
+                            </select>
+                        </div>
+                        <div class="filter-field-group">
+                            <label class="filter-label" for="weekPicker">Week Commencing:</label>
+                            <input type="date" id="weekPicker" class="calendar-input" onchange="loadAgentWeeklySchedule()">
+                        </div>
                     </div>
                 </div>
                 
@@ -125,7 +134,6 @@
                 <div style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type</label>
                     <select id="rotaActivityType" onchange="toggleTimeInputs()" required>
-                        <option value="Shift Preset">-- Select Shift Preset --</option>
                         <option value="8.30 - 17.00">8.30 - 17.00</option>
                         <option value="10.30 - 19.00">10.30 - 19.00</option>
                         <option value="8.30 - 17.00 (Cover)">8.30 - 17.00 (Cover)</option>
@@ -184,15 +192,18 @@
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
             const client = window.supabaseClient || window.supabase;
             if (client) {
+                // Fetch from agent_stats or profiles
                 const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
-                if (data) {
+                if (data && data.length > 0) {
                     data.forEach(row => {
                         const opt = document.createElement("option");
                         opt.value = row.agent_name;
                         opt.innerText = row.agent_name;
                         select.appendChild(opt);
                     });
-                    if (data.length > 0) select.value = data[0].agent_name;
+                    select.value = data[0].agent_name;
+                } else {
+                    select.innerHTML = '<option value="">No agents found</option>';
                 }
             }
         }
