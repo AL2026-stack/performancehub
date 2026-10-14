@@ -190,40 +190,37 @@
             const select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
             const client = window.supabaseClient || window.supabase;
-            if (!client) {
-                select.innerHTML = '<option value="">Supabase Client Not Found</option>';
-                return;
-            }
-
+            
             let agentNamesSet = new Set();
 
-            try {
-                const { data: statsData } = await client.from('agent_stats').select('agent_name');
-                if (statsData) statsData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+            if (client) {
+                try {
+                    const { data: statsData } = await client.from('agent_stats').select('agent_name');
+                    if (statsData) statsData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
 
-                const { data: rotaData } = await client.from('agent_rota').select('agent_name');
-                if (rotaData) rotaData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
-            } catch (err) {
-                console.error("Error loading agent names:", err);
+                    const { data: rotaData } = await client.from('agent_rota').select('agent_name');
+                    if (rotaData) rotaData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+                } catch (err) {
+                    console.error("Supabase fetch warning:", err);
+                }
             }
 
-            // Fallback if no names found in cloud tables yet
-            if (agentNamesSet.size === 0) {
-                agentNamesSet.add("Dave Dayao");
-            }
+            // Always ensure active user or test agents are present so dropdown is never stuck
+            agentNamesSet.add("Dave Dayao");
+            agentNamesSet.add(currentUser);
 
             const agents = Array.from(agentNamesSet).sort();
+            select.innerHTML = '<option value="">-- Choose Agent --</option>';
+            agents.forEach(name => {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.innerText = name;
+                select.appendChild(opt);
+            });
+
             if (agents.length > 0) {
-                agents.forEach(name => {
-                    const opt = document.createElement("option");
-                    opt.value = name;
-                    opt.innerText = name;
-                    select.appendChild(opt);
-                });
                 select.value = agents[0];
                 loadAgentWeeklySchedule();
-            } else {
-                select.innerHTML = '<option value="">No agents found in database</option>';
             }
         }
 
@@ -248,7 +245,7 @@
         async function loadAgentWeeklySchedule() {
             const agentName = document.getElementById("filterAgentSelect").value;
             const weekPickerVal = document.getElementById("weekPicker").value || new Date().toISOString().split('T')[0];
-            const monday = getMonday(weekPickerVal);
+            monday = getMonday(weekPickerVal);
             const weekDates = getWeekDates(monday);
 
             const container = document.getElementById("agentWeeklyContainer");
@@ -258,16 +255,20 @@
             }
 
             const client = window.supabaseClient || window.supabase;
-            const { data: shifts } = await client.from('agent_rota')
-                .select('*')
-                .ilike('agent_name', agentName)
-                .gte('shift_date', weekDates[0])
-                .lte('shift_date', weekDates[6]);
+            let shifts = [];
+            if (client) {
+                const { data } = await client.from('agent_rota')
+                    .select('*')
+                    .ilike('agent_name', agentName)
+                    .gte('shift_date', weekDates[0])
+                    .lte('shift_date', weekDates[6]);
+                shifts = data || [];
+            }
 
             const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
             container.innerHTML = weekDates.map((dateStr, idx) => {
-                const dayShifts = shifts ? shifts.filter(s => s.shift_date === dateStr) : [];
+                const dayShifts = shifts.filter(s => s.shift_date === dateStr);
                 return `
                     <div class="day-column-card">
                         <div>
