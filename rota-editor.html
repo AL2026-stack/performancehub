@@ -150,9 +150,11 @@
                 <div id="shiftPresetGroup" style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Preset</label>
                     <select id="rotaShiftPreset">
-                        <option value="8.30 - 17.00">8.30 - 17.00 (Phone: 8.30-12.00 & 13.00-17.00 + 30m buffer)</option>
-                        <option value="10.30 - 19.00">10.30 - 19.00 (Phone: 10.30-14.30 & 15.00-19.00 + 30m buffer)</option>
-                        <option value="09.00 - 17.00">09.00 - 17.00 (Phone: 9.00-13.00 & 13.30-17.00 + 30m buffer)</option>
+                        <option value="8.30 - 17.00">8.30 - 17.00</option>
+                        <option value="10.30 - 19.00">10.30 - 19.00</option>
+                        <option value="8.30 - 17.00 (Cover)">8.30 - 17.00 (Cover)</option>
+                        <option value="10.30 - 19.00 (Cover)">10.30 - 19.00 (Cover)</option>
+                        <option value="09.00 - 17.00">09.00 - 17.00</option>
                     </select>
                 </div>
 
@@ -375,12 +377,6 @@
             document.getElementById("rotaModal").style.display = "none";
         }
 
-        function timeToMinutes(timeStr) {
-            if (!timeStr) return 0;
-            var parts = timeStr.split(':');
-            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-        }
-
         async function submitActivityAssignment(e) {
             e.preventDefault();
             var client = window.supabaseClient || window.supabase;
@@ -398,48 +394,12 @@
                 var preset = document.getElementById("rotaShiftPreset").value;
                 if (preset.indexOf('8.30 - 17.00') === 0) { startStr = "08:30"; endStr = "17:00"; }
                 else if (preset.indexOf('10.30 - 19.00') === 0) { startStr = "10:30"; endStr = "19:00"; }
+                else if (preset.indexOf('8.30 - 17.00 (Cover)') === 0) { startStr = "08:30"; endStr = "17:00"; }
+                else if (preset.indexOf('10.30 - 19.00 (Cover)') === 0) { startStr = "10:30"; endStr = "19:00"; }
                 else if (preset.indexOf('09.00 - 17.00') === 0) { startStr = "09:00"; endStr = "17:00"; }
             } else {
                 startStr = document.getElementById("rotaStart").value;
                 endStr = document.getElementById("rotaEnd").value;
-            }
-
-            var newStartMins = timeToMinutes(startStr);
-            var newEndMins = timeToMinutes(endStr);
-
-            var existing = await client.from('agent_rota')
-                .select('*')
-                .ilike('agent_name', agentName)
-                .eq('shift_date', dateStr);
-
-            var overlappingShift = null;
-            if (existing.data) {
-                existing.data.forEach(function(s) {
-                    if (shiftId && s.id == shiftId) return;
-                    var sStart = timeToMinutes(s.start_time);
-                    var sEnd = timeToMinutes(s.end_time);
-                    if (newStartMins > sStart && newEndMins < sEnd) {
-                        overlappingShift = s;
-                    }
-                });
-            }
-
-            if (overlappingShift && actType === 'Lunch') {
-                var origStartStr = overlappingShift.start_time.slice(0, 5);
-                var origEndStr = overlappingShift.end_time.slice(0, 5);
-                var origType = overlappingShift.activity_type || 'Inbound';
-
-                await client.from('agent_rota').delete().eq('id', overlappingShift.id);
-
-                // Smart split: Split the inbound shift around the lunch break correctly accounting for working times
-                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: origStartStr, end_time: startStr, activity_type: origType, shift_type: origType }]);
-                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: startStr, end_time: endStr, activity_type: 'Lunch', shift_type: 'Lunch', comments: comments }]);
-                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: endStr, end_time: origEndStr, activity_type: origType, shift_type: origType }]);
-
-                closeRotaModal();
-                loadAgentWeeklySchedule();
-                showToast("Shift split successfully with lunch inserted.");
-                return;
             }
 
             var payload = {
