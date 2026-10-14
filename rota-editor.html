@@ -100,7 +100,7 @@
                         <div class="filter-field-group">
                             <label class="filter-label" for="filterAgentSelect">Select Agent:</label>
                             <select id="filterAgentSelect" class="filter-select" onchange="loadAgentWeeklySchedule()">
-                                <option value="">-- Loading Agents --</option>
+                                <option value="">-- Choose Agent --</option>
                             </select>
                         </div>
                         <div class="filter-field-group">
@@ -183,10 +183,11 @@
             populateAgentDropdown();
         });
 
+        // Exact Quality Forms dropdown population logic
         async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Loading Agents --</option>';
-            
+
             const client = window.supabaseClient || window.supabase;
             if (!client) {
                 select.innerHTML = '<option value="">Supabase Error</option>';
@@ -195,17 +196,17 @@
 
             try {
                 const { data, error } = await client
-                    .from('agent_stats') 
+                    .from('agent_stats')
                     .select('agent_name')
                     .order('agent_name', { ascending: true });
 
                 if (error) throw error;
 
                 select.innerHTML = '<option value="">-- Choose Agent --</option>';
-                
+
                 if (data && data.length > 0) {
                     const uniqueAgents = [...new Set(data.map(row => row.agent_name))];
-                    
+
                     uniqueAgents.forEach(name => {
                         if (name) {
                             const opt = document.createElement("option");
@@ -214,7 +215,7 @@
                             select.appendChild(opt);
                         }
                     });
-                    
+
                     if (uniqueAgents.length > 0) {
                         select.value = uniqueAgents[0];
                         loadAgentWeeklySchedule();
@@ -223,7 +224,7 @@
                     select.innerHTML = '<option value="">No agents found</option>';
                 }
             } catch (err) {
-                console.error("Error loading dropdown:", err);
+                console.error("Error loading agent dropdown:", err);
                 select.innerHTML = '<option value="">Error loading agents</option>';
             }
         }
