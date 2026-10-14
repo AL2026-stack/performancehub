@@ -132,7 +132,7 @@
                     <input type="date" id="rotaDate" readonly style="background: var(--light); font-weight: 700;">
                 </div>
                 <div style="margin-bottom: 0.85rem;">
-                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type</label>
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type / Shift Preset</label>
                     <select id="rotaActivityType" onchange="toggleTimeInputs()" required>
                         <option value="8.30 - 17.00">8.30 - 17.00</option>
                         <option value="10.30 - 19.00">10.30 - 19.00</option>
@@ -184,27 +184,40 @@
             document.getElementById("weekPicker").value = monday;
 
             await populateAgentDropdown();
-            loadAgentWeeklySchedule();
         });
 
         async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
             const client = window.supabaseClient || window.supabase;
-            if (client) {
-                // Fetch from agent_stats or profiles
-                const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
-                if (data && data.length > 0) {
-                    data.forEach(row => {
-                        const opt = document.createElement("option");
-                        opt.value = row.agent_name;
-                        opt.innerText = row.agent_name;
-                        select.appendChild(opt);
-                    });
-                    select.value = data[0].agent_name;
-                } else {
-                    select.innerHTML = '<option value="">No agents found</option>';
-                }
+            if (!client) return;
+
+            let agentNamesSet = new Set();
+
+            // Fetch from agent_stats
+            const { data: statsData } = await client.from('agent_stats').select('agent_name');
+            if (statsData) {
+                statsData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+            }
+
+            // Fetch from agent_rota as backup
+            const { data: rotaData } = await client.from('agent_rota').select('agent_name');
+            if (rotaData) {
+                rotaData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+            }
+
+            const agents = Array.from(agentNamesSet).sort();
+            if (agents.length > 0) {
+                agents.forEach(name => {
+                    const opt = document.createElement("option");
+                    opt.value = name;
+                    opt.innerText = name;
+                    select.appendChild(opt);
+                });
+                select.value = agents[0];
+                loadAgentWeeklySchedule();
+            } else {
+                select.innerHTML = '<option value="">No agents found in database</option>';
             }
         }
 
@@ -365,7 +378,7 @@
             if (overlappingShift && actType === 'Lunch') {
                 const origStartStr = overlappingShift.start_time.slice(0, 5);
                 const origEndStr = overlappingShift.end_time.slice(0, 5);
-                const origType = overlappingShift.activity_type || overlappingShift.shift_type || 'Inbound';
+                const origType = overlappingShift.activity_type || overlappingShift.shift_type || '8.30 - 17.00';
 
                 await client.from('agent_rota').delete().eq('id', overlappingShift.id);
 
