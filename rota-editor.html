@@ -51,16 +51,19 @@
         
         .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.65rem 1.1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(230, 0, 126, 0.2); }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
-        th, td { text-align: left; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
-        th { background-color: #0f172a; color: white; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
-        td { font-size: 0.9rem; }
-
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: var(--card-bg); color: var(--text-main); border-radius: 16px; padding: 2rem; max-width: 480px; width: 90%; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .toolbar-flex { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+        .calendar-input, .filter-select { padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
         .filter-label { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-        input, select { padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--card-bg); color: var(--text-main); width: 100%; outline: none; }
-        input:focus, select:focus { border-color: var(--primary); }
+
+        /* Agent Weekly View Cards */
+        .day-column-card { background: var(--light); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .day-title { font-weight: 800; font-size: 0.95rem; color: var(--dark); min-width: 130px; }
+        .activity-pill { background: #fff; border: 1px solid var(--border); padding: 0.4rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); margin-right: 0.5rem; margin-bottom: 0.5rem; }
+        
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); color: var(--text-main); border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        input, select, textarea { padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--card-bg); color: var(--text-main); width: 100%; outline: none; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
         .toast-notify { display: none; padding: 0.85rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.88rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
     </style>
 </head>
@@ -88,12 +91,18 @@
             
             <div class="card">
                 <div class="card-header-flex">
-                    <h2>✏️ Master Activity & Shift Editor</h2>
-                    <button class="btn-launch" onclick="openRotaModal(null)">+ Schedule New Activity</button>
+                    <h2>✏️ Agent Weekly Activity & Shift Editor</h2>
+                    <div class="toolbar-flex">
+                        <span class="filter-label">Select Agent:</span>
+                        <select id="filterAgentSelect" class="filter-select" onchange="loadAgentWeeklySchedule()"></select>
+
+                        <span class="filter-label">Week Commencing:</span>
+                        <input type="date" id="weekPicker" class="calendar-input" onchange="loadAgentWeeklySchedule()">
+                    </div>
                 </div>
                 
-                <div id="activityTableContainer" style="overflow-x: auto;">
-                    <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-weight: 600;">Loading scheduled activities...</div>
+                <div id="agentWeeklyContainer" style="margin-top: 1rem;">
+                    <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-weight: 600;">Please select an agent to view their weekly schedule.</div>
                 </div>
             </div>
         </main>
@@ -106,27 +115,40 @@
             <form onsubmit="submitActivityAssignment(event)">
                 <input type="hidden" id="editShiftId">
                 <div style="margin-bottom: 0.85rem;">
-                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Agent Name</label>
-                    <select id="rotaAgentSelect" required></select>
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Target Agent</label>
+                    <input type="text" id="modalAgentName" readonly style="background: var(--light); font-weight: 700;">
                 </div>
                 <div style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Date</label>
-                    <input type="date" id="rotaDate" required>
-                </div>
-                <div style="display: flex; gap: 1rem; margin-bottom: 0.85rem;">
-                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="08:00" required></div>
-                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="16:30" required></div>
+                    <input type="date" id="rotaDate" readonly style="background: var(--light); font-weight: 700;">
                 </div>
                 <div style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type</label>
-                    <select id="rotaActivityType" required>
-                        <option value="Inbound">Inbound (Counts to Working Hours)</option>
-                        <option value="Lunch">Lunch (Non-Working)</option>
-                        <option value="Overtime">Overtime (Non-Working / Extra)</option>
+                    <select id="rotaActivityType" onchange="toggleTimeInputs()" required>
+                        <option value="Shift Preset">-- Select Shift Preset --</option>
+                        <option value="8.30 - 17.00">8.30 - 17.00</option>
+                        <option value="10.30 - 19.00">10.30 - 19.00</option>
+                        <option value="8.30 - 17.00 (Cover)">8.30 - 17.00 (Cover)</option>
+                        <option value="10.30 - 19.00 (Cover)">10.30 - 19.00 (Cover)</option>
+                        <option value="09.00 - 17.00">09.00 - 17.00</option>
+                        <option value="Coaching">Coaching</option>
+                        <option value="Training">Training</option>
+                        <option value="Meeting">Meeting</option>
+                        <option value="Sickness">Sickness</option>
+                        <option value="RDO">RDO</option>
+                        <option value="Lunch">Lunch</option>
                     </select>
                 </div>
+                <div id="customTimeBox" style="display: none; gap: 1rem; margin-bottom: 0.85rem;">
+                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="09:00"></div>
+                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="17:00"></div>
+                </div>
+                <div style="margin-bottom: 1.25rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Comments / Notes (Optional)</label>
+                    <textarea id="rotaComments" rows="2" placeholder="Add any comments here..."></textarea>
+                </div>
                 <div style="display: flex; gap: 0.75rem; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                    <button type="button" id="deleteShiftBtn" style="background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; display: none;" onclick="deleteCurrentActivity()">🗑️ Remove Activity</button>
+                    <button type="button" id="deleteShiftBtn" style="background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; display: none;" onclick="deleteCurrentActivity()">🗑️ Remove</button>
                     <div style="display: flex; gap: 0.75rem; margin-left: auto;">
                         <button type="button" style="background:transparent; border:1px solid var(--border); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600;" onclick="closeRotaModal()">Cancel</button>
                         <button type="submit" style="background:var(--primary-gradient); color:white; border:none; padding:0.6rem 1.25rem; border-radius:8px; font-weight:700; cursor:pointer;">Commit</button>
@@ -146,54 +168,20 @@
         document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
-        document.addEventListener("DOMContentLoaded", () => {
-            loadActivityTable();
+        document.addEventListener("DOMContentLoaded", async () => {
+            const now = new Date();
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            const monday = new Date(now.setDate(diff)).toISOString().split('T')[0];
+            document.getElementById("weekPicker").value = monday;
+
+            await populateAgentDropdown();
+            loadAgentWeeklySchedule();
         });
 
-        async function loadActivityTable() {
-            const client = window.supabaseClient || window.supabase;
-            if (!client) return;
-
-            const { data } = await client.from('agent_rota').select('*').order('shift_date', { ascending: true });
-            const container = document.getElementById("activityTableContainer");
-
-            if (!data || data.length === 0) {
-                container.innerHTML = `<p style="padding: 2rem; text-align: center; color: var(--text-muted);">No scheduled activities found.</p>`;
-                return;
-            }
-
-            container.innerHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Agent Name</th>
-                            <th>Activity</th>
-                            <th>Hours</th>
-                            <th style="text-align: right;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.map(s => `
-                            <tr>
-                                <td style="font-weight: 700;">${s.shift_date}</td>
-                                <td>${s.agent_name}</td>
-                                <td><span style="font-weight: 700; color: var(--primary);">${s.activity_type || s.shift_type || 'Inbound'}</span></td>
-                                <td>${s.start_time.slice(0,5)} -${s.end_time.slice(0,5)}</td>
-                                <td style="text-align: right;">
-                                    <button class="btn-launch" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openRotaModal(${s.id})">Edit / Remove</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        }
-
-        async function openRotaModal(shiftId) {
-            const select = document.getElementById("rotaAgentSelect");
+        async function populateAgentDropdown() {
+            const select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
-            
             const client = window.supabaseClient || window.supabase;
             if (client) {
                 const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
@@ -204,30 +192,108 @@
                         opt.innerText = row.agent_name;
                         select.appendChild(opt);
                     });
+                    if (data.length > 0) select.value = data[0].agent_name;
                 }
             }
+        }
 
-            const deleteBtn = document.getElementById("deleteShiftBtn");
+        function getMonday(dStr) {
+            const d = new Date(dStr);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setDate(diff)).toISOString().split('T')[0];
+        }
+
+        function getWeekDates(mondayStr) {
+            const monday = new Date(mondayStr);
+            const dates = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                dates.push(d.toISOString().split('T')[0]);
+            }
+            return dates;
+        }
+
+        async function loadAgentWeeklySchedule() {
+            const agentName = document.getElementById("filterAgentSelect").value;
+            const weekPickerVal = document.getElementById("weekPicker").value || new Date().toISOString().split('T')[0];
+            const monday = getMonday(weekPickerVal);
+            const weekDates = getWeekDates(monday);
+
+            const container = document.getElementById("agentWeeklyContainer");
+            if (!agentName) {
+                container.innerHTML = `<p style="padding: 2rem; text-align: center; color: var(--text-muted);">Please select an agent.</p>`;
+                return;
+            }
+
+            const client = window.supabaseClient || window.supabase;
+            const { data: shifts } = await client.from('agent_rota')
+                .select('*')
+                .ilike('agent_name', agentName)
+                .gte('shift_date', weekDates[0])
+                .lte('shift_date', weekDates[6]);
+
+            const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+            container.innerHTML = weekDates.map((dateStr, idx) => {
+                const dayShifts = shifts ? shifts.filter(s => s.shift_date === dateStr) : [];
+                return `
+                    <div class="day-column-card">
+                        <div>
+                            <div class="day-title">${dayNames[idx]}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">${dateStr}</div>
+                        </div>
+                        <div style="flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-left: 1rem;">
+                            ${dayShifts.length === 0 ? `<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">No activities scheduled</span>` : 
+                                dayShifts.map(s => `
+                                    <div class="activity-pill">
+                                        <span>${s.start_time.slice(0,5)} -${s.end_time.slice(0,5)} (${s.activity_type \vert{}\vert{} s.shift_type})</span>${s.comments ? `<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">[${s.comments}]</span>` : ''}
+                                        <button onclick="openRotaModal(${s.id}, '${agentName}', '${dateStr}')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.75rem; font-weight:800; margin-left:0.25rem;" title="Edit">✏️</button>
+                                    </div>
+                                `).join('')}
+                        </div>
+                        <button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openRotaModal(null, '${agentName}', '${dateStr}')">+ Add Activity</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleTimeInputs() {
+            const val = document.getElementById("rotaActivityType").value;
+            const customBox = document.getElementById("customTimeBox");
+            if (val === 'Coaching' || val === 'Training' || val === 'Meeting' || val === 'Sickness' || val === 'RDO' || val === 'Lunch') {
+                customBox.style.display = "flex";
+            } else {
+                customBox.style.display = "none";
+            }
+        }
+
+        async function openRotaModal(shiftId, agentName, dateStr) {
+            document.getElementById("modalAgentName").value = agentName;
+            document.getElementById("rotaDate").value = dateStr;
             document.getElementById("editShiftId").value = shiftId || "";
+            const deleteBtn = document.getElementById("deleteShiftBtn");
 
+            const client = window.supabaseClient || window.supabase;
             if (shiftId && client) {
                 document.getElementById("modalTitle").innerText = "Edit / Remove Activity";
                 deleteBtn.style.display = "block";
                 const { data } = await client.from('agent_rota').select('*').eq('id', shiftId).single();
                 if (data) {
-                    select.value = data.agent_name;
-                    document.getElementById("rotaDate").value = data.shift_date;
+                    const actType = data.activity_type || data.shift_type;
+                    document.getElementById("rotaActivityType").value = actType;
+                    toggleTimeInputs();
                     document.getElementById("rotaStart").value = data.start_time.slice(0,5);
                     document.getElementById("rotaEnd").value = data.end_time.slice(0,5);
-                    document.getElementById("rotaActivityType").value = data.activity_type || data.shift_type || 'Inbound';
+                    document.getElementById("rotaComments").value = data.comments || "";
                 }
             } else {
                 document.getElementById("modalTitle").innerText = "Schedule Activity";
                 deleteBtn.style.display = "none";
-                document.getElementById("rotaDate").value = new Date().toISOString().split('T')[0];
-                document.getElementById("rotaStart").value = "08:00";
-                document.getElementById("rotaEnd").value = "16:30";
-                document.getElementById("rotaActivityType").value = "Inbound";
+                document.getElementById("rotaActivityType").value = "8.30 - 17.00";
+                toggleTimeInputs();
+                document.getElementById("rotaComments").value = "";
             }
 
             document.getElementById("rotaModal").style.display = "flex";
@@ -243,100 +309,76 @@
             return parseInt(parts[0]) * 60 + parseInt(parts[1]);
         }
 
-        function minutesToTimeStr(totalMins) {
-            const h = Math.floor(totalMins / 60).toString().padStart(2, '0');
-            const m = (totalMins % 60).toString().padStart(2, '0');
-            return `${h}:${m}`;
-        }
-
         async function submitActivityAssignment(e) {
             e.preventDefault();
             const client = window.supabaseClient || window.supabase;
             if (!client) return;
 
             const shiftId = document.getElementById("editShiftId").value;
-            const agentName = document.getElementById("rotaAgentSelect").value;
+            const agentName = document.getElementById("modalAgentName").value;
             const dateStr = document.getElementById("rotaDate").value;
-            const newStartStr = document.getElementById("rotaStart").value;
-            const newEndStr = document.getElementById("rotaEnd").value;
-            const activity = document.getElementById("rotaActivityType").value;
+            const actType = document.getElementById("rotaActivityType").value;
+            const comments = document.getElementById("rotaComments").value.trim();
 
-            const newStartMins = timeToMinutes(newStartStr);
-            const newEndMins = timeToMinutes(newEndStr);
+            let startStr = "08:30", endStr = "17:00";
 
-            // Fetch existing activities for this agent on this date to check for overlaps
+            if (actType === '8.30 - 17.00' || actType === '8.30 - 17.00 (Cover)') { startStr = "08:30"; endStr = "17:00"; }
+            else if (actType === '10.30 - 19.00' || actType === '10.30 - 19.00 (Cover)') { startStr = "10:30"; endStr = "19:00"; }
+            else if (actType === '09.00 - 17.00') { startStr = "09:00"; endStr = "17:00"; }
+            else {
+                startStr = document.getElementById("rotaStart").value;
+                endStr = document.getElementById("rotaEnd").value;
+            }
+
+            const newStartMins = timeToMinutes(startStr);
+            const newEndMins = timeToMinutes(endStr);
+
+            // Check overlap for Smart Lunch Splitting
             const { data: existingShifts } = await client.from('agent_rota')
                 .select('*')
-                .eq('agent_name', agentName)
+                .ilike('agent_name', agentName)
                 .eq('shift_date', dateStr);
 
             let overlappingShift = null;
             if (existingShifts) {
                 existingShifts.forEach(s => {
-                    if (shiftId && s.id == shiftId) return; // ignore current shift if editing
+                    if (shiftId && s.id == shiftId) return;
                     const sStart = timeToMinutes(s.start_time);
                     const sEnd = timeToMinutes(s.end_time);
-
-                    // Check if new activity falls strictly inside an existing shift
                     if (newStartMins > sStart && newEndMins < sEnd) {
                         overlappingShift = s;
                     }
                 });
             }
 
-            if (overlappingShift && activity === 'Lunch') {
-                // Smart Split Logic: Split existing shift into two and insert lunch in between
+            if (overlappingShift && actType === 'Lunch') {
                 const origStartStr = overlappingShift.start_time.slice(0, 5);
                 const origEndStr = overlappingShift.end_time.slice(0, 5);
                 const origType = overlappingShift.activity_type || overlappingShift.shift_type || 'Inbound';
 
-                // 1. Delete original overlapping shift
                 await client.from('agent_rota').delete().eq('id', overlappingShift.id);
 
-                // 2. Insert First Half
-                await client.from('agent_rota').insert([{
-                    agent_name: agentName,
-                    shift_date: dateStr,
-                    start_time: origStartStr,
-                    end_time: newStartStr,
-                    activity_type: origType,
-                    shift_type: origType
-                }]);
-
-                // 3. Insert Lunch Activity
-                await client.from('agent_rota').insert([{
-                    agent_name: agentName,
-                    shift_date: dateStr,
-                    start_time: newStartStr,
-                    end_time: newEndStr,
-                    activity_type: 'Lunch',
-                    shift_type: 'Lunch'
-                }]);
-
-                // 4. Insert Second Half
-                await client.from('agent_rota').insert([{
-                    agent_name: agentName,
-                    shift_date: dateStr,
-                    start_time: newEndStr,
-                    end_time: origEndStr,
-                    activity_type: origType,
-                    shift_type: origType
-                }]);
+                // First half
+                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: origStartStr, end_time: startStr, activity_type: origType, shift_type: origType }]);
+                // Lunch
+                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: startStr, end_time: endStr, activity_type: 'Lunch', shift_type: 'Lunch', comments }]);
+                // Second half
+                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: endStr, end_time: origEndStr, activity_type: origType, shift_type: origType }]);
 
                 closeRotaModal();
-                loadActivityTable();
+                loadAgentWeeklySchedule();
                 showToast("Shift split successfully with lunch inserted.");
                 return;
             }
 
-            // Normal Insert / Update
             const payload = {
                 agent_name: agentName,
                 shift_date: dateStr,
-                start_time: newStartStr,
-                end_time: newEndStr,
-                activity_type: activity,
-                shift_type: activity
+                start_time: startStr,
+                end_time: endStr,
+                activity_type: actType,
+                shift_type: actType,
+                comments
             };
 
             let error = null;
@@ -350,7 +392,7 @@
 
             if (!error) {
                 closeRotaModal();
-                loadActivityTable();
+                loadAgentWeeklySchedule();
                 showToast("Activity successfully saved.");
             } else {
                 alert("Error saving activity: " + error.message);
@@ -367,7 +409,7 @@
 
             if (!error) {
                 closeRotaModal();
-                loadActivityTable();
+                loadAgentWeeklySchedule();
                 showToast("Activity removed successfully.");
             } else {
                 alert("Error removing activity: " + error.message);
