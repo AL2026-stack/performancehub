@@ -136,13 +136,13 @@
                 <div style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type</label>
                     <select id="rotaActivityType" onchange="handleActivityTypeChange()" required>
-                        <option value="Inbound">Inbound</option>
-                        <option value="Training">Training</option>
-                        <option value="Meeting">Meeting</option>
-                        <option value="Coaching">Coaching</option>
-                        <option value="RDO">RDO</option>
-                        <option value="Sickness">Sickness</option>
-                        <option value="Lunch">Lunch</option>
+                        <option value="Inbound">Inbound (Paid)</option>
+                        <option value="Training">Training (Paid)</option>
+                        <option value="Meeting">Meeting (Paid)</option>
+                        <option value="Coaching">Coaching (Paid)</option>
+                        <option value="Lunch">Lunch (Paid)</option>
+                        <option value="Sickness">Sickness (Unpaid)</option>
+                        <option value="RDO">RDO (Unpaid)</option>
                     </select>
                 </div>
 
@@ -158,10 +158,10 @@
                     </select>
                 </div>
 
-                <!-- Custom time pickers for non-inbound activities -->
+                <!-- Custom time pickers for non-inbound activities (or Lunch) -->
                 <div id="customTimeBox" style="display: none; gap: 1rem; margin-bottom: 0.85rem;">
-                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="09:00"></div>
-                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="17:00"></div>
+                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="12:00"></div>
+                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="13:00"></div>
                 </div>
 
                 <!-- Comments / Notes Field -->
@@ -377,6 +377,12 @@
             document.getElementById("rotaModal").style.display = "none";
         }
 
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            var parts = timeStr.split(':');
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+
         async function submitActivityAssignment(e) {
             e.preventDefault();
             var client = window.supabaseClient || window.supabase;
@@ -400,6 +406,44 @@
             } else {
                 startStr = document.getElementById("rotaStart").value;
                 endStr = document.getElementById("rotaEnd").value;
+            }
+
+            var newStartMins = timeToMinutes(startStr);
+            var newEndMins = timeToMinutes(endStr);
+
+            // Check existing shifts for smart lunch splitting
+            var existing = await client.from('agent_rota')
+                .select('*')
+                .ilike('agent_name', agentName)
+                .eq('shift_date', dateStr);
+
+            var overlappingShift = null;
+            if (existing.data) {
+                existing.data.forEach(function(s) {
+                    if (shiftId && s.id == shiftId) return;
+                    var sStart = timeToMinutes(s.start_time);
+                    var sEnd = timeToMinutes(s.end_time);
+                    if (newStartMins > sStart && newEndMins < sEnd) {
+                        overlappingShift = s;
+                    }
+                });
+            }
+
+            if (overlappingShift && actType === 'Lunch') {
+                var origStartStr = overlappingShift.start_time.slice(0, 5);
+                var origEndStr = overlappingShift.end_time.slice(0, 5);
+                var origType = overlappingShift.activity_type || 'Inbound';
+
+                await client.from('agent_rota').delete().eq('id', overlappingShift.id);
+
+                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: origStartStr, end_time: startStr, activity_type: origType, shift_type: origType }]);
+                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: startStr, end_time: endStr, activity_type: 'Lunch', shift_type: 'Lunch', comments: comments }]);
+                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: endStr, end_time: origEndStr, activity_type: origType, shift_type: origType }]);
+
+                closeRotaModal();
+                loadAgentWeeklySchedule();
+                showToast("Shift split successfully with lunch inserted.");
+                return;
             }
 
             var payload = {
