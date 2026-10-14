@@ -95,17 +95,6 @@
         .page-view-section.hidden { display: none !important; }
         @keyframes viewFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 75/25 Split Dashboard Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            gap: 1.75rem;
-            align-items: start;
-        }
-        @media (max-width: 1200px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
-        }
-
         .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
         .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
         .btn-launch:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(230, 0, 126, 0.35); }
@@ -205,6 +194,7 @@
             <div id="teamOpsSidebarSection" style="display: none;">
                 <div class="sidebar-section-title">Team Performance & Rankings</div>
                 <a href="tiers.html" class="nav-item">🏆 Team Performance Rankings</a>
+                <a href="rota.html" class="nav-item">📅 Rota Management</a>
             </div>
         </nav>
 
@@ -218,67 +208,60 @@
                     <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit Ticket Feedback</button>
                 </div>
 
-                <!-- 75/25 SPLIT DASHBOARD GRID -->
-                <div class="dashboard-grid">
-                    <!-- LEFT COLUMN (75%): KPIs & Pending QAs -->
-                    <div style="display: flex; flex-direction: column; gap: 1.75rem;">
-                        <div class="card">
-                            <div class="card-header-flex">
-                                <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
-                                <div class="filter-group">
-                                    <span class="filter-label">Timescale:</span>
-                                    <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
-                                        <option value="Daily">Daily</option>
-                                        <option value="Weekly">Weekly</option>
-                                        <option value="Monthly">Monthly</option>
-                                        <option value="MTD">Month to Date (MTD)</option>
-                                    </select>
-                                    <span class="filter-label" id="homeValueFilterLabel">Target:</span>
-                                    <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
-                                </div>
-                            </div>
-                            <div id="homeKpiDisplayArea">
-                                <div class="skeleton-grid">
-                                    <div class="skeleton-card"></div>
-                                    <div class="skeleton-card"></div>
-                                    <div class="skeleton-card"></div>
-                                    <div class="skeleton-card"></div>
-                                </div>
-                            </div>
-                        </div>
+                <!-- FULL LENGTH ANNOUNCEMENTS & DAILY BRIEF -->
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2>📢 Announcements & Daily Brief</h2>
+                        <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openAnnouncementModal()">+ Post</button>
+                    </div>
+                    <div id="announcementsContainer">Loading announcements...</div>
+                </div>
 
-                        <div class="card">
-                            <div class="card-header-flex">
-                                <h2>
-                                    ⏳ QAs Pending Agent Acknowledgment
-                                    <span id="homePendingCountBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Pending</span>
-                                </h2>
-                                <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
-                            </div>
-                            <div id="homePendingQaContainer">
-                                <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
-                                    🎉 No Pending QA Forms to be Completed
-                                </div>
-                            </div>
+                <!-- PERFORMANCE KPIS & PENDING QAS -->
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
+                        <div class="filter-group">
+                            <span class="filter-label">Timescale:</span>
+                            <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
+                                <option value="Daily">Daily</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Monthly">Monthly</option>
+                                <option value="MTD">Month to Date (MTD)</option>
+                            </select>
+                            <span class="filter-label" id="homeValueFilterLabel">Target:</span>
+                            <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
                         </div>
                     </div>
-
-                    <!-- RIGHT COLUMN (25%): Announcements & Rota Sidebar -->
-                    <div style="display: flex; flex-direction: column; gap: 1.75rem;">
-                        <div class="card">
-                            <div class="card-header-flex">
-                                <h2>📢 Announcements & Daily Brief</h2>
-                                <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openAnnouncementModal()">+ Post</button>
-                            </div>
-                            <div id="announcementsContainer">Loading announcements...</div>
+                    <div id="homeKpiDisplayArea">
+                        <div class="skeleton-grid">
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="card">
-                            <div class="card-header-flex">
-                                <h2>📅 My Upcoming Rota</h2>
-                                <button id="btnAddShift" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openRotaModal()">+ Add Shift</button>
-                            </div>
-                            <div id="rotaContainer">Loading schedule...</div>
+                <!-- AGENT ROTA WIDGET (Visible to Agents on Homepage) -->
+                <div id="agentRotaCard" class="card">
+                    <div class="card-header-flex">
+                        <h2>📅 My Upcoming Rota</h2>
+                    </div>
+                    <div id="rotaContainer">Loading schedule...</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2>
+                            ⏳ QAs Pending Agent Acknowledgment
+                            <span id="homePendingCountBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Pending</span>
+                        </h2>
+                        <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
+                    </div>
+                    <div id="homePendingQaContainer">
+                        <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                            🎉 No Pending QA Forms to be Completed
                         </div>
                     </div>
                 </div>
@@ -407,41 +390,6 @@
         </div>
     </div>
 
-    <!-- ADD SHIFT MODAL (Managers Only) -->
-    <div id="rotaModal" class="modal-overlay">
-        <div class="modal-content">
-            <h3 style="color: var(--primary); margin-bottom: 0.75rem; font-size: 1.15rem;">Schedule Agent Shift</h3>
-            <form onsubmit="submitNewShift(event)">
-                <div style="margin-bottom: 0.75rem;">
-                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Agent Name</label>
-                    <select id="rotaAgentSelect" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);"></select>
-                </div>
-                <div style="margin-bottom: 0.75rem;">
-                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Date</label>
-                    <input type="date" id="rotaDate" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);">
-                </div>
-                <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
-                    <div style="flex: 1;">
-                        <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label>
-                        <input type="time" id="rotaStart" value="08:00" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);">
-                    </div>
-                    <div style="flex: 1;">
-                        <label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label>
-                        <input type="time" id="rotaEnd" value="16:30" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);">
-                    </div>
-                </div>
-                <div style="margin-bottom: 1.25rem;">
-                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Type / Notes</label>
-                    <input type="text" id="rotaType" placeholder="e.g. Standard Shift, WFH, Early" value="Standard Shift" required style="width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text-main);">
-                </div>
-                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                    <button type="button" class="btn-cancel-upload" onclick="closeRotaModal()">Cancel</button>
-                    <button type="submit" class="btn-modal-action">Save Shift</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
         const currentUser = sessionStorage.getItem("activeUser");
         const currentRole = sessionStorage.getItem("activeRole");
@@ -482,6 +430,12 @@
             const qaFilterWrap = document.getElementById("qaAgentFilterWrap");
             if (qaFilterWrap) { qaFilterWrap.style.display = isManagement ? "flex" : "none"; }
 
+            // Hide agent rota widget for managers/superusers since they use the dedicated page
+            const agentRotaCard = document.getElementById("agentRotaCard");
+            if (agentRotaCard) {
+                agentRotaCard.style.display = isManagement ? "none" : "block";
+            }
+
             await syncCloudData();
 
             populateAgentFilters();
@@ -489,7 +443,7 @@
             handleTimeframeTypeChange(); 
             renderDashboard();
             loadAnnouncements();
-            loadAgentRota();
+            if (!isManagement) loadAgentRota();
         });
 
         async function syncCloudData() {
@@ -576,27 +530,14 @@
             const client = window.supabaseClient || window.supabase;
             if (!client) return;
 
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
-            const btnAddShift = document.getElementById("btnAddShift");
-            if (btnAddShift) btnAddShift.style.display = isManagement ? "inline-flex" : "none";
-
-            let query = client.from('agent_rota').select('*').order('shift_date', { ascending: true });
-            
-            if (!isManagement) {
-                query = query.ilike('agent_name', currentUser);
-            } else {
-                const today = new Date().toISOString().split('T')[0];
-                query = query.gte('shift_date', today).limit(5);
-            }
-
-            const { data } = await query;
+            const { data } = await client.from('agent_rota').select('*').ilike('agent_name', currentUser).order('shift_date', { ascending: true });
             globalRotaData = data || [];
 
             const container = document.getElementById("rotaContainer");
             if (!container) return;
 
             if (globalRotaData.length === 0) {
-                container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 1rem;">No upcoming shifts found.</p>`;
+                container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 1rem;">No upcoming shifts scheduled for you.</p>`;
                 return;
             }
 
@@ -604,12 +545,9 @@
                 const dateFormatted = new Date(shift.shift_date).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
                 return `
                     <div style="background: var(--light); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.6rem; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            ${isManagement ? `<strong style="font-size: 0.82rem; display: block; color: var(--primary);">${shift.agent_name}</strong>` : ''}
-                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">${dateFormatted}</span>
-                        </div>
+                        <span style="font-size: 0.88rem; font-weight: 700; color: var(--text-main);">${dateFormatted}</span>
                         <div style="text-align: right;">
-                            <span style="font-size: 0.85rem; font-weight: 800; color: var(--text-main);">${shift.start_time.slice(0,5)} - ${shift.end_time.slice(0,5)}</span>
+                            <span style="font-size: 0.88rem; font-weight: 800; color: var(--text-main);">${shift.start_time.slice(0,5)} - ${shift.end_time.slice(0,5)}</span>
                             <span style="display: block; font-size: 0.72rem; color: var(--text-muted);">${shift.shift_type}</span>
                         </div>
                     </div>
@@ -660,53 +598,6 @@
                 loadAnnouncements();
             } else {
                 alert("Error archiving: " + error.message);
-            }
-        }
-
-        async function openRotaModal() {
-            const select = document.getElementById("rotaAgentSelect");
-            select.innerHTML = '<option value="">-- Choose Agent --</option>';
-            
-            const client = window.supabaseClient || window.supabase;
-            if (client) {
-                const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
-                if (data) {
-                    data.forEach(row => {
-                        const opt = document.createElement("option");
-                        opt.value = row.agent_name;
-                        opt.innerText = row.agent_name;
-                        select.appendChild(opt);
-                    });
-                }
-            }
-            document.getElementById("rotaDate").value = new Date().toISOString().split('T')[0];
-            document.getElementById("rotaModal").style.display = "flex";
-        }
-
-        function closeRotaModal() {
-            document.getElementById("rotaModal").style.display = "none";
-        }
-
-        async function submitNewShift(e) {
-            e.preventDefault();
-            const client = window.supabaseClient || window.supabase;
-            if (!client) return;
-
-            const payload = {
-                agent_name: document.getElementById("rotaAgentSelect").value,
-                shift_date: document.getElementById("rotaDate").value,
-                start_time: document.getElementById("rotaStart").value,
-                end_time: document.getElementById("rotaEnd").value,
-                shift_type: document.getElementById("rotaType").value.trim()
-            };
-
-            const { error } = await client.from('agent_rota').insert([payload]);
-            if (!error) {
-                triggerToast("Shift successfully scheduled.");
-                closeRotaModal();
-                loadAgentRota();
-            } else {
-                alert("Error saving shift: " + error.message);
             }
         }
 
