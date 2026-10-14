@@ -95,6 +95,17 @@
         .page-view-section.hidden { display: none !important; }
         @keyframes viewFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* 75/25 Split Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 1.75rem;
+            align-items: start;
+        }
+        @media (max-width: 1200px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
         .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
         .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
         .btn-launch:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(230, 0, 126, 0.35); }
@@ -208,61 +219,66 @@
                     <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit Ticket Feedback</button>
                 </div>
 
-                <!-- FULL LENGTH ANNOUNCEMENTS & DAILY BRIEF -->
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>📢 Announcements & Daily Brief</h2>
-                        <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openAnnouncementModal()">+ Post</button>
-                    </div>
-                    <div id="announcementsContainer">Loading announcements...</div>
-                </div>
+                <!-- 75/25 SPLIT DASHBOARD GRID -->
+                <div class="dashboard-grid">
+                    <!-- LEFT COLUMN (75%): KPIs & Pending QAs / Rota -->
+                    <div style="display: flex; flex-direction: column; gap: 1.75rem;">
+                        <div class="card">
+                            <div class="card-header-flex">
+                                <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
+                                <div class="filter-group">
+                                    <span class="filter-label">Timescale:</span>
+                                    <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
+                                        <option value="Daily">Daily</option>
+                                        <option value="Weekly">Weekly</option>
+                                        <option value="Monthly">Monthly</option>
+                                        <option value="MTD">Month to Date (MTD)</option>
+                                    </select>
+                                    <span class="filter-label" id="homeValueFilterLabel">Target:</span>
+                                    <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
+                                </div>
+                            </div>
+                            <div id="homeKpiDisplayArea">
+                                <div class="skeleton-grid">
+                                    <div class="skeleton-card"></div>
+                                    <div class="skeleton-card"></div>
+                                    <div class="skeleton-card"></div>
+                                    <div class="skeleton-card"></div>
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- PERFORMANCE KPIS & PENDING QAS -->
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
-                        <div class="filter-group">
-                            <span class="filter-label">Timescale:</span>
-                            <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
-                                <option value="Daily">Daily</option>
-                                <option value="Weekly">Weekly</option>
-                                <option value="Monthly">Monthly</option>
-                                <option value="MTD">Month to Date (MTD)</option>
-                            </select>
-                            <span class="filter-label" id="homeValueFilterLabel">Target:</span>
-                            <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
+                        <!-- AGENT ROTA WIDGET (Visible ONLY to Agents under KPIs) -->
+                        <div id="agentRotaCard" class="card" style="display: none;">
+                            <div class="card-header-flex">
+                                <h2>📅 My Upcoming Rota</h2>
+                            </div>
+                            <div id="rotaContainer">Loading schedule...</div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header-flex">
+                                <h2>
+                                    ⏳ QAs Pending Agent Acknowledgment
+                                    <span id="homePendingCountBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Pending</span>
+                                </h2>
+                                <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
+                            </div>
+                            <div id="homePendingQaContainer">
+                                <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                                    🎉 No Pending QA Forms to be Completed
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div id="homeKpiDisplayArea">
-                        <div class="skeleton-grid">
-                            <div class="skeleton-card"></div>
-                            <div class="skeleton-card"></div>
-                            <div class="skeleton-card"></div>
-                            <div class="skeleton-card"></div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- AGENT ROTA WIDGET (Visible to Agents on Homepage) -->
-                <div id="agentRotaCard" class="card">
-                    <div class="card-header-flex">
-                        <h2>📅 My Upcoming Rota</h2>
-                    </div>
-                    <div id="rotaContainer">Loading schedule...</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header-flex">
-                        <h2>
-                            ⏳ QAs Pending Agent Acknowledgment
-                            <span id="homePendingCountBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Pending</span>
-                        </h2>
-                        <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
-                    </div>
-                    <div id="homePendingQaContainer">
-                        <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
-                            🎉 No Pending QA Forms to be Completed
+                    <!-- RIGHT COLUMN (25%): Announcements & Daily Brief Sidebar -->
+                    <div class="card" style="height: 100%;">
+                        <div class="card-header-flex">
+                            <h2>📢 Announcements</h2>
+                            <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openAnnouncementModal()">+ Post</button>
                         </div>
+                        <div id="announcementsContainer">Loading announcements...</div>
                     </div>
                 </div>
             </div>
@@ -430,7 +446,7 @@
             const qaFilterWrap = document.getElementById("qaAgentFilterWrap");
             if (qaFilterWrap) { qaFilterWrap.style.display = isManagement ? "flex" : "none"; }
 
-            // Hide agent rota widget for managers/superusers since they use the dedicated page
+            // Show agent rota card ONLY for agents (hidden for managers/superusers)
             const agentRotaCard = document.getElementById("agentRotaCard");
             if (agentRotaCard) {
                 agentRotaCard.style.display = isManagement ? "none" : "block";
