@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rota Management - Zzoomm Performance Tracker</title>
+    <title>WFM Rota Scheduler - Zzoomm</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
             --dark: #0f172a; 
             --light: #f8fafc; 
             --card-bg: #ffffff; 
-            --border: #e2e8f0; 
+            --border: #cbd5e1; 
             --success: #10b981; 
             --danger: #ef4444; 
             --text-main: #0f172a; 
@@ -44,23 +44,35 @@
         .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
         .nav-item.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.35); }
 
-        .main-workspace { flex: 1; padding: 2.25rem; width: 100%; max-width: none; display: flex; flex-direction: column; gap: 1.75rem; }
-        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .main-workspace { flex: 1; padding: 2rem; width: 100%; max-width: none; display: flex; flex-direction: column; gap: 1.5rem; }
+        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
         .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
-        .card h2 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
+        .card h2 { font-size: 1.15rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
         
-        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.75rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); }
+        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.65rem 1.1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(230, 0, 126, 0.2); }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
-        th, td { text-align: left; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
-        th { background-color: var(--light); color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
-        td { font-size: 0.9rem; }
+        /* IEX Style Matrix Grid */
+        .wfm-matrix-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+        .wfm-table { width: 100%; border-collapse: collapse; text-align: center; }
+        .wfm-table th, .wfm-table td { border: 1px solid var(--border); padding: 0.65rem 0.5rem; font-size: 0.82rem; }
+        .wfm-table th { background: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+        .wfm-table td.agent-col { text-align: left; font-weight: 700; background: #f1f5f9; padding-left: 1rem; color: var(--dark); width: 180px; }
+        
+        .shift-cell { cursor: pointer; transition: background 0.15s; user-select: none; }
+        .shift-cell:hover { background: #fdf2f8 !important; }
+        
+        .shift-badge { background: #fce7f3; color: #db2777; padding: 0.25rem 0.4rem; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
+        .shift-off { color: var(--text-muted); font-style: italic; font-weight: 500; font-size: 0.75rem; }
+
+        .toolbar-flex { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+        .calendar-input { padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: var(--card-bg); color: var(--text-main); border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%; border: 1px solid var(--border); }
-        .filter-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
-        input, select { padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--card-bg); color: var(--text-main); width: 100%; }
-        .toast-notify { display: none; padding: 1rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .modal-content { background: var(--card-bg); color: var(--text-main); border-radius: 16px; padding: 2rem; max-width: 480px; width: 90%; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .filter-label { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        input, select { padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--card-bg); color: var(--text-main); width: 100%; outline: none; }
+        input:focus, select:focus { border-color: var(--primary); }
+        .toast-notify { display: none; padding: 0.85rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.88rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
     </style>
 </head>
 <body>
@@ -77,46 +89,55 @@
     <div class="app-body">
         <nav class="sidebar">
             <a href="index.html" class="nav-item">🏠 Home Dashboard</a>
-            <div class="sidebar-section-title">Rota Management</div>
-            <a href="rota.html" class="nav-item active">📅 Team Rota Scheduler</a>
+            <div class="sidebar-section-title">WFM Suite</div>
+            <a href="rota.html" class="nav-item active">📊 IEX Schedule Matrix</a>
         </nav>
 
         <main class="main-workspace">
             <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
+            
             <div class="card">
                 <div class="card-header-flex">
-                    <h2>📅 Team Shift Rota Manager</h2>
-                    <button class="btn-launch" onclick="openRotaModal()">+ Schedule New Shift</button>
+                    <h2>📊 Workforce Rota & Schedule Matrix (IEX View)</h2>
+                    <div class="toolbar-flex">
+                        <span class="filter-label">Week Commencing:</span>
+                        <input type="date" id="weekPicker" class="calendar-input" onchange="loadWfmMatrix()">
+                        <button class="btn-launch" onclick="openRotaModal(null, null)">+ Add Shift Assignment</button>
+                    </div>
                 </div>
-                <div id="rotaManagementTableContainer">Loading master schedule...</div>
+                
+                <div class="wfm-matrix-wrapper" id="matrixContainer">
+                    <div style="padding: 3rem; text-align: center; color: var(--text-muted); font-weight: 600;">Loading WFM Schedule Matrix...</div>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- ADD SHIFT MODAL -->
+    <!-- SHIFT ASSIGNMENT MODAL -->
     <div id="rotaModal" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.15rem;">Schedule Agent Shift</h3>
-            <form onsubmit="submitNewShift(event)">
-                <div style="margin-bottom: 0.75rem;">
+            <h3 style="color: var(--primary); margin-bottom: 1.25rem; font-size: 1.15rem; font-weight: 800;">WFM Shift Editor</h3>
+            <form onsubmit="submitShiftAssignment(event)">
+                <input type="hidden" id="editShiftId">
+                <div style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Agent Name</label>
                     <select id="rotaAgentSelect" required></select>
                 </div>
-                <div style="margin-bottom: 0.75rem;">
+                <div style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Date</label>
                     <input type="date" id="rotaDate" required>
                 </div>
-                <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+                <div style="display: flex; gap: 1rem; margin-bottom: 0.85rem;">
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="08:00" required></div>
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="16:30" required></div>
                 </div>
                 <div style="margin-bottom: 1.25rem;">
-                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Type / Notes</label>
-                    <input type="text" id="rotaType" value="Standard Shift" required>
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity / Shift Type</label>
+                    <input type="text" id="rotaType" value="Standard Shift" placeholder="e.g. Standard Shift, WFH, Early" required>
                 </div>
                 <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                    <button type="button" style="background:transparent; border:1px solid var(--border); padding:0.45rem 1rem; border-radius:8px; cursor:pointer;" onclick="closeRotaModal()">Cancel</button>
-                    <button type="submit" style="background:var(--primary-gradient); color:white; border:none; padding:0.6rem 1.25rem; border-radius:8px; font-weight:700; cursor:pointer;">Save Shift</button>
+                    <button type="button" style="background:transparent; border:1px solid var(--border); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600;" onclick="closeRotaModal()">Cancel</button>
+                    <button type="submit" style="background:var(--primary-gradient); color:white; border:none; padding:0.6rem 1.25rem; border-radius:8px; font-weight:700; cursor:pointer;">Commit Schedule</button>
                 </div>
             </form>
         </div>
@@ -132,67 +153,143 @@
         document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
-        document.addEventListener("DOMContentLoaded", () => { loadMasterRota(); });
+        document.addEventListener("DOMContentLoaded", () => {
+            // Default week picker to current Monday
+            const now = new Date();
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            const monday = new Date(now.setDate(diff)).toISOString().split('T')[0];
+            document.getElementById("weekPicker").value = monday;
+            loadWfmMatrix();
+        });
 
-        async function loadMasterRota() {
+        function getWeekDates(mondayStr) {
+            const monday = new Date(mondayStr);
+            const dates = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                dates.push(d.toISOString().split('T')[0]);
+            }
+            return dates;
+        }
+
+        async function loadWfmMatrix() {
             const client = window.supabaseClient || window.supabase;
             if (!client) return;
 
-            const { data } = await client.from('agent_rota').select('*').order('shift_date', { ascending: true });
-            const container = document.getElementById("rotaManagementTableContainer");
+            const mondayStr = document.getElementById("weekPicker").value;
+            const weekDates = getWeekDates(mondayStr);
 
-            if (!data || data.length === 0) {
-                container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No shifts currently scheduled.</p>`;
+            // Fetch agents and shifts
+            const { data: agentsData } = await client.from('agent_stats').select('agent_name').order('agent_name');
+            const { data: shiftsData } = await client.from('agent_rota').select('*').gte('shift_date', weekDates[0]).lte('shift_date', weekDates[6]);
+
+            const agents = agentsData ? agentsData.map(a => a.agent_name) : [];
+            const shifts = shiftsData || [];
+
+            const container = document.getElementById("matrixContainer");
+            if (agents.length === 0) {
+                container.innerHTML = `<p style="padding: 2rem; text-align: center; color: var(--text-muted);">No agents found in database.</p>`;
                 return;
             }
 
-            container.innerHTML = `
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Agent Name</th>
-                                <th>Shift Hours</th>
-                                <th>Type</th>
-                                <th style="text-align: right;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.map(s => `
-                                <tr>
-                                    <td style="font-weight: 700;">${s.shift_date}</td>
-                                    <td>${s.agent_name}</td>
-                                    <td>${s.shift_type}</td>
-                                    <td>${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</td>
-                                    <td style="text-align: right;">
-                                        <button onclick="deleteShift(${s.id})" style="background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.3rem 0.6rem; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.78rem;">Delete</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
+            const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+            let html = `
+                <table class="wfm-table">
+                    <thead>
+                        <tr>
+                            <th>Agent ID / Name</th>
+                            ${weekDates.map((d, idx) => `<th>${dayNames[idx]}<br><span style="font-size:0.68rem; font-weight:500; opacity:0.85;">${d}</span></th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
             `;
+
+            const dailyCoverage = [0, 0, 0, 0, 0, 0, 0];
+
+            agents.forEach(agent => {
+                html += `<tr><td class="agent-col">${agent}</td>`;
+                weekDates.forEach((dateStr, dIdx) => {
+                    const match = shifts.find(s => s.agent_name.toLowerCase() === agent.toLowerCase() && s.shift_date === dateStr);
+                    if (match) {
+                        dailyCoverage[dIdx]++;
+                        html += `
+                            <td class="shift-cell" onclick="openRotaModal('${agent}', '${dateStr}', ${match.id})">
+                                <span class="shift-badge" title="${match.shift_type}">${match.start_time.slice(0,5)}-${match.end_time.slice(0,5)}</span>
+                            </td>
+                        `;
+                    } else {
+                        html += `
+                            <td class="shift-cell" onclick="openRotaModal('${agent}', '${dateStr}', null)">
+                                <span class="shift-off">OFF</span>
+                            </td>
+                        `;
+                    }
+                });
+                html += `</tr>`;
+            });
+
+            // Coverage Row
+            html += `
+                <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid var(--border);">
+                    <td class="agent-col" style="background: #e2e8f0;">Staffed Headcount</td>
+                    ${dailyCoverage.map(count => `<td style="color: var(--primary); font-size: 0.9rem;">${count}</td>`).join('')}
+                </tr>
+            `;
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
         }
 
-        async function openRotaModal() {
+        async function openRotaModal(prefillAgent, prefillDate, shiftId) {
             const select = document.getElementById("rotaAgentSelect");
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
+            
             const client = window.supabaseClient || window.supabase;
             if (client) {
                 const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
-                if (data) data.forEach(row => { select.innerHTML += `<option value="${row.agent_name}">${row.agent_name}</option>`; });
+                if (data) {
+                    data.forEach(row => {
+                        const opt = document.createElement("option");
+                        opt.value = row.agent_name;
+                        opt.innerText = row.agent_name;
+                        if (prefillAgent && row.agent_name.toLowerCase() === prefillAgent.toLowerCase()) opt.selected = true;
+                        select.appendChild(opt);
+                    });
+                }
             }
-            document.getElementById("rotaDate").value = new Date().toISOString().split('T')[0];
+
+            document.getElementById("rotaDate").value = prefillDate || new Date().toISOString().split('T')[0];
+            document.getElementById("editShiftId").value = shiftId || "";
+
+            if (shiftId && client) {
+                const { data } = await client.from('agent_rota').select('*').eq('id', shiftId).single();
+                if (data) {
+                    document.getElementById("rotaStart").value = data.start_time.slice(0,5);
+                    document.getElementById("rotaEnd").value = data.end_time.slice(0,5);
+                    document.getElementById("rotaType").value = data.shift_type;
+                }
+            } else {
+                document.getElementById("rotaStart").value = "08:00";
+                document.getElementById("rotaEnd").value = "16:30";
+                document.getElementById("rotaType").value = "Standard Shift";
+            }
+
             document.getElementById("rotaModal").style.display = "flex";
         }
 
-        function closeRotaModal() { document.getElementById("rotaModal").style.display = "none"; }
+        function closeRotaModal() {
+            document.getElementById("rotaModal").style.display = "none";
+        }
 
-        async function submitNewShift(e) {
+        async function submitShiftAssignment(e) {
             e.preventDefault();
             const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const shiftId = document.getElementById("editShiftId").value;
             const payload = {
                 agent_name: document.getElementById("rotaAgentSelect").value,
                 shift_date: document.getElementById("rotaDate").value,
@@ -200,18 +297,29 @@
                 end_time: document.getElementById("rotaEnd").value,
                 shift_type: document.getElementById("rotaType").value.trim()
             };
-            const { error } = await client.from('agent_rota').insert([payload]);
+
+            let error = null;
+            if (shiftId) {
+                const res = await client.from('agent_rota').update(payload).eq('id', shiftId);
+                error = res.error;
+            } else {
+                const res = await client.from('agent_rota').insert([payload]);
+                error = res.error;
+            }
+
             if (!error) {
                 closeRotaModal();
-                loadMasterRota();
-            } else { alert("Error: " + error.message); }
+                loadWfmMatrix();
+                showToast("Schedule successfully updated.");
+            } else {
+                alert("Error saving shift: " + error.message);
+            }
         }
 
-        async function deleteShift(id) {
-            if (!confirm("Delete this shift?")) return;
-            const client = window.supabaseClient || window.supabase;
-            await client.from('agent_rota').delete().eq('id', id);
-            loadMasterRota();
+        function showToast(msg) {
+            const t = document.getElementById("toastNotification");
+            t.innerText = msg; t.style.display = "block";
+            setTimeout(() => t.style.display = "none", 3500);
         }
     </script>
 </body>
