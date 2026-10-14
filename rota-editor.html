@@ -100,7 +100,7 @@
                         <div class="filter-field-group">
                             <label class="filter-label" for="filterAgentSelect">Select Agent:</label>
                             <select id="filterAgentSelect" class="filter-select" onchange="loadAgentWeeklySchedule()">
-                                <option value="Dave Dayao">Dave Dayao</option>
+                                <option value="">-- Choose Agent --</option>
                             </select>
                         </div>
                         <div class="filter-field-group">
@@ -185,7 +185,14 @@
 
         async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
-            let agentsList = ["Dave Dayao"];
+            let agentsList = [
+                "Dave Dayao",
+                "Anthony",
+                "Sarah Jenkins",
+                "Mark Taylor",
+                "Emma Watson",
+                "Chris Evans"
+            ];
 
             try {
                 const client = window.supabaseClient || window.supabase;
@@ -200,8 +207,8 @@
                 console.log("Supabase agent fetch notice:", err);
             }
 
-            const uniqueAgents = Array.from(new Set(agentsList)).sort();
-            select.innerHTML = '';
+            const uniqueAgents = Array.from(new Set(agentsList.filter(Boolean))).sort();
+            select.innerHTML = '<option value="">-- Choose Agent --</option>';
             uniqueAgents.forEach(name => {
                 const opt = document.createElement("option");
                 opt.value = name;
