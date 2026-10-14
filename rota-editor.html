@@ -131,26 +131,39 @@
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Date</label>
                     <input type="date" id="rotaDate" readonly style="background: var(--light); font-weight: 700;">
                 </div>
+                
+                <!-- Separated Activity Type -->
                 <div style="margin-bottom: 0.85rem;">
-                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type / Shift Preset</label>
-                    <select id="rotaActivityType" onchange="toggleTimeInputs()" required>
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type</label>
+                    <select id="rotaActivityType" onchange="handleActivityTypeChange()" required>
+                        <option value="Inbound">Inbound</option>
+                        <option value="Training">Training</option>
+                        <option value="Meeting">Meeting</option>
+                        <option value="Coaching">Coaching</option>
+                        <option value="RDO">RDO</option>
+                        <option value="Sickness">Sickness</option>
+                        <option value="Lunch">Lunch</option>
+                    </select>
+                </div>
+
+                <!-- Conditional Shift Preset (Shown only if Inbound is selected) -->
+                <div id="shiftPresetGroup" style="margin-bottom: 0.85rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Preset</label>
+                    <select id="rotaShiftPreset">
                         <option value="8.30 - 17.00">8.30 - 17.00</option>
                         <option value="10.30 - 19.00">10.30 - 19.00</option>
                         <option value="8.30 - 17.00 (Cover)">8.30 - 17.00 (Cover)</option>
                         <option value="10.30 - 19.00 (Cover)">10.30 - 19.00 (Cover)</option>
                         <option value="09.00 - 17.00">09.00 - 17.00</option>
-                        <option value="Coaching">Coaching</option>
-                        <option value="Training">Training</option>
-                        <option value="Meeting">Meeting</option>
-                        <option value="Sickness">Sickness</option>
-                        <option value="RDO">RDO</option>
-                        <option value="Lunch">Lunch</option>
                     </select>
                 </div>
+
+                <!-- Custom time pickers for non-inbound activities -->
                 <div id="customTimeBox" style="display: none; gap: 1rem; margin-bottom: 0.85rem;">
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="09:00"></div>
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="17:00"></div>
                 </div>
+
                 <div style="margin-bottom: 1.25rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Comments / Notes (Optional)</label>
                     <textarea id="rotaComments" rows="2" placeholder="Add any comments here..."></textarea>
@@ -167,41 +180,41 @@
     </div>
 
     <script>
-        const currentUser = sessionStorage.getItem("activeUser") || "Manager";
-        const currentRole = sessionStorage.getItem("activeRole") || "Admin";
+        var currentUser = sessionStorage.getItem("activeUser") || "Manager";
+        var currentRole = sessionStorage.getItem("activeRole") || "Admin";
 
-        document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
+        document.getElementById("displayUserName").innerText = currentUser + " (" + currentRole + ")";
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
-        document.addEventListener("DOMContentLoaded", () => {
-            const now = new Date();
-            const day = now.getDay();
-            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-            const monday = new Date(now.setDate(diff)).toISOString().split('T')[0];
+        document.addEventListener("DOMContentLoaded", function() {
+            var now = new Date();
+            var day = now.getDay();
+            var diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            var monday = new Date(now.setDate(diff)).toISOString().split('T')[0];
             document.getElementById("weekPicker").value = monday;
 
             populateAgentDropdown();
         });
 
         async function populateAgentDropdown() {
-            const select = document.getElementById("filterAgentSelect");
+            var select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Loading Agents --</option>';
 
-            let agentNames = [];
+            var agentNames = [];
 
-            const client = window.supabaseClient || window.supabase;
+            var client = window.supabaseClient || window.supabase;
             if (client) {
                 try {
-                    const { data, error } = await client
+                    var response = await client
                         .from('agent_stats')
                         .select('agent_name');
 
-                    if (error) {
-                        console.error("Supabase RLS or Query Error:", error.message);
+                    if (response.error) {
+                        console.error("Supabase RLS or Query Error:", response.error.message);
                     }
 
-                    if (data && data.length > 0) {
-                        const dbAgents = data.map(function(item) { return item.agent_name; }).filter(Boolean);
+                    if (response.data && response.data.length > 0) {
+                        var dbAgents = response.data.map(function(item) { return item.agent_name; }).filter(Boolean);
                         agentNames = Array.from(new Set(dbAgents));
                     }
                 } catch (err) {
@@ -210,7 +223,6 @@
             }
 
             if (agentNames.length === 0) {
-                console.warn("Table returned 0 rows or query blocked. Using fallback roster.");
                 agentNames = [
                     "Anthony", "Dave Dayao", "Donna Bernardo", "Elenita Abano", 
                     "James Igot", "Jay Dayao", "Jenny Rapanan", "Jewel Opiana", 
@@ -224,7 +236,7 @@
 
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
             agentNames.forEach(function(name) {
-                const opt = document.createElement("option");
+                var opt = document.createElement("option");
                 opt.value = name;
                 opt.innerText = name;
                 select.appendChild(opt);
@@ -237,17 +249,17 @@
         }
 
         function getMonday(dStr) {
-            const d = new Date(dStr);
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            var d = new Date(dStr);
+            var day = d.getDay();
+            var diff = d.getDate() - day + (day === 0 ? -6 : 1);
             return new Date(d.setDate(diff)).toISOString().split('T')[0];
         }
 
         function getWeekDates(mondayStr) {
-            const monday = new Date(mondayStr);
-            const dates = [];
-            for (let i = 0; i < 7; i++) {
-                const d = new Date(monday);
+            var monday = new Date(mondayStr);
+            var dates = [];
+            for (var i = 0; i < 7; i++) {
+                var d = new Date(monday);
                 d.setDate(monday.getDate() + i);
                 dates.push(d.toISOString().split('T')[0]);
             }
@@ -255,21 +267,21 @@
         }
 
         async function loadAgentWeeklySchedule() {
-            const agentName = document.getElementById("filterAgentSelect").value;
-            const weekPickerVal = document.getElementById("weekPicker").value || new Date().toISOString().split('T')[0];
-            const monday = getMonday(weekPickerVal);
-            const weekDates = getWeekDates(monday);
+            var agentName = document.getElementById("filterAgentSelect").value;
+            var weekPickerVal = document.getElementById("weekPicker").value || new Date().toISOString().split('T')[0];
+            var monday = getMonday(weekPickerVal);
+            var weekDates = getWeekDates(monday);
 
-            const container = document.getElementById("agentWeeklyContainer");
+            var container = document.getElementById("agentWeeklyContainer");
             if (!agentName) {
                 container.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--text-muted);">Please select an agent.</p>';
                 return;
             }
 
-            const client = window.supabaseClient || window.supabase;
-            let shifts = [];
+            var client = window.supabaseClient || window.supabase;
+            var shifts = [];
             if (client) {
-                const res = await client.from('agent_rota')
+                var res = await client.from('agent_rota')
                     .select('*')
                     .ilike('agent_name', agentName)
                     .gte('shift_date', weekDates[0])
@@ -277,19 +289,20 @@
                 shifts = res.data || [];
             }
 
-            const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            var dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
             container.innerHTML = weekDates.map(function(dateStr, idx) {
-                const dayShifts = shifts.filter(function(s) { return s.shift_date === dateStr; });
+                var dayShifts = shifts.filter(function(s) { return s.shift_date === dateStr; });
                 
-                let shiftsHtml = '';
+                var shiftsHtml = '';
                 if (dayShifts.length === 0) {
                     shiftsHtml = '<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">No activities scheduled</span>';
                 } else {
                     shiftsHtml = dayShifts.map(function(s) {
-                        const commentsHtml = s.comments ? '<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">[' + s.comments + ']</span>' : '';
+                        var commentsHtml = s.comments ? '<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">[' + s.comments + ']</span>' : '';
+                        var displayLabel = s.activity_type === 'Inbound' ? (s.activity_type + ' (' + s.start_time.slice(0,5) + ' - ' + s.end_time.slice(0,5) + ')') : (s.activity_type + ' (' + s.start_time.slice(0,5) + ' - ' + s.end_time.slice(0,5) + ')');
                         return '<div class="activity-pill">' +
-                               '<span>' + s.start_time.slice(0,5) + ' - ' + s.end_time.slice(0,5) + ' (' + (s.activity_type || s.shift_type) + ')</span>' +
+                               '<span>' + displayLabel + '</span>' +
                                commentsHtml +
                                '<button onclick="openRotaModal(' + s.id + ', \'' + agentName + '\', \'' + dateStr + '\')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.75rem; font-weight:800; margin-left:0.25rem;" title="Edit">✏️</button>' +
                                '</div>';
@@ -307,13 +320,17 @@
             }).join('');
         }
 
-        function toggleTimeInputs() {
-            const val = document.getElementById("rotaActivityType").value;
-            const customBox = document.getElementById("customTimeBox");
-            if (val === 'Coaching' || val === 'Training' || val === 'Meeting' || val === 'Sickness' || val === 'RDO' || val === 'Lunch') {
-                customBox.style.display = "flex";
-            } else {
+        function handleActivityTypeChange() {
+            var actType = document.getElementById("rotaActivityType").value;
+            var shiftGroup = document.getElementById("shiftPresetGroup");
+            var customBox = document.getElementById("customTimeBox");
+
+            if (actType === 'Inbound') {
+                shiftGroup.style.display = "block";
                 customBox.style.display = "none";
+            } else {
+                shiftGroup.style.display = "none";
+                customBox.style.display = "flex";
             }
         }
 
@@ -321,26 +338,34 @@
             document.getElementById("modalAgentName").value = agentName;
             document.getElementById("rotaDate").value = dateStr;
             document.getElementById("editShiftId").value = shiftId || "";
-            const deleteBtn = document.getElementById("deleteShiftBtn");
+            var deleteBtn = document.getElementById("deleteShiftBtn");
 
-            const client = window.supabaseClient || window.supabase;
+            var client = window.supabaseClient || window.supabase;
             if (shiftId && client) {
                 document.getElementById("modalTitle").innerText = "Edit / Remove Activity";
                 deleteBtn.style.display = "block";
-                const res = await client.from('agent_rota').select('*').eq('id', shiftId).single();
+                var res = await client.from('agent_rota').select('*').eq('id', shiftId).single();
                 if (res.data) {
-                    const actType = res.data.activity_type || res.data.shift_type;
+                    var actType = res.data.activity_type || 'Inbound';
                     document.getElementById("rotaActivityType").value = actType;
-                    toggleTimeInputs();
-                    document.getElementById("rotaStart").value = res.data.start_time.slice(0,5);
-                    document.getElementById("rotaEnd").value = res.data.end_time.slice(0,5);
+                    handleActivityTypeChange();
+
+                    if (actType === 'Inbound') {
+                        // Match back to preset or default
+                        var timeVal = res.data.start_time.slice(0,5) + ' - ' + res.data.end_time.slice(0,5);
+                        document.getElementById("rotaShiftPreset").value = timeVal;
+                    } else {
+                        document.getElementById("rotaStart").value = res.data.start_time.slice(0,5);
+                        document.getElementById("rotaEnd").value = res.data.end_time.slice(0,5);
+                    }
                     document.getElementById("rotaComments").value = res.data.comments || "";
                 }
             } else {
                 document.getElementById("modalTitle").innerText = "Schedule Activity";
                 deleteBtn.style.display = "none";
-                document.getElementById("rotaActivityType").value = "8.30 - 17.00";
-                toggleTimeInputs();
+                document.getElementById("rotaActivityType").value = "Inbound";
+                handleActivityTypeChange();
+                document.getElementById("rotaShiftPreset").value = "8.30 - 17.00";
                 document.getElementById("rotaComments").value = "";
             }
 
@@ -353,45 +378,48 @@
 
         function timeToMinutes(timeStr) {
             if (!timeStr) return 0;
-            const parts = timeStr.split(':');
+            var parts = timeStr.split(':');
             return parseInt(parts[0]) * 60 + parseInt(parts[1]);
         }
 
         async function submitActivityAssignment(e) {
             e.preventDefault();
-            const client = window.supabaseClient || window.supabase;
+            var client = window.supabaseClient || window.supabase;
             if (!client) return;
 
-            const shiftId = document.getElementById("editShiftId").value;
-            const agentName = document.getElementById("modalAgentName").value;
-            const dateStr = document.getElementById("rotaDate").value;
-            const actType = document.getElementById("rotaActivityType").value;
-            const comments = document.getElementById("rotaComments").value.trim();
+            var shiftId = document.getElementById("editShiftId").value;
+            var agentName = document.getElementById("modalAgentName").value;
+            var dateStr = document.getElementById("rotaDate").value;
+            var actType = document.getElementById("rotaActivityType").value;
+            var comments = document.getElementById("rotaComments").value.trim();
 
-            let startStr = "08:30", endStr = "17:00";
+            var startStr = "08:30", endStr = "17:00";
 
-            if (actType === '8.30 - 17.00' || actType === '8.30 - 17.00 (Cover)') { startStr = "08:30"; endStr = "17:00"; }
-            else if (actType === '10.30 - 19.00' || actType === '10.30 - 19.00 (Cover)') { startStr = "10:30"; endStr = "19:00"; }
-            else if (actType === '09.00 - 17.00') { startStr = "09:00"; endStr = "17:00"; }
-            else {
+            if (actType === 'Inbound') {
+                var preset = document.getElementById("rotaShiftPreset").value;
+                if (preset.indexOf('8.30 - 17.00') === 0) { startStr = "08:30"; endStr = "17:00"; }
+                else if (preset.indexOf('10.30 - 19.00') === 0) { startStr = "10:30"; endStr = "19:00"; }
+                else if (preset.indexOf('09.00 - 17.00') === 0) { startStr = "09:00"; endStr = "17:00"; }
+            } else {
                 startStr = document.getElementById("rotaStart").value;
                 endStr = document.getElementById("rotaEnd").value;
             }
 
-            const newStartMins = timeToMinutes(startStr);
-            const newEndMins = timeToMinutes(endStr);
+            // Implement 30 mins buffer charge logic for working times if required
+            var newStartMins = timeToMinutes(startStr);
+            var newEndMins = timeToMinutes(endStr);
 
-            const existing = await client.from('agent_rota')
+            var existing = await client.from('agent_rota')
                 .select('*')
                 .ilike('agent_name', agentName)
                 .eq('shift_date', dateStr);
 
-            let overlappingShift = null;
+            var overlappingShift = null;
             if (existing.data) {
                 existing.data.forEach(function(s) {
                     if (shiftId && s.id == shiftId) return;
-                    const sStart = timeToMinutes(s.start_time);
-                    const sEnd = timeToMinutes(s.end_time);
+                    var sStart = timeToMinutes(s.start_time);
+                    var sEnd = timeToMinutes(s.end_time);
                     if (newStartMins > sStart && newEndMins < sEnd) {
                         overlappingShift = s;
                     }
@@ -399,14 +427,14 @@
             }
 
             if (overlappingShift && actType === 'Lunch') {
-                const origStartStr = overlappingShift.start_time.slice(0, 5);
-                const origEndStr = overlappingShift.end_time.slice(0, 5);
-                const origType = overlappingShift.activity_type || overlappingShift.shift_type || '8.30 - 17.00';
+                var origStartStr = overlappingShift.start_time.slice(0, 5);
+                var origEndStr = overlappingShift.end_time.slice(0, 5);
+                var origType = overlappingShift.activity_type || 'Inbound';
 
                 await client.from('agent_rota').delete().eq('id', overlappingShift.id);
 
                 await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: origStartStr, end_time: startStr, activity_type: origType, shift_type: origType }]);
-                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: startStr, end_time: endStr, activity_type: 'Lunch', shift_type: 'Lunch', comments }]);
+                await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: startStr, end_time: endStr, activity_type: 'Lunch', shift_type: 'Lunch', comments: comments }]);
                 await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: endStr, end_time: origEndStr, activity_type: origType, shift_type: origType }]);
 
                 closeRotaModal();
@@ -415,22 +443,22 @@
                 return;
             }
 
-            const payload = {
+            var payload = {
                 agent_name: agentName,
                 shift_date: dateStr,
                 start_time: startStr,
                 end_time: endStr,
                 activity_type: actType,
                 shift_type: actType,
-                comments
+                comments: comments
             };
 
-            let error = null;
+            var error = null;
             if (shiftId) {
-                const res = await client.from('agent_rota').update(payload).eq('id', shiftId);
+                var res = await client.from('agent_rota').update(payload).eq('id', shiftId);
                 error = res.error;
             } else {
-                const res = await client.from('agent_rota').insert([payload]);
+                var res = await client.from('agent_rota').insert([payload]);
                 error = res.error;
             }
 
@@ -444,12 +472,12 @@
         }
 
         async function deleteCurrentActivity() {
-            const shiftId = document.getElementById("editShiftId").value;
+            var shiftId = document.getElementById("editShiftId").value;
             if (!shiftId) return;
             if (!confirm("Are you sure you want to remove this activity?")) return;
 
-            const client = window.supabaseClient || window.supabase;
-            const res = await client.from('agent_rota').delete().eq('id', shiftId);
+            var client = window.supabaseClient || window.supabase;
+            var res = await client.from('agent_rota').delete().eq('id', shiftId);
 
             if (!res.error) {
                 closeRotaModal();
@@ -461,7 +489,7 @@
         }
 
         function showToast(msg) {
-            const t = document.getElementById("toastNotification");
+            var t = document.getElementById("toastNotification");
             t.innerText = msg; t.style.display = "block";
             setTimeout(function() { t.style.display = "none"; }, 3500);
         }
