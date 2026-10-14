@@ -100,7 +100,7 @@
                         <div class="filter-field-group">
                             <label class="filter-label" for="filterAgentSelect">Select Agent:</label>
                             <select id="filterAgentSelect" class="filter-select" onchange="loadAgentWeeklySchedule()">
-                                <option value="">-- Choose Agent --</option>
+                                <option value="">-- Loading Agents --</option>
                             </select>
                         </div>
                         <div class="filter-field-group">
@@ -173,15 +173,6 @@
         document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
-        const agentTeamList = [
-            "Dave Dayao",
-            "Anthony",
-            "Sarah Jenkins",
-            "Mark Taylor",
-            "Emma Watson",
-            "Chris Evans"
-        ];
-
         document.addEventListener("DOMContentLoaded", () => {
             const now = new Date();
             const day = now.getDay();
@@ -192,20 +183,48 @@
             populateAgentDropdown();
         });
 
-        function populateAgentDropdown() {
+        async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
-            select.innerHTML = '<option value="">-- Choose Agent --</option>';
+            select.innerHTML = '<option value="">-- Loading Agents --</option>';
+            
+            const client = window.supabaseClient || window.supabase;
+            if (!client) {
+                select.innerHTML = '<option value="">Supabase Error</option>';
+                return;
+            }
 
-            agentTeamList.forEach(name => {
-                const opt = document.createElement("option");
-                opt.value = name;
-                opt.innerText = name;
-                select.appendChild(opt);
-            });
+            try {
+                const { data, error } = await client
+                    .from('agent_stats') 
+                    .select('agent_name')
+                    .order('agent_name', { ascending: true });
 
-            if (agentTeamList.length > 0) {
-                select.value = agentTeamList[0];
-                loadAgentWeeklySchedule();
+                if (error) throw error;
+
+                select.innerHTML = '<option value="">-- Choose Agent --</option>';
+                
+                if (data && data.length > 0) {
+                    const uniqueAgents = [...new Set(data.map(row => row.agent_name))];
+                    
+                    uniqueAgents.forEach(name => {
+                        if (name) {
+                            const opt = document.createElement("option");
+                            opt.value = name;
+                            opt.innerText = name;
+                            select.appendChild(opt);
+                        }
+                    });
+                    
+                    if (uniqueAgents.length > 0) {
+                        select.value = uniqueAgents[0];
+                        loadAgentWeeklySchedule();
+                    }
+                } else {
+                    select.innerHTML = '<option value="">No agents found</option>';
+                }
+            } catch (err) {
+                console.error("Error loading dropdown:", err);
+                select.innerHTML = '<option value="">Error loading agents</option>';
             }
         }
 
