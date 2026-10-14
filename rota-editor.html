@@ -189,25 +189,25 @@
         async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
-            const client = window.supabaseClient || window.supabase;
             
             let agentNamesSet = new Set();
 
-            if (client) {
-                try {
+            try {
+                const client = window.supabaseClient || window.supabase;
+                if (client) {
                     const { data: statsData } = await client.from('agent_stats').select('agent_name');
                     if (statsData) statsData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
 
                     const { data: rotaData } = await client.from('agent_rota').select('agent_name');
                     if (rotaData) rotaData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
-                } catch (err) {
-                    console.error("Supabase fetch warning:", err);
                 }
+            } catch (err) {
+                console.log("Supabase agent fetch warning:", err);
             }
 
-            // Always ensure active user or test agents are present so dropdown is never stuck
+            // Fallback default agents so dropdown is always populated
             agentNamesSet.add("Dave Dayao");
-            agentNamesSet.add(currentUser);
+            agentNamesSet.add(currentUser || "Admin Agent");
 
             const agents = Array.from(agentNamesSet).sort();
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
@@ -245,7 +245,7 @@
         async function loadAgentWeeklySchedule() {
             const agentName = document.getElementById("filterAgentSelect").value;
             const weekPickerVal = document.getElementById("weekPicker").value || new Date().toISOString().split('T')[0];
-            monday = getMonday(weekPickerVal);
+            const monday = getMonday(weekPickerVal);
             const weekDates = getWeekDates(monday);
 
             const container = document.getElementById("agentWeeklyContainer");
