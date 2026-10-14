@@ -140,7 +140,7 @@
                         <option value="Training">Training (Paid)</option>
                         <option value="Meeting">Meeting (Paid)</option>
                         <option value="Coaching">Coaching (Paid)</option>
-                        <option value="Lunch">Lunch (Unpaid)</option>
+                        <option value="Lunch">Lunch (Paid)</option>
                         <option value="Sickness">Sickness (Unpaid)</option>
                         <option value="RDO">RDO (Unpaid)</option>
                     </select>
@@ -314,7 +314,7 @@
                 return '<div class="day-column-card">' +
                        '<div>' +
                        '<div class="day-title">' + dayNames[idx] + '</div>' +
-                       '<div style="font-size: 0.78rem; color: var(--text-muted);">' + dateStr + '</div>' +
+                       '<div style="font-size: 0.78rem; color: var::text-muted; color: var(--text-muted);">' + dateStr + '</div>' +
                        '</div>' +
                        '<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-left: 1rem;">' + shiftsHtml + '</div>' +
                        '<button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openRotaModal(null, \'' + agentName + '\', \'' + dateStr + '\')">+ Add Activity</button>' +
