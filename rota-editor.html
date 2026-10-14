@@ -183,7 +183,6 @@
             populateAgentDropdown();
         });
 
-        // Robust agent loader querying agent_stats (agent_name) with diagnostic logging & fallback
         async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Loading Agents --</option>';
@@ -202,17 +201,16 @@
                     }
 
                     if (data && data.length > 0) {
-                        const dbAgents = data.map(item => item.agent_name).filter(Boolean);
-                        agentNames = [...new Set(dbAgents)];
+                        const dbAgents = data.map(function(item) { return item.agent_name; }).filter(Boolean);
+                        agentNames = Array.from(new Set(dbAgents));
                     }
                 } catch (err) {
                     console.error("Network or Client Exception:", err);
                 }
             }
 
-            // Fallback roster list if table read is blocked or empty
             if (agentNames.length === 0) {
-                console.warn("Table returned 0 rows or query blocked by RLS. Using fallback roster.");
+                console.warn("Table returned 0 rows or query blocked. Using fallback roster.");
                 agentNames = [
                     "Anthony", "Dave Dayao", "Donna Bernardo", "Elenita Abano", 
                     "James Igot", "Jay Dayao", "Jenny Rapanan", "Jewel Opiana", 
@@ -222,11 +220,10 @@
                 ];
             }
 
-            // Sort alphabetically
-            agentNames.sort((a, b) => a.localeCompare(b));
+            agentNames.sort(function(a, b) { return a.localeCompare(b); });
 
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
-            agentNames.forEach(name => {
+            agentNames.forEach(function(name) {
                 const opt = document.createElement("option");
                 opt.value = name;
                 opt.innerText = name;
@@ -265,43 +262,48 @@
 
             const container = document.getElementById("agentWeeklyContainer");
             if (!agentName) {
-                container.innerHTML = `<p style="padding: 2rem; text-align: center; color: var(--text-muted);">Please select an agent.</p>`;
+                container.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--text-muted);">Please select an agent.</p>';
                 return;
             }
 
             const client = window.supabaseClient || window.supabase;
             let shifts = [];
             if (client) {
-                const { data } = await client.from('agent_rota')
+                const res = await client.from('agent_rota')
                     .select('*')
                     .ilike('agent_name', agentName)
                     .gte('shift_date', weekDates[0])
                     .lte('shift_date', weekDates[6]);
-                shifts = data || [];
+                shifts = res.data || [];
             }
 
             const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-            container.innerHTML = weekDates.map((dateStr, idx) => {
-                const dayShifts = shifts.filter(s => s.shift_date === dateStr);
-                return `
-                    <div class="day-column-card">
-                        <div>
-                            <div class="day-title">${dayNames[idx]}</div>
-                            <div style="font-size: 0.78rem; color: var(--text-muted);">${dateStr}</div>
-                        </div>
-                        <div style="flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-left: 1rem;">
-                            ${dayShifts.length === 0 ? `<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">No activities scheduled</span>` : 
-                                dayShifts.map(s => `
-                                    <div class="activity-pill">
-                                        <span>${s.start_time.slice(0,5)} -${s.end_time.slice(0,5)} (${s.activity_type \vert{}\vert{} s.shift_type})</span>${s.comments ? `<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">[${s.comments}]</span>` : ''}
-                                        <button onclick="openRotaModal(${s.id}, '${agentName}', '${dateStr}')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.75rem; font-weight:800; margin-left:0.25rem;" title="Edit">✏️</button>
-                                    </div>
-                                `).join('')}
-                        </div>
-                        <button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openRotaModal(null, '${agentName}', '${dateStr}')">+ Add Activity</button>
-                    </div>
-                `;
+            container.innerHTML = weekDates.map(function(dateStr, idx) {
+                const dayShifts = shifts.filter(function(s) { return s.shift_date === dateStr; });
+                
+                let shiftsHtml = '';
+                if (dayShifts.length === 0) {
+                    shiftsHtml = '<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">No activities scheduled</span>';
+                } else {
+                    shiftsHtml = dayShifts.map(function(s) {
+                        const commentsHtml = s.comments ? '<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">[' + s.comments + ']</span>' : '';
+                        return '<div class="activity-pill">' +
+                               '<span>' + s.start_time.slice(0,5) + ' - ' + s.end_time.slice(0,5) + ' (' + (s.activity_type || s.shift_type) + ')</span>' +
+                               commentsHtml +
+                               '<button onclick="openRotaModal(' + s.id + ', \'' + agentName + '\', \'' + dateStr + '\')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.75rem; font-weight:800; margin-left:0.25rem;" title="Edit">✏️</button>' +
+                               '</div>';
+                    }).join('');
+                }
+
+                return '<div class="day-column-card">' +
+                       '<div>' +
+                       '<div class="day-title">' + dayNames[idx] + '</div>' +
+                       '<div style="font-size: 0.78rem; color: var(--text-muted);">' + dateStr + '</div>' +
+                       '</div>' +
+                       '<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-left: 1rem;">' + shiftsHtml + '</div>' +
+                       '<button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openRotaModal(null, \'' + agentName + '\', \'' + dateStr + '\')">+ Add Activity</button>' +
+                       '</div>';
             }).join('');
         }
 
@@ -325,14 +327,14 @@
             if (shiftId && client) {
                 document.getElementById("modalTitle").innerText = "Edit / Remove Activity";
                 deleteBtn.style.display = "block";
-                const { data } = await client.from('agent_rota').select('*').eq('id', shiftId).single();
-                if (data) {
-                    const actType = data.activity_type || data.shift_type;
+                const res = await client.from('agent_rota').select('*').eq('id', shiftId).single();
+                if (res.data) {
+                    const actType = res.data.activity_type || res.data.shift_type;
                     document.getElementById("rotaActivityType").value = actType;
                     toggleTimeInputs();
-                    document.getElementById("rotaStart").value = data.start_time.slice(0,5);
-                    document.getElementById("rotaEnd").value = data.end_time.slice(0,5);
-                    document.getElementById("rotaComments").value = data.comments || "";
+                    document.getElementById("rotaStart").value = res.data.start_time.slice(0,5);
+                    document.getElementById("rotaEnd").value = res.data.end_time.slice(0,5);
+                    document.getElementById("rotaComments").value = res.data.comments || "";
                 }
             } else {
                 document.getElementById("modalTitle").innerText = "Schedule Activity";
@@ -379,15 +381,14 @@
             const newStartMins = timeToMinutes(startStr);
             const newEndMins = timeToMinutes(endStr);
 
-            // Check overlap for Smart Lunch Splitting
-            const { data: existingShifts } = await client.from('agent_rota')
+            const existing = await client.from('agent_rota')
                 .select('*')
                 .ilike('agent_name', agentName)
                 .eq('shift_date', dateStr);
 
             let overlappingShift = null;
-            if (existingShifts) {
-                existingShifts.forEach(s => {
+            if (existing.data) {
+                existing.data.forEach(function(s) {
                     if (shiftId && s.id == shiftId) return;
                     const sStart = timeToMinutes(s.start_time);
                     const sEnd = timeToMinutes(s.end_time);
@@ -404,11 +405,8 @@
 
                 await client.from('agent_rota').delete().eq('id', overlappingShift.id);
 
-                // First half
                 await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: origStartStr, end_time: startStr, activity_type: origType, shift_type: origType }]);
-                // Lunch
                 await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: startStr, end_time: endStr, activity_type: 'Lunch', shift_type: 'Lunch', comments }]);
-                // Second half
                 await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: endStr, end_time: origEndStr, activity_type: origType, shift_type: origType }]);
 
                 closeRotaModal();
@@ -451,21 +449,21 @@
             if (!confirm("Are you sure you want to remove this activity?")) return;
 
             const client = window.supabaseClient || window.supabase;
-            const { error } = await client.from('agent_rota').delete().eq('id', shiftId);
+            const res = await client.from('agent_rota').delete().eq('id', shiftId);
 
-            if (!error) {
+            if (!res.error) {
                 closeRotaModal();
                 loadAgentWeeklySchedule();
                 showToast("Activity removed successfully.");
             } else {
-                alert("Error removing activity: " + error.message);
+                alert("Error removing activity: " + res.error.message);
             }
         }
 
         function showToast(msg) {
             const t = document.getElementById("toastNotification");
             t.innerText = msg; t.style.display = "block";
-            setTimeout(() => t.style.display = "none", 3500);
+            setTimeout(function() { t.style.display = "none"; }, 3500);
         }
     </script>
 </body>
