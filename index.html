@@ -95,17 +95,6 @@
         .page-view-section.hidden { display: none !important; }
         @keyframes viewFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 75/25 Split Dashboard Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            gap: 1.75rem;
-            align-items: start;
-        }
-        @media (max-width: 1200px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
-        }
-
         .action-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
         .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.85rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.25); transition: all 0.2s; }
         .btn-launch:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(230, 0, 126, 0.35); }
@@ -219,66 +208,72 @@
                     <button id="btnShortCutTicket" class="btn-launch btn-alt-color" style="display:none;" onclick="openEvaluationWindow('Ticket Feedback')">🎫 Submit Ticket Feedback</button>
                 </div>
 
-                <!-- 75/25 SPLIT DASHBOARD GRID -->
-                <div class="dashboard-grid">
-                    <!-- LEFT COLUMN (75%): KPIs & Pending QAs / Rota -->
-                    <div style="display: flex; flex-direction: column; gap: 1.75rem;">
-                        <div class="card">
-                            <div class="card-header-flex">
-                                <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
-                                <div class="filter-group">
-                                    <span class="filter-label">Timescale:</span>
-                                    <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
-                                        <option value="Daily">Daily</option>
-                                        <option value="Weekly">Weekly</option>
-                                        <option value="Monthly">Monthly</option>
-                                        <option value="MTD">Month to Date (MTD)</option>
-                                    </select>
-                                    <span class="filter-label" id="homeValueFilterLabel">Target:</span>
-                                    <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
-                                </div>
-                            </div>
-                            <div id="homeKpiDisplayArea">
-                                <div class="skeleton-grid">
-                                    <div class="skeleton-card"></div>
-                                    <div class="skeleton-card"></div>
-                                    <div class="skeleton-card"></div>
-                                    <div class="skeleton-card"></div>
-                                </div>
-                            </div>
-                        </div>
+                <!-- BLOCK 1: ANNOUNCEMENTS & DAILY BRIEF (Full Width) -->
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2>📢 Announcements & Daily Brief</h2>
+                        <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openAnnouncementModal()">+ Post</button>
+                    </div>
+                    <div id="announcementsContainer">Loading announcements...</div>
+                </div>
 
-                        <!-- AGENT ROTA WIDGET (Visible ONLY to Agents under KPIs) -->
-                        <div id="agentRotaCard" class="card" style="display: none;">
-                            <div class="card-header-flex">
-                                <h2>📅 My Upcoming Rota</h2>
-                            </div>
-                            <div id="rotaContainer">Loading schedule...</div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header-flex">
-                                <h2>
-                                    ⏳ QAs Pending Agent Acknowledgment
-                                    <span id="homePendingCountBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Pending</span>
-                                </h2>
-                                <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
-                            </div>
-                            <div id="homePendingQaContainer">
-                                <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
-                                    🎉 No Pending QA Forms to be Completed
-                                </div>
-                            </div>
+                <!-- BLOCK 2: PERFORMANCE KPIS (Full Width) -->
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2 id="homeKpiHeaderTitle">📊 Performance KPIs</h2>
+                        <div class="filter-group">
+                            <span class="filter-label">Timescale:</span>
+                            <select id="homeScopeFilter" class="filter-select" onchange="handleHomeScopeChange()">
+                                <option value="Daily">Daily</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Monthly">Monthly</option>
+                                <option value="MTD">Month to Date (MTD)</option>
+                            </select>
+                            <span class="filter-label" id="homeValueFilterLabel">Target:</span>
+                            <div id="homePeriodSelectorContainer" style="display: inline-block;"></div>
                         </div>
                     </div>
-
-                    <!-- RIGHT COLUMN (25%): Announcements & Daily Brief Sidebar -->
-                    <div class="card" style="height: 100%;">
-                        <div class="card-header-flex">
-                            <h2>📢 Announcements</h2>
-                            <button id="btnAddAnnouncement" class="btn-launch" style="display: none; padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openAnnouncementModal()">+ Post</button>
+                    <div id="homeKpiDisplayArea">
+                        <div class="skeleton-grid">
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
+                            <div class="skeleton-card"></div>
                         </div>
-                        <div id="announcementsContainer">Loading announcements...</div>
+                    </div>
+                </div>
+
+                <!-- BLOCK 3: AGENT ROTA (For Agents) OR MANAGERS WORKING TODAY WIDGET -->
+                <div id="agentRotaCard" class="card" style="display: none;">
+                    <div class="card-header-flex">
+                        <h2>📅 My Upcoming Rota</h2>
+                    </div>
+                    <div id="rotaContainer">Loading schedule...</div>
+                </div>
+
+                <div id="managerWorkingTodayCard" class="card" style="display: none;">
+                    <div class="card-header-flex">
+                        <h2>👥 Agents Working Today</h2>
+                        <div class="filter-group">
+                            <span class="filter-label">Select Day:</span>
+                            <input type="date" id="workingTodayDate" class="calendar-input" onchange="loadAgentsWorkingToday()">
+                        </div>
+                    </div>
+                    <div id="workingTodayContainer">Loading active shifts...</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-flex">
+                        <h2>
+                            ⏳ QAs Pending Agent Acknowledgment
+                            <span id="homePendingCountBadge" style="font-size: 0.78rem; background: rgba(245, 158, 11, 0.15); color: #ea580c; padding: 0.25rem 0.65rem; border-radius: 12px; display: none;">0 Pending</span>
+                        </h2>
+                        <button class="btn-header" style="background:#0f172a;" onclick="switchView('qaView')">View All Quality Forms ↗</button>
+                    </div>
+                    <div id="homePendingQaContainer">
+                        <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; background: var(--light); border: 1px dashed var(--border); border-radius: 12px;">
+                            🎉 No Pending QA Forms to be Completed
+                        </div>
                     </div>
                 </div>
             </div>
@@ -433,6 +428,9 @@
             if (document.getElementById("uploadTargetDate")) {
                 document.getElementById("uploadTargetDate").value = todayStr;
             }
+            if (document.getElementById("workingTodayDate")) {
+                document.getElementById("workingTodayDate").value = todayStr;
+            }
 
             const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
             const isSuperuserOnly = (currentRole === "Superuser" || currentRole === "Admin");
@@ -446,10 +444,18 @@
             const qaFilterWrap = document.getElementById("qaAgentFilterWrap");
             if (qaFilterWrap) { qaFilterWrap.style.display = isManagement ? "flex" : "none"; }
 
-            // Show agent rota card ONLY for agents (hidden for managers/superusers)
+            // Conditional view for managers vs agents
             const agentRotaCard = document.getElementById("agentRotaCard");
-            if (agentRotaCard) {
-                agentRotaCard.style.display = isManagement ? "none" : "block";
+            const managerWorkingTodayCard = document.getElementById("managerWorkingTodayCard");
+
+            if (isManagement) {
+                if (agentRotaCard) agentRotaCard.style.display = "none";
+                if (managerWorkingTodayCard) managerWorkingTodayCard.style.display = "block";
+                loadAgentsWorkingToday();
+            } else {
+                if (agentRotaCard) agentRotaCard.style.display = "block";
+                if (managerWorkingTodayCard) managerWorkingTodayCard.style.display = "none";
+                loadAgentRota();
             }
 
             await syncCloudData();
@@ -459,7 +465,6 @@
             handleTimeframeTypeChange(); 
             renderDashboard();
             loadAnnouncements();
-            if (!isManagement) loadAgentRota();
         });
 
         async function syncCloudData() {
@@ -569,6 +574,60 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        async function loadAgentsWorkingToday() {
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const selectedDate = document.getElementById("workingTodayDate") ? document.getElementById("workingTodayDate").value : new Date().toISOString().split('T')[0];
+            const { data } = await client.from('agent_rota').select('*').eq('shift_date', selectedDate).order('start_time');
+            const container = document.getElementById("workingTodayContainer");
+
+            if (!container) return;
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">No agents scheduled for ${selectedDate}.</p>`;
+                return;
+            }
+
+            // Summarize shift counts
+            const shiftCounts = {};
+            data.forEach(s => {
+                const shiftKey = `${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)} (${s.shift_type})`;
+                shiftCounts[shiftKey] = (shiftCounts[shiftKey] || 0) + 1;
+            });
+
+            let summaryHtml = `<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem;">`;
+            Object.keys(shiftCounts).forEach(k => {
+                summaryHtml += `<div style="background: var(--light); border: 1px solid var(--border); padding: 0.5rem 0.85rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700;">${k}: <span style="color: var(--primary);">${shiftCounts[k]} agent(s)</span></div>`;
+            });
+            summaryHtml += `</div>`;
+
+            summaryHtml += `
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Agent Name</th>
+                                <th>Shift Hours</th>
+                                <th>Shift Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(s => `
+                                <tr>
+                                    <td style="font-weight: 700;">${s.agent_name}</td>
+                                    <td>${s.start_time.slice(0,5)} -${s.end_time.slice(0,5)}</td>
+                                    <td>${s.shift_type}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = summaryHtml;
         }
 
         function openAnnouncementModal() {
