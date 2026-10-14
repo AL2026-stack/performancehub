@@ -57,14 +57,15 @@
         .wfm-table th { background: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
         .wfm-table td.agent-col { text-align: left; font-weight: 700; background: #f1f5f9; padding-left: 1rem; color: var(--dark); width: 180px; }
         
-        .shift-badge { background: #fce7f3; color: #db2777; padding: 0.25rem 0.4rem; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
+        .shift-badge { background: #fce7f3; color: #db2777; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700; font-size: 0.72rem; display: inline-block; }
         .shift-badge.lunch { background: #e0f2fe; color: #0284c7; }
         .shift-badge.overtime { background: #fef3c7; color: #d97706; }
         .shift-off { color: var(--text-muted); font-style: italic; font-weight: 500; font-size: 0.75rem; }
 
         .summary-label-col { text-align: left; font-weight: 700; background: #e2e8f0; padding-left: 1rem; color: var(--dark); font-size: 0.78rem; text-transform: uppercase; }
         .toolbar-flex { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-        .calendar-input { padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
+        .calendar-input, .filter-select { padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
+        .filter-label { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
     </style>
 </head>
 <body>
@@ -89,10 +90,18 @@
         <main class="main-workspace">
             <div class="card">
                 <div class="card-header-flex">
-                    <h2>📊 Weekly Hours & Staffing Overview</h2>
+                    <h2>📊 Workforce Hours & Staffing Overview</h2>
                     <div class="toolbar-flex">
-                        <span class="filter-label">Week Commencing:</span>
-                        <input type="date" id="weekPicker" class="calendar-input" onchange="loadWfmMatrix()">
+                        <span class="filter-label">View Mode:</span>
+                        <select id="viewModeSelect" class="filter-select" onchange="loadWfmMatrix()">
+                            <option value="Day">Day View</option>
+                            <option value="Week" selected>Week View</option>
+                            <option value="Month">Month View</option>
+                        </select>
+
+                        <span class="filter-label" id="datePickerLabel">Target Date:</span>
+                        <input type="date" id="targetDatePicker" class="calendar-input" onchange="loadWfmMatrix()">
+                        
                         <a href="rota-editor.html" class="btn-launch">✏️ Open Activity Editor</a>
                     </div>
                 </div>
@@ -115,20 +124,36 @@
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
         document.addEventListener("DOMContentLoaded", () => {
-            const now = new Date();
-            const day = now.getDay();
-            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-            const monday = new Date(now.setDate(diff)).toISOString().split('T')[0];
-            document.getElementById("weekPicker").value = monday;
+            document.getElementById("targetDatePicker").value = new Date().toISOString().split('T')[0];
             loadWfmMatrix();
         });
 
-        function getWeekDates(mondayStr) {
-            const monday = new Date(mondayStr);
+        function getMonday(dStr) {
+            const d = new Date(dStr);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setDate(diff)).toISOString().split('T')[0];
+        }
+
+        function getDatesList(startStr, count) {
+            const start = new Date(startStr);
             const dates = [];
-            for (let i = 0; i < 7; i++) {
-                const d = new Date(monday);
-                d.setDate(monday.getDate() + i);
+            for (let i = 0; i < count; i++) {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                dates.push(d.toISOString().split('T')[0]);
+            }
+            return dates;
+        }
+
+        function getMonthDates(anyDateStr) {
+            const date = new Date(anyDateStr);
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+            const dates = [];
+            for (let i = 1; i <= lastDay; i++) {
+                const d = new Date(year, month, i);
                 dates.push(d.toISOString().split('T')[0]);
             }
             return dates;
@@ -144,11 +169,29 @@
             const client = window.supabaseClient || window.supabase;
             if (!client) return;
 
-            const mondayStr = document.getElementById("weekPicker").value;
-            const weekDates = getWeekDates(mondayStr);
+            const mode = document.getElementById("viewModeSelect").value;
+            const rawDate = document.getElementById("targetDatePicker").value || new Date().toISOString().split('T')[0];
+
+            let activeDates = [];
+            let headerLabels = [];
+
+            if (mode === 'Day') {
+                activeDates = [rawDate];
+                headerLabels = [rawDate];
+            } else if (mode === 'Week') {
+                const monday = getMonday(rawDate);
+                activeDates = getDatesList(monday, 7);
+                headerLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => `${day}<br><span style="font-size:0.68rem; font-weight:500; opacity:0.85;">${activeDates[idx]}</span>`);
+            } else { // Month
+                activeDates = getMonthDates(rawDate);
+                headerLabels = activeDates.map(d => d.slice(8)); // show day numbers e.g. "01", "02"
+            }
+
+            const startDate = activeDates[0];
+            const endDate = activeDates[activeDates.length - 1];
 
             const { data: agentsData } = await client.from('agent_stats').select('agent_name').order('agent_name');
-            const { data: shiftsData } = await client.from('agent_rota').select('*').gte('shift_date', weekDates[0]).lte('shift_date', weekDates[6]);
+            const { data: shiftsData } = await client.from('agent_rota').select('*').gte('shift_date', startDate).lte('shift_date', endDate);
 
             const agents = agentsData ? agentsData.map(a => a.agent_name) : [];
             const shifts = shiftsData || [];
@@ -159,27 +202,25 @@
                 return;
             }
 
-            const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
             let html = `
                 <table class="wfm-table">
                     <thead>
                         <tr>
                             <th>Agent ID / Name</th>
-                            ${weekDates.map((d, idx) => `<th>${dayNames[idx]}<br><span style="font-size:0.68rem; font-weight:500; opacity:0.85;">${d}</span></th>`).join('')}
+                            ${headerLabels.map(lbl => `<th>${lbl}</th>`).join('')}
                         </tr>
                     </thead>
                     <tbody>
             `;
 
-            const earlyCount = [0, 0, 0, 0, 0, 0, 0];
-            const lateCount = [0, 0, 0, 0, 0, 0, 0];
-            const totalHeadcount = [0, 0, 0, 0, 0, 0, 0];
-            const totalPaidHours = [0, 0, 0, 0, 0, 0, 0];
+            const earlyCount = new Array(activeDates.length).fill(0);
+            const lateCount = new Array(activeDates.length).fill(0);
+            const totalHeadcount = new Array(activeDates.length).fill(0);
+            const totalPaidHours = new Array(activeDates.length).fill(0);
 
             agents.forEach(agent => {
                 html += `<tr><td class="agent-col">${agent}</td>`;
-                weekDates.forEach((dateStr, dIdx) => {
+                activeDates.forEach((dateStr, dIdx) => {
                     const agentShifts = shifts.filter(s => s.agent_name.toLowerCase() === agent.toLowerCase() && s.shift_date === dateStr);
                     if (agentShifts.length > 0) {
                         totalHeadcount[dIdx]++;
