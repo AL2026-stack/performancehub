@@ -183,7 +183,7 @@
             populateAgentDropdown();
         });
 
-        // Supabase query with built-in team list matching Quality Forms
+        // Queries agent_stats for agent_name with built-in team baseline fallback
         async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Loading Agents --</option>';
@@ -211,7 +211,7 @@
                         }
                     }
                 } catch (err) {
-                    console.log("Using standard team roster");
+                    console.log("Using standard team roster fallback");
                 }
             }
 
