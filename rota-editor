@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WFM Activity Editor - Zzoomm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <style>
+        :root { 
+            --primary: #e6007e; 
+            --primary-gradient: linear-gradient(135deg, #e6007e 0%, #ff1a8c 100%);
+            --dark: #0f172a; 
+            --light: #f8fafc; 
+            --card-bg: #ffffff; 
+            --border: #cbd5e1; 
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --text-main: #0f172a; 
+            --text-muted: #64748b;
+            --sidebar-width: 260px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        body { background-color: var(--light); color: var(--text-main); min-height: 100vh; }
+        
+        header { 
+            background: #0f172a; color: white; padding: 0.85rem 1.75rem; display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-bottom: 1px solid rgba(255,255,255,0.08); position: relative; z-index: 100;
+        }
+        .header-logo { height: 40px; width: auto; object-fit: contain; }
+        .user-profile-box { display: flex; align-items: center; gap: 0.85rem; }
+        .user-avatar-badge { width: 34px; height: 34px; border-radius: 50%; background: var(--primary-gradient); color: white; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
+        .user-tag { font-weight: 600; font-size: 0.9rem; background: rgba(255,255,255,0.08); padding: 0.4rem 0.85rem; border-radius: 8px; color: white; border: 1px solid rgba(255,255,255,0.12); }
+        .btn-header { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.45rem 0.9rem; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+        .btn-logout { background: transparent; color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.45rem 0.9rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+
+        .app-body { display: flex; min-height: calc(100vh - 66px); }
+        .sidebar { width: var(--sidebar-width); background: #0f172a; color: white; padding: 1.75rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+        .sidebar-section-title { font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin: 1.25rem 0.65rem 0.4rem 0.65rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.88rem; font-weight: 600; border-radius: 10px; transition: all 0.2s ease; }
+        .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+        .nav-item.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.35); }
+
+        .main-workspace { flex: 1; padding: 2rem; width: 100%; max-width: none; display: flex; flex-direction: column; gap: 1.5rem; }
+        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
+        .card h2 { font-size: 1.15rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
+        
+        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.65rem 1.1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(230, 0, 126, 0.2); }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        th, td { text-align: left; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
+        th { background-color: #0f172a; color: white; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+        td { font-size: 0.9rem; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); color: var(--text-main); border-radius: 16px; padding: 2rem; max-width: 480px; width: 90%; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .filter-label { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        input, select { padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--card-bg); color: var(--text-main); width: 100%; outline: none; }
+        input:focus, select:focus { border-color: var(--primary); }
+        .toast-notify { display: none; padding: 0.85rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.88rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="display: flex; align-items: center;"><img src="logo.png" alt="Zzoomm" class="header-logo" onerror="this.style.display='none';"></div>
+        <div class="user-profile-box">
+            <div class="user-avatar-badge" id="displayUserAvatar">U</div>
+            <span class="user-tag" id="displayUserName">User</span>
+            <a href="index.html" class="btn-header">🏠 Dashboard</a>
+            <button class="btn-logout" onclick="sessionStorage.clear(); window.location.href='login.html';">Sign Out</button>
+        </div>
+    </header>
+
+    <div class="app-body">
+        <nav class="sidebar">
+            <a href="index.html" class="nav-item">🏠 Home Dashboard</a>
+            <div class="sidebar-section-title">WFM Suite</div>
+            <a href="rota.html" class="nav-item">📊 Hours & Staffing Overview</a>
+            <a href="rota-editor.html" class="nav-item active">✏️ Activity Editor</a>
+        </nav>
+
+        <main class="main-workspace">
+            <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
+            
+            <div class="card">
+                <div class="card-header-flex">
+                    <h2>✏️ Master Activity & Shift Editor</h2>
+                    <button class="btn-launch" onclick="openRotaModal(null)">+ Schedule New Activity</button>
+                </div>
+                
+                <div id="activityTableContainer" style="overflow-x: auto;">
+                    <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-weight: 600;">Loading scheduled activities...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ACTIVITY EDITOR MODAL -->
+    <div id="rotaModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color: var(--primary); margin-bottom: 1.25rem; font-size: 1.15rem; font-weight: 800;" id="modalTitle">Schedule Activity</h3>
+            <form onsubmit="submitActivityAssignment(event)">
+                <input type="hidden" id="editShiftId">
+                <div style="margin-bottom: 0.85rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Agent Name</label>
+                    <select id="rotaAgentSelect" required></select>
+                </div>
+                <div style="margin-bottom: 0.85rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Date</label>
+                    <input type="date" id="rotaDate" required>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-bottom: 0.85rem;">
+                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="08:00" required></div>
+                    <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="16:30" required></div>
+                </div>
+                <div style="margin-bottom: 0.85rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type</label>
+                    <select id="rotaActivityType" required>
+                        <option value="Inbound">Inbound (Counts to Working Hours)</option>
+                        <option value="Lunch">Lunch (Non-Working)</option>
+                        <option value="Overtime">Overtime (Non-Working / Extra)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.75rem; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                    <button type="button" id="deleteShiftBtn" style="background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; display: none;" onclick="deleteCurrentActivity()">🗑️ Remove Activity</button>
+                    <div style="display: flex; gap: 0.75rem; margin-left: auto;">
+                        <button type="button" style="background:transparent; border:1px solid var(--border); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600;" onclick="closeRotaModal()">Cancel</button>
+                        <button type="submit" style="background:var(--primary-gradient); color:white; border:none; padding:0.6rem 1.25rem; border-radius:8px; font-weight:700; cursor:pointer;">Commit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = sessionStorage.getItem("activeUser");
+        const currentRole = sessionStorage.getItem("activeRole");
+        if (!currentUser || (currentRole !== "Supervisor" && currentRole !== "Superuser" && currentRole !== "Admin")) {
+            window.location.href = "index.html";
+        }
+
+        document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
+        document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadActivityTable();
+        });
+
+        async function loadActivityTable() {
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const { data } = await client.from('agent_rota').select('*').order('shift_date', { ascending: true });
+            const container = document.getElementById("activityTableContainer");
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `<p style="padding: 2rem; text-align: center; color: var(--text-muted);">No scheduled activities found.</p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Agent Name</th>
+                            <th>Activity</th>
+                            <th>Hours</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(s => `
+                            <tr>
+                                <td style="font-weight: 700;">${s.shift_date}</td>
+                                <td>${s.agent_name}</td>
+                                <td><span style="font-weight: 700; color: var(--primary);">${s.activity_type || s.shift_type || 'Inbound'}</span></td>
+                                <td>${s.start_time.slice(0,5)} -${s.end_time.slice(0,5)}</td>
+                                <td style="text-align: right;">
+                                    <button class="btn-launch" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" onclick="openRotaModal(${s.id})">Edit / Remove</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function openRotaModal(shiftId) {
+            const select = document.getElementById("rotaAgentSelect");
+            select.innerHTML = '<option value="">-- Choose Agent --</option>';
+            
+            const client = window.supabaseClient || window.supabase;
+            if (client) {
+                const { data } = await client.from('agent_stats').select('agent_name').order('agent_name');
+                if (data) {
+                    data.forEach(row => {
+                        const opt = document.createElement("option");
+                        opt.value = row.agent_name;
+                        opt.innerText = row.agent_name;
+                        select.appendChild(opt);
+                    });
+                }
+            }
+
+            const deleteBtn = document.getElementById("deleteShiftBtn");
+            document.getElementById("editShiftId").value = shiftId || "";
+
+            if (shiftId && client) {
+                document.getElementById("modalTitle").innerText = "Edit / Remove Activity";
+                deleteBtn.style.display = "block";
+                const { data } = await client.from('agent_rota').select('*').eq('id', shiftId).single();
+                if (data) {
+                    select.value = data.agent_name;
+                    document.getElementById("rotaDate").value = data.shift_date;
+                    document.getElementById("rotaStart").value = data.start_time.slice(0,5);
+                    document.getElementById("rotaEnd").value = data.end_time.slice(0,5);
+                    document.getElementById("rotaActivityType").value = data.activity_type || data.shift_type || 'Inbound';
+                }
+            } else {
+                document.getElementById("modalTitle").innerText = "Schedule Activity";
+                deleteBtn.style.display = "none";
+                document.getElementById("rotaDate").value = new Date().toISOString().split('T')[0];
+                document.getElementById("rotaStart").value = "08:00";
+                document.getElementById("rotaEnd").value = "16:30";
+                document.getElementById("rotaActivityType").value = "Inbound";
+            }
+
+            document.getElementById("rotaModal").style.display = "flex";
+        }
+
+        function closeRotaModal() {
+            document.getElementById("rotaModal").style.display = "none";
+        }
+
+        async function submitActivityAssignment(e) {
+            e.preventDefault();
+            const client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            const shiftId = document.getElementById("editShiftId").value;
+            const activity = document.getElementById("rotaActivityType").value;
+
+            const payload = {
+                agent_name: document.getElementById("rotaAgentSelect").value,
+                shift_date: document.getElementById("rotaDate").value,
+                start_time: document.getElementById("rotaStart").value,
+                end_time: document.getElementById("rotaEnd").value,
+                activity_type: activity,
+                shift_type: activity
+            };
+
+            let error = null;
+            if (shiftId) {
+                const res = await client.from('agent_rota').update(payload).eq('id', shiftId);
+                error = res.error;
+            } else {
+                const res = await client.from('agent_rota').insert([payload]);
+                error = res.error;
+            }
+
+            if (!error) {
+                closeRotaModal();
+                loadActivityTable();
+                showToast("Activity successfully saved.");
+            } else {
+                alert("Error saving activity: " + error.message);
+            }
+        }
+
+        async function deleteCurrentActivity() {
+            const shiftId = document.getElementById("editShiftId").value;
+            if (!shiftId) return;
+            if (!confirm("Are you sure you want to remove this activity?")) return;
+
+            const client = window.supabaseClient || window.supabase;
+            const { error } = await client.from('agent_rota').delete().eq('id', shiftId);
+
+            if (!error) {
+                closeRotaModal();
+                loadActivityTable();
+                showToast("Activity removed successfully.");
+            } else {
+                alert("Error removing activity: " + error.message);
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById("toastNotification");
+            t.innerText = msg; t.style.display = "block";
+            setTimeout(() => t.style.display = "none", 3500);
+        }
+    </script>
+</body>
+</html>
