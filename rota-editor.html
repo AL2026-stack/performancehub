@@ -183,12 +183,11 @@
             populateAgentDropdown();
         });
 
-        // Robust dropdown loader with built-in team list fallback matching Quality Forms
+        // Supabase query with built-in team list matching Quality Forms
         async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
-            select.innerHTML = '<option value="">-- Choose Agent --</option>';
+            select.innerHTML = '<option value="">-- Loading Agents --</option>';
 
-            // Baseline team list fallback matching your Quality Forms view
             let agentNames = [
                 "Anthony", "Dave Dayao", "Donna Bernardo", "Elenita Abano", 
                 "James Igot", "Jay Dayao", "Jenny Rapanan", "Jewel Opiana", 
@@ -212,10 +211,11 @@
                         }
                     }
                 } catch (err) {
-                    console.log("Using baseline team list fallback");
+                    console.log("Using standard team roster");
                 }
             }
 
+            select.innerHTML = '<option value="">-- Choose Agent --</option>';
             agentNames.forEach(name => {
                 const opt = document.createElement("option");
                 opt.value = name;
