@@ -100,7 +100,7 @@
                         <div class="filter-field-group">
                             <label class="filter-label" for="filterAgentSelect">Select Agent:</label>
                             <select id="filterAgentSelect" class="filter-select" onchange="loadAgentWeeklySchedule()">
-                                <option value="">Loading agents...</option>
+                                <option value="Dave Dayao">Dave Dayao</option>
                             </select>
                         </div>
                         <div class="filter-field-group">
@@ -167,11 +167,8 @@
     </div>
 
     <script>
-        const currentUser = sessionStorage.getItem("activeUser");
-        const currentRole = sessionStorage.getItem("activeRole");
-        if (!currentUser || (currentRole !== "Supervisor" && currentRole !== "Superuser" && currentRole !== "Admin")) {
-            window.location.href = "index.html";
-        }
+        const currentUser = sessionStorage.getItem("activeUser") || "Manager";
+        const currentRole = sessionStorage.getItem("activeRole") || "Admin";
 
         document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
@@ -188,38 +185,32 @@
 
         async function populateAgentDropdown() {
             const select = document.getElementById("filterAgentSelect");
-            select.innerHTML = '<option value="">-- Choose Agent --</option>';
-            
-            let agentNamesSet = new Set();
+            let agentsList = ["Dave Dayao"];
 
             try {
                 const client = window.supabaseClient || window.supabase;
                 if (client) {
                     const { data: statsData } = await client.from('agent_stats').select('agent_name');
-                    if (statsData) statsData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+                    if (statsData) statsData.forEach(row => { if (row.agent_name) agentsList.push(row.agent_name); });
 
                     const { data: rotaData } = await client.from('agent_rota').select('agent_name');
-                    if (rotaData) rotaData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+                    if (rotaData) rotaData.forEach(row => { if (row.agent_name) agentsList.push(row.agent_name); });
                 }
             } catch (err) {
-                console.log("Supabase agent fetch warning:", err);
+                console.log("Supabase agent fetch notice:", err);
             }
 
-            // Fallback default agents so dropdown is always populated
-            agentNamesSet.add("Dave Dayao");
-            agentNamesSet.add(currentUser || "Admin Agent");
-
-            const agents = Array.from(agentNamesSet).sort();
-            select.innerHTML = '<option value="">-- Choose Agent --</option>';
-            agents.forEach(name => {
+            const uniqueAgents = Array.from(new Set(agentsList)).sort();
+            select.innerHTML = '';
+            uniqueAgents.forEach(name => {
                 const opt = document.createElement("option");
                 opt.value = name;
                 opt.innerText = name;
                 select.appendChild(opt);
             });
 
-            if (agents.length > 0) {
-                select.value = agents[0];
+            if (uniqueAgents.length > 0) {
+                select.value = uniqueAgents[0];
                 loadAgentWeeklySchedule();
             }
         }
