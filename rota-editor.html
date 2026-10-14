@@ -150,11 +150,9 @@
                 <div id="shiftPresetGroup" style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Preset</label>
                     <select id="rotaShiftPreset">
-                        <option value="8.30 - 17.00">8.30 - 17.00</option>
-                        <option value="10.30 - 19.00">10.30 - 19.00</option>
-                        <option value="8.30 - 17.00 (Cover)">8.30 - 17.00 (Cover)</option>
-                        <option value="10.30 - 19.00 (Cover)">10.30 - 19.00 (Cover)</option>
-                        <option value="09.00 - 17.00">09.00 - 17.00</option>
+                        <option value="8.30 - 17.00">8.30 - 17.00 (Phone: 8.30-12.00 & 13.00-17.00 + 30m buffer)</option>
+                        <option value="10.30 - 19.00">10.30 - 19.00 (Phone: 10.30-14.30 & 15.00-19.00 + 30m buffer)</option>
+                        <option value="09.00 - 17.00">09.00 - 17.00 (Phone: 9.00-13.00 & 13.30-17.00 + 30m buffer)</option>
                     </select>
                 </div>
 
@@ -164,10 +162,12 @@
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="17:00"></div>
                 </div>
 
+                <!-- Comments / Notes Field -->
                 <div style="margin-bottom: 1.25rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Comments / Notes (Optional)</label>
                     <textarea id="rotaComments" rows="2" placeholder="Add any comments here..."></textarea>
                 </div>
+
                 <div style="display: flex; gap: 0.75rem; justify-content: space-between; align-items: center; margin-top: 1rem;">
                     <button type="button" id="deleteShiftBtn" style="background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; display: none;" onclick="deleteCurrentActivity()">🗑️ Remove</button>
                     <div style="display: flex; gap: 0.75rem; margin-left: auto;">
@@ -300,7 +300,7 @@
                 } else {
                     shiftsHtml = dayShifts.map(function(s) {
                         var commentsHtml = s.comments ? '<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">[' + s.comments + ']</span>' : '';
-                        var displayLabel = s.activity_type === 'Inbound' ? (s.activity_type + ' (' + s.start_time.slice(0,5) + ' - ' + s.end_time.slice(0,5) + ')') : (s.activity_type + ' (' + s.start_time.slice(0,5) + ' - ' + s.end_time.slice(0,5) + ')');
+                        var displayLabel = s.activity_type + ' (' + s.start_time.slice(0,5) + ' - ' + s.end_time.slice(0,5) + ')';
                         return '<div class="activity-pill">' +
                                '<span>' + displayLabel + '</span>' +
                                commentsHtml +
@@ -351,7 +351,6 @@
                     handleActivityTypeChange();
 
                     if (actType === 'Inbound') {
-                        // Match back to preset or default
                         var timeVal = res.data.start_time.slice(0,5) + ' - ' + res.data.end_time.slice(0,5);
                         document.getElementById("rotaShiftPreset").value = timeVal;
                     } else {
@@ -405,7 +404,6 @@
                 endStr = document.getElementById("rotaEnd").value;
             }
 
-            // Implement 30 mins buffer charge logic for working times if required
             var newStartMins = timeToMinutes(startStr);
             var newEndMins = timeToMinutes(endStr);
 
@@ -433,6 +431,7 @@
 
                 await client.from('agent_rota').delete().eq('id', overlappingShift.id);
 
+                // Smart split: Split the inbound shift around the lunch break correctly accounting for working times
                 await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: origStartStr, end_time: startStr, activity_type: origType, shift_type: origType }]);
                 await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: startStr, end_time: endStr, activity_type: 'Lunch', shift_type: 'Lunch', comments: comments }]);
                 await client.from('agent_rota').insert([{ agent_name: agentName, shift_date: dateStr, start_time: endStr, end_time: origEndStr, activity_type: origType, shift_type: origType }]);
