@@ -190,20 +190,26 @@
             const select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
             const client = window.supabaseClient || window.supabase;
-            if (!client) return;
+            if (!client) {
+                select.innerHTML = '<option value="">Supabase Client Not Found</option>';
+                return;
+            }
 
             let agentNamesSet = new Set();
 
-            // Fetch from agent_stats
-            const { data: statsData } = await client.from('agent_stats').select('agent_name');
-            if (statsData) {
-                statsData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+            try {
+                const { data: statsData } = await client.from('agent_stats').select('agent_name');
+                if (statsData) statsData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+
+                const { data: rotaData } = await client.from('agent_rota').select('agent_name');
+                if (rotaData) rotaData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+            } catch (err) {
+                console.error("Error loading agent names:", err);
             }
 
-            // Fetch from agent_rota as backup
-            const { data: rotaData } = await client.from('agent_rota').select('agent_name');
-            if (rotaData) {
-                rotaData.forEach(row => { if (row.agent_name) agentNamesSet.add(row.agent_name); });
+            // Fallback if no names found in cloud tables yet
+            if (agentNamesSet.size === 0) {
+                agentNamesSet.add("Dave Dayao");
             }
 
             const agents = Array.from(agentNamesSet).sort();
