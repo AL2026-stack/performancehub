@@ -51,7 +51,6 @@
         
         .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.65rem 1.1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(230, 0, 126, 0.2); }
         
-        /* IEX Style Matrix Grid */
         .wfm-matrix-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
         .wfm-table { width: 100%; border-collapse: collapse; text-align: center; }
         .wfm-table th, .wfm-table td { border: 1px solid var(--border); padding: 0.65rem 0.5rem; font-size: 0.82rem; }
@@ -63,6 +62,8 @@
         
         .shift-badge { background: #fce7f3; color: #db2777; padding: 0.25rem 0.4rem; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: inline-block; }
         .shift-off { color: var(--text-muted); font-style: italic; font-weight: 500; font-size: 0.75rem; }
+
+        .summary-label-col { text-align: left; font-weight: 700; background: #e2e8f0; padding-left: 1rem; color: var(--dark); font-size: 0.78rem; text-transform: uppercase; }
 
         .toolbar-flex { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
         .calendar-input { padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
@@ -116,7 +117,7 @@
     <!-- SHIFT ASSIGNMENT MODAL -->
     <div id="rotaModal" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="color: var(--primary); margin-bottom: 1.25rem; font-size: 1.15rem; font-weight: 800;">WFM Shift Editor</h3>
+            <h3 style="color: var(--primary); margin-bottom: 1.25rem; font-size: 1.15rem; font-weight: 800;" id="modalTitle">WFM Shift Editor</h3>
             <form onsubmit="submitShiftAssignment(event)">
                 <input type="hidden" id="editShiftId">
                 <div style="margin-bottom: 0.85rem;">
@@ -131,13 +132,20 @@
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="08:00" required></div>
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="16:30" required></div>
                 </div>
+                <div style="margin-bottom: 0.85rem;">
+                    <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Lunch Break Duration (Minutes)</label>
+                    <input type="number" id="rotaLunch" value="30" min="0" max="120" step="5" required>
+                </div>
                 <div style="margin-bottom: 1.25rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity / Shift Type</label>
                     <input type="text" id="rotaType" value="Standard Shift" placeholder="e.g. Standard Shift, WFH, Early" required>
                 </div>
-                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                    <button type="button" style="background:transparent; border:1px solid var(--border); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600;" onclick="closeRotaModal()">Cancel</button>
-                    <button type="submit" style="background:var(--primary-gradient); color:white; border:none; padding:0.6rem 1.25rem; border-radius:8px; font-weight:700; cursor:pointer;">Commit Schedule</button>
+                <div style="display: flex; gap: 0.75rem; justify-content: space-between; align-items: center;">
+                    <button type="button" id="deleteShiftBtn" style="background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; display: none;" onclick="deleteCurrentShift()">🗑️ Remove Shift</button>
+                    <div style="display: flex; gap: 0.75rem; margin-left: auto;">
+                        <button type="button" style="background:transparent; border:1px solid var(--border); padding:0.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600;" onclick="closeRotaModal()">Cancel</button>
+                        <button type="submit" style="background:var(--primary-gradient); color:white; border:none; padding:0.6rem 1.25rem; border-radius:8px; font-weight:700; cursor:pointer;">Commit Schedule</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -154,7 +162,6 @@
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Default week picker to current Monday
             const now = new Date();
             const day = now.getDay();
             const diff = now.getDate() - day + (day === 0 ? -6 : 1);
@@ -174,6 +181,12 @@
             return dates;
         }
 
+        function timeToHours(timeStr) {
+            if (!timeStr) return 0;
+            const parts = timeStr.split(':');
+            return parseInt(parts[0]) + parseInt(parts[1]) / 60;
+        }
+
         async function loadWfmMatrix() {
             const client = window.supabaseClient || window.supabase;
             if (!client) return;
@@ -181,7 +194,6 @@
             const mondayStr = document.getElementById("weekPicker").value;
             const weekDates = getWeekDates(mondayStr);
 
-            // Fetch agents and shifts
             const { data: agentsData } = await client.from('agent_stats').select('agent_name').order('agent_name');
             const { data: shiftsData } = await client.from('agent_rota').select('*').gte('shift_date', weekDates[0]).lte('shift_date', weekDates[6]);
 
@@ -207,14 +219,47 @@
                     <tbody>
             `;
 
-            const dailyCoverage = [0, 0, 0, 0, 0, 0, 0];
+            const earlyCount = [0, 0, 0, 0, 0, 0, 0];
+            const lateCount = [0, 0, 0, 0, 0, 0, 0];
+            const totalHeadcount = [0, 0, 0, 0, 0, 0, 0];
+            const totalPaidHours = [0, 0, 0, 0, 0, 0, 0];
 
             agents.forEach(agent => {
                 html += `<tr><td class="agent-col">${agent}</td>`;
                 weekDates.forEach((dateStr, dIdx) => {
                     const match = shifts.find(s => s.agent_name.toLowerCase() === agent.toLowerCase() && s.shift_date === dateStr);
                     if (match) {
-                        dailyCoverage[dIdx]++;
+                        totalHeadcount[dIdx]++;
+                        
+                        const startH = timeToHours(match.start_time);
+                        const endH = timeToHours(match.end_time);
+
+                        if (startH >= 8.5 && startH <= 10.5) {
+                            earlyCount[dIdx]++;
+                        }
+
+                        if (startH <= 17.0 && endH >= 19.0) {
+                            lateCount[dIdx]++;
+                        }
+
+                        let grossHours = endH - startH;
+                        if (grossHours < 0) grossHours += 24;
+
+                        // Lunch deduction in hours
+                        const lunchHours = (match.lunch_duration || 0) / 60;
+
+                        // Unpaid break rules (Mon-Fri = 1h, Sat = 30m)
+                        const dayOfWeek = new Date(dateStr).getDay();
+                        let unpaidBreak = 0;
+                        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                            unpaidBreak = 1.0;
+                        } else if (dayOfWeek === 6) {
+                            unpaidBreak = 0.5;
+                        }
+
+                        const netPaid = Math.max(0, grossHours - lunchHours - unpaidBreak);
+                        totalPaidHours[dIdx] += netPaid;
+
                         html += `
                             <td class="shift-cell" onclick="openRotaModal('${agent}', '${dateStr}', ${match.id})">
                                 <span class="shift-badge" title="${match.shift_type}">${match.start_time.slice(0,5)}-${match.end_time.slice(0,5)}</span>
@@ -231,11 +276,22 @@
                 html += `</tr>`;
             });
 
-            // Coverage Row
             html += `
-                <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid var(--border);">
-                    <td class="agent-col" style="background: #e2e8f0;">Staffed Headcount</td>
-                    ${dailyCoverage.map(count => `<td style="color: var(--primary); font-size: 0.9rem;">${count}</td>`).join('')}
+                <tr style="border-top: 2px solid var(--border);">
+                    <td class="summary-label-col">Early Hours (8:30 - 10:30)</td>
+                    ${earlyCount.map(c => `<td style="font-weight:700; color:var(--primary);">${c}</td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="summary-label-col">Late Hours (17:00 - 19:00)</td>
+                    ${lateCount.map(c => `<td style="font-weight:700; color:var(--primary);">${c}</td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="summary-label-col">Total Headcount</td>
+                    ${totalHeadcount.map(c => `<td style="font-weight:700;">${c}</td>`).join('')}
+                </tr>
+                <tr style="background: #f1f5f9; font-weight: 800;">
+                    <td class="summary-label-col" style="background: #e2e8f0;">Total Paid Hours</td>
+                    ${totalPaidHours.map(h => `<td style="color: #0f172a; font-size: 0.88rem;">${h.toFixed(1)}h</td>`).join('')}
                 </tr>
             `;
 
@@ -264,16 +320,24 @@
             document.getElementById("rotaDate").value = prefillDate || new Date().toISOString().split('T')[0];
             document.getElementById("editShiftId").value = shiftId || "";
 
+            const deleteBtn = document.getElementById("deleteShiftBtn");
+
             if (shiftId && client) {
+                document.getElementById("modalTitle").innerText = "Edit / Remove Shift";
+                deleteBtn.style.display = "block";
                 const { data } = await client.from('agent_rota').select('*').eq('id', shiftId).single();
                 if (data) {
                     document.getElementById("rotaStart").value = data.start_time.slice(0,5);
                     document.getElementById("rotaEnd").value = data.end_time.slice(0,5);
+                    document.getElementById("rotaLunch").value = data.lunch_duration ?? 30;
                     document.getElementById("rotaType").value = data.shift_type;
                 }
             } else {
+                document.getElementById("modalTitle").innerText = "Schedule Agent Shift";
+                deleteBtn.style.display = "none";
                 document.getElementById("rotaStart").value = "08:00";
                 document.getElementById("rotaEnd").value = "16:30";
+                document.getElementById("rotaLunch").value = "30";
                 document.getElementById("rotaType").value = "Standard Shift";
             }
 
@@ -295,6 +359,7 @@
                 shift_date: document.getElementById("rotaDate").value,
                 start_time: document.getElementById("rotaStart").value,
                 end_time: document.getElementById("rotaEnd").value,
+                lunch_duration: parseInt(document.getElementById("rotaLunch").value) || 0,
                 shift_type: document.getElementById("rotaType").value.trim()
             };
 
@@ -313,6 +378,23 @@
                 showToast("Schedule successfully updated.");
             } else {
                 alert("Error saving shift: " + error.message);
+            }
+        }
+
+        async function deleteCurrentShift() {
+            const shiftId = document.getElementById("editShiftId").value;
+            if (!shiftId) return;
+            if (!confirm("Are you sure you want to remove this shift assignment?")) return;
+
+            const client = window.supabaseClient || window.supabase;
+            const { error } = await client.from('agent_rota').delete().eq('id', shiftId);
+
+            if (!error) {
+                closeRotaModal();
+                loadWfmMatrix();
+                showToast("Shift removed successfully.");
+            } else {
+                alert("Error removing shift: " + error.message);
             }
         }
 
