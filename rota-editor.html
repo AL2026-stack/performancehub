@@ -140,7 +140,7 @@
                         <option value="Training">Training (Paid)</option>
                         <option value="Meeting">Meeting (Paid)</option>
                         <option value="Coaching">Coaching (Paid)</option>
-                        <option value="Lunch">Lunch (Paid)</option>
+                        <option value="Lunch">Lunch (Unpaid)</option>
                         <option value="Sickness">Sickness (Unpaid)</option>
                         <option value="RDO">RDO (Unpaid)</option>
                     </select>
@@ -158,7 +158,7 @@
                     </select>
                 </div>
 
-                <!-- Custom time pickers for non-inbound activities (or Lunch) -->
+                <!-- Custom time pickers for non-inbound activities -->
                 <div id="customTimeBox" style="display: none; gap: 1rem; margin-bottom: 0.85rem;">
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="12:00"></div>
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="13:00"></div>
@@ -411,7 +411,6 @@
             var newStartMins = timeToMinutes(startStr);
             var newEndMins = timeToMinutes(endStr);
 
-            // Check existing shifts for smart lunch splitting
             var existing = await client.from('agent_rota')
                 .select('*')
                 .ilike('agent_name', agentName)
