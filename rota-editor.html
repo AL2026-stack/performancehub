@@ -175,7 +175,7 @@
 
                         <div style="margin-bottom: 1rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
-                                <label class="filter-label">Select Target Agents</label>
+                                <label class="filter-label">Select Target Agents (Agents Only)</label>
                                 <button type="button" onclick="toggleSelectAllAgents()" style="background:none; border:none; color:var(--primary); font-size:0.78rem; font-weight:800; cursor:pointer;">Select / Deselect All</button>
                             </div>
                             <div id="bulkAgentCheckboxContainer" class="agent-checkbox-grid"></div>
@@ -329,6 +329,13 @@
                     "Roxanne Gan", "Tom Manlangit", "Zeri Prigoner"
                 ];
             }
+
+            // Exclude management/superusers/admins from standard agent lists
+            var managementNames = ["manager", "superuser", "admin", "supervisor"];
+            agentNames = agentNames.filter(function(name) {
+                var nLower = name.toLowerCase();
+                return !managementNames.some(function(m) { return nLower.includes(m); });
+            });
 
             agentNames.sort(function(a, b) { return a.localeCompare(b); });
             globalAgentList = agentNames;
