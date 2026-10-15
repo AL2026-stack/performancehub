@@ -51,7 +51,11 @@
         
         .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.65rem 1.1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(230, 0, 126, 0.2); }
         
-        /* Side-by-side toolbar alignment */
+        /* Mode Tab Bar */
+        .mode-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 0.75rem; }
+        .mode-tab { background: transparent; border: none; font-size: 0.95rem; font-weight: 700; color: var(--text-muted); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .mode-tab.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(230, 0, 126, 0.25); }
+
         .toolbar-flex { display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: wrap; }
         .filter-field-group { display: flex; flex-direction: column; gap: 0.3rem; }
         .calendar-input, .filter-select { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; min-width: 220px; }
@@ -62,6 +66,10 @@
         .day-title { font-weight: 800; font-size: 0.95rem; color: var(--dark); min-width: 130px; }
         .activity-pill { background: #fff; border: 1px solid var(--border); padding: 0.4rem 0.75rem; border-radius: 8px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); margin-right: 0.5rem; margin-bottom: 0.5rem; }
         
+        /* Bulk View Grid */
+        .agent-checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; max-height: 220px; overflow-y: auto; padding: 0.75rem; background: var(--light); border: 1px solid var(--border); border-radius: 8px; margin-top: 0.3rem; }
+        .agent-checkbox-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: var(--card-bg); color: var(--text-main); border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
         input, select, textarea { padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--card-bg); color: var(--text-main); width: 100%; outline: none; font-family: inherit; }
@@ -92,26 +100,98 @@
             <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
             
             <div class="card">
-                <div class="card-header-flex">
-                    <h2>✏️ Agent Weekly Activity & Shift Editor</h2>
-                    
-                    <!-- Side-by-side toolbar filter controls -->
-                    <div class="toolbar-flex">
-                        <div class="filter-field-group">
-                            <label class="filter-label" for="filterAgentSelect">Select Agent:</label>
-                            <select id="filterAgentSelect" class="filter-select" onchange="loadAgentWeeklySchedule()">
-                                <option value="">-- Choose Agent --</option>
-                            </select>
-                        </div>
-                        <div class="filter-field-group">
-                            <label class="filter-label" for="weekPicker">Week Commencing:</label>
-                            <input type="date" id="weekPicker" class="calendar-input" onchange="loadAgentWeeklySchedule()">
+                <!-- Mode Switcher Tabs -->
+                <div class="mode-tabs">
+                    <button class="mode-tab active" id="tabSingle" onclick="switchEditorMode('single')">👤 Single Agent Weekly Editor</button>
+                    <button class="mode-tab" id="tabBulk" onclick="switchEditorMode('bulk')">📦 Bulk Activity Scheduler</button>
+                </div>
+
+                <!-- SINGLE AGENT VIEW -->
+                <div id="singleEditorSection">
+                    <div class="card-header-flex">
+                        <h2>✏️ Agent Weekly Activity & Shift Editor</h2>
+                        <div class="toolbar-flex">
+                            <div class="filter-field-group">
+                                <label class="filter-label" for="filterAgentSelect">Select Agent:</label>
+                                <select id="filterAgentSelect" class="filter-select" onchange="loadAgentWeeklySchedule()">
+                                    <option value="">-- Choose Agent --</option>
+                                </select>
+                            </div>
+                            <div class="filter-field-group">
+                                <label class="filter-label" for="weekPicker">Week Commencing:</label>
+                                <input type="date" id="weekPicker" class="calendar-input" onchange="loadAgentWeeklySchedule()">
+                            </div>
                         </div>
                     </div>
+                    
+                    <div id="agentWeeklyContainer" style="margin-top: 1rem;">
+                        <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-weight: 600;">Please select an agent to view their weekly schedule.</div>
+                    </div>
                 </div>
-                
-                <div id="agentWeeklyContainer" style="margin-top: 1rem;">
-                    <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-weight: 600;">Please select an agent to view their weekly schedule.</div>
+
+                <!-- BULK SCHEDULER VIEW -->
+                <div id="bulkEditorSection" style="display: none;">
+                    <div class="card-header-flex" style="margin-bottom: 1rem;">
+                        <h2>📦 Bulk Activity Scheduler (Smart Overlap & Duplicate Skip)</h2>
+                    </div>
+                    <form onsubmit="submitBulkActivities(event)">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Date</label>
+                                <input type="date" id="bulkStartDate" class="calendar-input" style="width: 100%;" required>
+                            </div>
+                            <div>
+                                <label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Date</label>
+                                <input type="date" id="bulkEndDate" class="calendar-input" style="width: 100%;" required>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type</label>
+                            <select id="bulkActivityType" onchange="handleBulkActivityChange()" required>
+                                <option value="Inbound">Inbound (Paid)</option>
+                                <option value="Training">Training (Paid)</option>
+                                <option value="Meeting">Meeting (Paid)</option>
+                                <option value="Coaching">Coaching (Paid)</option>
+                                <option value="Lunch">Lunch (Unpaid)</option>
+                                <option value="Sickness">Sickness (Unpaid)</option>
+                                <option value="RDO">RDO (Unpaid)</option>
+                            </select>
+                        </div>
+
+                        <div id="bulkShiftPresetGroup" style="margin-bottom: 1rem;">
+                            <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Preset</label>
+                            <select id="bulkShiftPreset">
+                                <option value="8.30 - 17.00">8.30 - 17.00</option>
+                                <option value="10.30 - 19.00">10.30 - 19.00</option>
+                                <option value="8.30 - 17.00 (Cover)">8.30 - 17.00 (Cover)</option>
+                                <option value="10.30 - 19.00 (Cover)">10.30 - 19.00 (Cover)</option>
+                                <option value="09.00 - 17.00">09.00 - 17.00</option>
+                            </select>
+                        </div>
+
+                        <div id="bulkCustomTimeBox" style="display: none; gap: 1rem; margin-bottom: 1rem;">
+                            <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="bulkStart" value="09:00"></div>
+                            <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="bulkEnd" value="17:00"></div>
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                                <label class="filter-label">Select Target Agents</label>
+                                <button type="button" onclick="toggleSelectAllAgents()" style="background:none; border:none; color:var(--primary); font-size:0.78rem; font-weight:800; cursor:pointer;">Select / Deselect All</button>
+                            </div>
+                            <div id="bulkAgentCheckboxContainer" class="agent-checkbox-grid">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1.25rem;">
+                            <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Comments / Notes (Optional)</label>
+                            <textarea id="bulkComments" rows="2" placeholder="Add bulk notes here..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-launch" style="width: 100%;">🚀 Apply Bulk Schedule</button>
+                    </form>
                 </div>
             </div>
         </main>
@@ -131,8 +211,6 @@
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Date</label>
                     <input type="date" id="rotaDate" readonly style="background: var(--light); font-weight: 700;">
                 </div>
-                
-                <!-- Separated Activity Type -->
                 <div style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Activity Type</label>
                     <select id="rotaActivityType" onchange="handleActivityTypeChange()" required>
@@ -140,13 +218,12 @@
                         <option value="Training">Training (Paid)</option>
                         <option value="Meeting">Meeting (Paid)</option>
                         <option value="Coaching">Coaching (Paid)</option>
-                        <option value="Lunch">Lunch (Paid)</option>
+                        <option value="Lunch">Lunch (Unpaid)</option>
                         <option value="Sickness">Sickness (Unpaid)</option>
                         <option value="RDO">RDO (Unpaid)</option>
                     </select>
                 </div>
 
-                <!-- Conditional Shift Preset (Shown only if Inbound is selected) -->
                 <div id="shiftPresetGroup" style="margin-bottom: 0.85rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Shift Preset</label>
                     <select id="rotaShiftPreset">
@@ -158,13 +235,11 @@
                     </select>
                 </div>
 
-                <!-- Custom time pickers for non-inbound activities -->
                 <div id="customTimeBox" style="display: none; gap: 1rem; margin-bottom: 0.85rem;">
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">Start Time</label><input type="time" id="rotaStart" value="12:00"></div>
                     <div style="flex: 1;"><label class="filter-label" style="display:block; margin-bottom:0.3rem;">End Time</label><input type="time" id="rotaEnd" value="13:00"></div>
                 </div>
 
-                <!-- Comments / Notes Field -->
                 <div style="margin-bottom: 1.25rem;">
                     <label class="filter-label" style="display:block; margin-bottom:0.3rem;">Comments / Notes (Optional)</label>
                     <textarea id="rotaComments" rows="2" placeholder="Add any comments here..."></textarea>
@@ -188,33 +263,51 @@
         document.getElementById("displayUserName").innerText = currentUser + " (" + currentRole + ")";
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
+        var globalAgentList = [];
+
         document.addEventListener("DOMContentLoaded", function() {
             var now = new Date();
             var day = now.getDay();
             var diff = now.getDate() - day + (day === 0 ? -6 : 1);
             var monday = new Date(now.setDate(diff)).toISOString().split('T')[0];
             document.getElementById("weekPicker").value = monday;
+            document.getElementById("bulkStartDate").value = monday;
+            
+            var friday = new Date(new Date(monday).setDate(new Date(monday).getDate() + 4)).toISOString().split('T')[0];
+            document.getElementById("bulkEndDate").value = friday;
 
-            populateAgentDropdown();
+            populateAgentDropdowns();
         });
 
-        async function populateAgentDropdown() {
+        function switchEditorMode(mode) {
+            var tabSingle = document.getElementById("tabSingle");
+            var tabBulk = document.getElementById("tabBulk");
+            var singleSec = document.getElementById("singleEditorSection");
+            var bulkSec = document.getElementById("bulkEditorSection");
+
+            if (mode === 'single') {
+                tabSingle.classList.add("active");
+                tabBulk.classList.remove("active");
+                singleSec.style.display = "block";
+                bulkSec.style.display = "none";
+            } else {
+                tabBulk.classList.add("active");
+                tabSingle.classList.remove("active");
+                bulkSec.style.display = "block";
+                singleSec.style.display = "none";
+                renderBulkAgentCheckboxes();
+            }
+        }
+
+        async function populateAgentDropdowns() {
             var select = document.getElementById("filterAgentSelect");
             select.innerHTML = '<option value="">-- Loading Agents --</option>';
 
             var agentNames = [];
-
             var client = window.supabaseClient || window.supabase;
             if (client) {
                 try {
-                    var response = await client
-                        .from('agent_stats')
-                        .select('agent_name');
-
-                    if (response.error) {
-                        console.error("Supabase RLS or Query Error:", response.error.message);
-                    }
-
+                    var response = await client.from('agent_stats').select('agent_name');
                     if (response.data && response.data.length > 0) {
                         var dbAgents = response.data.map(function(item) { return item.agent_name; }).filter(Boolean);
                         agentNames = Array.from(new Set(dbAgents));
@@ -235,6 +328,7 @@
             }
 
             agentNames.sort(function(a, b) { return a.localeCompare(b); });
+            globalAgentList = agentNames;
 
             select.innerHTML = '<option value="">-- Choose Agent --</option>';
             agentNames.forEach(function(name) {
@@ -248,6 +342,22 @@
                 select.value = agentNames[0];
                 loadAgentWeeklySchedule();
             }
+        }
+
+        function renderBulkAgentCheckboxes() {
+            var container = document.getElementById("bulkAgentCheckboxContainer");
+            container.innerHTML = globalAgentList.map(function(name) {
+                return '<label class="agent-checkbox-item">' +
+                       '<input type="checkbox" name="bulkAgentCheck" value="' + name + '" checked> ' +
+                       name +
+                       '</label>';
+            }).join('');
+        }
+
+        function toggleSelectAllAgents() {
+            var checkboxes = document.querySelectorAll('input[name="bulkAgentCheck"]');
+            var allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+            checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
         }
 
         function getMonday(dStr) {
@@ -314,7 +424,7 @@
                 return '<div class="day-column-card">' +
                        '<div>' +
                        '<div class="day-title">' + dayNames[idx] + '</div>' +
-                       '<div style="font-size: 0.78rem; color: var::text-muted; color: var(--text-muted);">' + dateStr + '</div>' +
+                       '<div style="font-size: 0.78rem; color: var(--text-muted);">' + dateStr + '</div>' +
                        '</div>' +
                        '<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-left: 1rem;">' + shiftsHtml + '</div>' +
                        '<button class="btn-launch" style="padding: 0.4rem 0.85rem; font-size: 0.78rem;" onclick="openRotaModal(null, \'' + agentName + '\', \'' + dateStr + '\')">+ Add Activity</button>' +
@@ -326,6 +436,20 @@
             var actType = document.getElementById("rotaActivityType").value;
             var shiftGroup = document.getElementById("shiftPresetGroup");
             var customBox = document.getElementById("customTimeBox");
+
+            if (actType === 'Inbound') {
+                shiftGroup.style.display = "block";
+                customBox.style.display = "none";
+            } else {
+                shiftGroup.style.display = "none";
+                customBox.style.display = "flex";
+            }
+        }
+
+        function handleBulkActivityChange() {
+            var actType = document.getElementById("bulkActivityType").value;
+            var shiftGroup = document.getElementById("bulkShiftPresetGroup");
+            var customBox = document.getElementById("bulkCustomTimeBox");
 
             if (actType === 'Inbound') {
                 shiftGroup.style.display = "block";
@@ -473,6 +597,94 @@
             }
         }
 
+        async function submitBulkActivities(e) {
+            e.preventDefault();
+            var client = window.supabaseClient || window.supabase;
+            if (!client) return;
+
+            var startDateStr = document.getElementById("bulkStartDate").value;
+            var endDateStr = document.getElementById("bulkEndDate").value;
+            var actType = document.getElementById("bulkActivityType").value;
+            var comments = document.getElementById("bulkComments").value.trim();
+            
+            var selectedCheckboxes = document.querySelectorAll('input[name="bulkAgentCheck"]:checked');
+            var selectedAgents = Array.from(selectedCheckboxes).map(function(cb) { return cb.value; });
+
+            if (selectedAgents.length === 0) {
+                alert("Please select at least one agent for the bulk operation.");
+                return;
+            }
+
+            var startStr = "08:30", endStr = "17:00";
+            if (actType === 'Inbound') {
+                var preset = document.getElementById("bulkShiftPreset").value;
+                if (preset.indexOf('8.30 - 17.00') === 0) { startStr = "08:30"; endStr = "17:00"; }
+                else if (preset.indexOf('10.30 - 19.00') === 0) { startStr = "10:30"; endStr = "19:00"; }
+                else if (preset.indexOf('8.30 - 17.00 (Cover)') === 0) { startStr = "08:30"; endStr = "17:00"; }
+                else if (preset.indexOf('10.30 - 19.00 (Cover)') === 0) { startStr = "10:30"; endStr = "19:00"; }
+                else if (preset.indexOf('09.00 - 17.00') === 0) { startStr = "09:00"; endStr = "17:00"; }
+            } else {
+                startStr = document.getElementById("bulkStart").value;
+                endStr = document.getElementById("bulkEnd").value;
+            }
+
+            var dateList = [];
+            var curr = new Date(startDateStr);
+            var endD = new Date(endDateStr);
+            while (curr <= endD) {
+                dateList.push(curr.toISOString().split('T')[0]);
+                curr.setDate(curr.getDate() + 1);
+            }
+
+            // Fetch existing shifts for these agents in this date range to check for identical duplicates
+            var existingRes = await client.from('agent_rota')
+                .select('*')
+                .in('agent_name', selectedAgents)
+                .gte('shift_date', dateList[0])
+                .lte('shift_date', dateList[dateList.length - 1]);
+            
+            var existingShifts = existingRes.data || [];
+
+            var payloads = [];
+            selectedAgents.forEach(function(agent) {
+                dateList.forEach(function(dateStr) {
+                    // Check if an identical shift already exists for this agent on this date
+                    var isDuplicate = existingShifts.some(function(s) {
+                        return s.agent_name.toLowerCase() === agent.toLowerCase() &&
+                               s.shift_date === dateStr &&
+                               (s.activity_type || '').toLowerCase() === actType.toLowerCase() &&
+                               s.start_time.slice(0,5) === startStr &&
+                               s.end_time.slice(0,5) === endStr;
+                    });
+
+                    if (!isDuplicate) {
+                        payloads.push({
+                            agent_name: agent,
+                            shift_date: dateStr,
+                            start_time: startStr,
+                            end_time: endStr,
+                            activity_type: actType,
+                            shift_type: actType,
+                            comments: comments
+                        });
+                    }
+                });
+            });
+
+            if (payloads.length === 0) {
+                showToast("All selected agents already have this exact activity scheduled for these dates. No new entries added.");
+                return;
+            }
+
+            var res = await client.from('agent_rota').insert(payloads);
+            if (!res.error) {
+                showToast("Successfully scheduled bulk activities (" + payloads.length + " new entries added, duplicates skipped).");
+                switchEditorMode('single');
+            } else {
+                alert("Error processing bulk operation: " + res.error.message);
+            }
+        }
+
         async function deleteCurrentActivity() {
             var shiftId = document.getElementById("editShiftId").value;
             if (!shiftId) return;
@@ -493,7 +705,7 @@
         function showToast(msg) {
             var t = document.getElementById("toastNotification");
             t.innerText = msg; t.style.display = "block";
-            setTimeout(function() { t.style.display = "none"; }, 3500);
+            setTimeout(function() { t.style.display = "none"; }, 4000);
         }
     </script>
 </body>
