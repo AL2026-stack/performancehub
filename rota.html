@@ -190,61 +190,76 @@
             var dailyEarlyHours = [0, 0, 0, 0, 0, 0, 0];
             var dailyLateHours = [0, 0, 0, 0, 0, 0, 0];
 
+            // Pre-process rows per agent & day to accurately compute totals
+            var tableRowsData = [];
+
             agentNames.forEach(function(agent) {
-                html += '<tr><td>' + agent + '</td>';
-                
+                var agentRowDays = [];
                 weekDates.forEach(function(dateStr, dayIdx) {
                     var agentDayShifts = shifts.filter(function(s) {
                         return s.agent_name && s.agent_name.toLowerCase() === agent.toLowerCase() && s.shift_date === dateStr;
                     });
 
-                    if (agentDayShifts.length === 0) {
-                        html += '<td><span class="shift-pill-box off">OFF</span></td>';
-                    } else {
-                        var hasWorkingShift = agentDayShifts.some(function(s) {
+                    var dayInfo = { hasShift: false, specialStatus: null, totalHours: 0, shifts: agentDayShifts };
+
+                    if (agentDayShifts.length > 0) {
+                        var hasWorking = agentDayShifts.some(function(s) {
                             var t = (s.activity_type || s.shift_type || '').toLowerCase();
                             return t !== 'rdo' && t !== 'sickness';
                         });
-                        if (hasWorkingShift) {
+
+                        if (hasWorking) {
+                            dayInfo.hasShift = true;
                             dailyHeadcount[dayIdx]++;
                         }
-
-                        var dayTotalHours = 0;
-                        var hasSpecialStatus = null;
 
                         agentDayShifts.forEach(function(s) {
                             var actType = (s.activity_type || s.shift_type || '').toLowerCase();
                             if (actType === 'sickness' || actType === 'rdo') {
-                                hasSpecialStatus = s.activity_type || s.shift_type;
+                                dayInfo.specialStatus = s.activity_type || s.shift_type;
                             }
 
-                            // Calculate paid hours (excluding Lunch, Sickness, RDO)
                             if (actType !== 'lunch' && actType !== 'sickness' && actType !== 'rdo') {
                                 var sMins = timeToMinutes(s.start_time);
                                 var eMins = timeToMinutes(s.end_time);
                                 var hrs = (eMins - sMins) / 60;
                                 if (hrs > 0) {
-                                    dayTotalHours += hrs;
+                                    dayInfo.totalHours += hrs;
                                     dailyPaidHours[dayIdx] += hrs;
 
-                                    if (s.start_time.slice(0,5) < "10:30" && s.end_time.slice(0,5) > "08:30") {
-                                        dailyEarlyHours[dayIdx] += Math.min(hrs, 2);
+                                    // Early hours overlap check (08:30 to 10:30 -> 510 mins to 630 mins)
+                                    var earlyStart = Math.max(sMins, 510);
+                                    var earlyEnd = Math.min(eMins, 630);
+                                    if (earlyEnd > earlyStart) {
+                                        dailyEarlyHours[dayIdx] += (earlyEnd - earlyStart) / 60;
                                     }
-                                    if (s.end_time.slice(0,5) > "17:00") {
-                                        dailyLateHours[dayIdx] += Math.max(0, (eMins - Math.max(sMins, 1020)) / 60);
+
+                                    // Late hours overlap check (17:00 to 19:00 -> 1020 mins to 1140 mins)
+                                    var lateStart = Math.max(sMins, 1020);
+                                    var lateEnd = Math.min(eMins, 1140);
+                                    if (lateEnd > lateStart) {
+                                        dailyLateHours[dayIdx] += (lateEnd - lateStart) / 60;
                                     }
                                 }
                             }
                         });
+                    }
+                    agentRowDays.push(dayInfo);
+                });
+                tableRowsData.push({ agent: agent, days: agentRowDays });
+            });
 
-                        html += '<td>';
-                        if (hasSpecialStatus) {
-                            var pillCls = hasSpecialStatus.toLowerCase() === 'sickness' ? 'shift-pill-box sickness' : 'shift-pill-box rdo';
-                            html += '<div class="' + pillCls + '">' + hasSpecialStatus + '</div>';
-                        } else {
-                            html += '<div class="shift-pill-box">' + dayTotalHours.toFixed(1) + 'h</div>';
-                        }
-                        html += '</td>';
+            // Render Table HTML
+            tableRowsData.forEach(function(row) {
+                html += '<tr><td>' + row.agent + '</td>';
+                row.days.forEach(function(day) {
+                    if (!day.hasShift && !day.specialStatus) {
+                        html += '<td><span class="shift-pill-box off">OFF</span></td>';
+                    } else if (day.specialStatus) {
+                        var pillCls = day.specialStatus.toLowerCase() === 'sickness' ? 'shift-pill-box sickness' : 'shift-pill-box rdo';
+                        html += '<td><div class="' + pillCls + '">' + day.specialStatus + '</div></td>';
+                    } else {
+                        html += '<td><div class="shift-pill-box">' + day.totalHours.toFixed(1) + 'h</div></td>';
                     }
                 });
                 html += '</tr>';
