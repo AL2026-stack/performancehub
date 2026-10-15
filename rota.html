@@ -149,7 +149,7 @@
             
             var agentNames = [
                 "Anthony", "Dave Dayao", "Donna Bernardo", "Elenita Abano", 
-                "James Igot", "Jay Dayay", "Jenny Rapanan", "Jewel Opiana", 
+                "James Igot", "Jay Dayao", "Jenny Rapanan", "Jewel Opiana", 
                 "Joshua Ababon", "Joy Tadiaman", "Joyce Adducul", "Lauriz Jose", 
                 "Lori Gallo", "Ma Bautista", "Marieber Villamor", "Reuben Dinaguit", 
                 "Roxanne Gan", "Tom Manlangit", "Zeri Prigoner"
@@ -231,12 +231,12 @@
 
                                     // Mon - Fri (dayIdx 0 to 4) Early / Late headcount check
                                     if (dayIdx < 5) {
-                                        // Early window: 08:30 (510 mins) to 10:30 (630 mins)
+                                        // Early: Active during 08:30 (510) - 10:30 (630)
                                         if (sMins <= 510 && eMins > 510) {
                                             agentWorkingEarly = true;
                                         }
-                                        // Late window: 17:00 (1020 mins) to 19:00 (1140 mins)
-                                        if (sMins < 1140 && eMins >= 1020) {
+                                        // Late: Active extending past 17:00 (1020) into evening window (e.g., 10.30 - 19.00 shift)
+                                        if (eMins > 1020) {
                                             agentWorkingLate = true;
                                         }
                                     }
