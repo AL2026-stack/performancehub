@@ -56,11 +56,15 @@
         .rota-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
         .rota-table th, .rota-table td { border: 1px solid var(--border); padding: 0.65rem; text-align: center; vertical-align: middle; }
         .rota-table th { background: #0f172a; color: white; font-weight: 700; }
-        .rota-table td:first-child { font-weight: 700; text-align: left; background: var(--light); min-width: 160px; }
+        .rota-table td:first-child { font-weight: 700; text-align: left; background: var(--light); min-width: 200px; display: flex; justify-content: space-between; align-items: center; }
         
         .shift-pill-box { display: inline-block; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.82rem; margin: 2px; }
         .shift-pill-box.off { background: transparent; color: var(--text-muted); border: none; font-style: italic; font-weight: 500; }
         .shift-pill-box.sickness, .shift-pill-box.rdo { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        
+        .btn-archive { background: transparent; color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+        .btn-archive:hover { background: var(--danger); color: white; }
+        .toast-notify { display: none; padding: 0.85rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.88rem; margin-bottom: 1rem; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
     </style>
 </head>
 <body>
@@ -83,6 +87,8 @@
         </nav>
 
         <main class="main-workspace">
+            <div id="toastNotification" class="toast-notify">Action completed successfully.</div>
+
             <div class="card">
                 <div class="card-header-flex">
                     <h2>📊 Hours & Staffing Overview</h2>
@@ -155,6 +161,9 @@
                 "Roxanne Gan", "Tom Manlangit", "Zeri Prigoner"
             ];
 
+            // Filter out locally archived agents stored in localStorage
+            var archivedAgents = JSON.parse(localStorage.getItem("archived_agents") || "[]");
+
             if (client) {
                 try {
                     var statsRes = await client.from('agent_stats').select('agent_name');
@@ -166,6 +175,12 @@
                     console.log("Using fallback agent roster");
                 }
             }
+
+            // Exclude archived agents from active view
+            agentNames = agentNames.filter(function(name) {
+                return !archivedAgents.includes(name);
+            });
+
             agentNames.sort(function(a, b) { return a.localeCompare(b); });
 
             var shifts = [];
@@ -229,13 +244,10 @@
                                     dayInfo.totalHours += hrs;
                                     dailyPaidHours[dayIdx] += hrs;
 
-                                    // Mon - Fri (dayIdx 0 to 4) Early / Late headcount check
                                     if (dayIdx < 5) {
-                                        // Early: Active during 08:30 (510) - 10:30 (630)
                                         if (sMins <= 510 && eMins > 510) {
                                             agentWorkingEarly = true;
                                         }
-                                        // Late: Active extending past 17:00 (1020) into evening window (e.g., 10.30 - 19.00 shift)
                                         if (eMins > 1020) {
                                             agentWorkingLate = true;
                                         }
@@ -252,9 +264,13 @@
                 tableRowsData.push({ agent: agent, days: agentRowDays });
             });
 
-            // Render Table HTML
+            // Render Table HTML with Archive Action
             tableRowsData.forEach(function(row) {
-                html += '<tr><td>' + row.agent + '</td>';
+                html += '<tr><td>' +
+                        '<span>' + row.agent + '</span>' +
+                        '<button class="btn-archive" onclick="archiveAgent(\'' + row.agent + '\')" title="Archive Agent">Archive</button>' +
+                        '</td>';
+                
                 row.days.forEach(function(day) {
                     if (!day.hasShift && !day.specialStatus) {
                         html += '<td><span class="shift-pill-box off">OFF</span></td>';
@@ -290,6 +306,25 @@
 
             html += '</tbody></table>';
             document.getElementById("rotaTableContainer").innerHTML = html;
+        }
+
+        function archiveAgent(agentName) {
+            if (!confirm("Are you sure you want to archive " + agentName + "? They will be hidden from the active rota overview.")) return;
+            
+            var archived = JSON.parse(localStorage.getItem("archived_agents") || "[]");
+            if (!archived.includes(agentName)) {
+                archived.push(agentName);
+                localStorage.setItem("archived_agents", JSON.stringify(archived));
+            }
+
+            showToast(agentName + " has been archived successfully.");
+            loadRotaOverview();
+        }
+
+        function showToast(msg) {
+            var t = document.getElementById("toastNotification");
+            t.innerText = msg; t.style.display = "block";
+            setTimeout(function() { t.style.display = "none"; }, 4000);
         }
     </script>
 </body>
