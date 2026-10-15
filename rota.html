@@ -45,24 +45,32 @@
         .nav-item.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.35); }
 
         .main-workspace { flex: 1; padding: 2rem; width: 100%; max-width: none; display: flex; flex-direction: column; gap: 1.5rem; overflow-x: auto; }
-        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); min-width: 900px; }
+        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); min-width: 950px; }
         .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
         .card h2 { font-size: 1.15rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
         
-        .calendar-input { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
+        .calendar-input, .filter-select { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
         .filter-label { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+        /* View Mode Toggle Buttons */
+        .view-mode-group { display: flex; background: var(--light); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .view-mode-btn { background: transparent; border: none; padding: 0.5rem 0.85rem; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+        .view-mode-btn.active { background: var(--primary); color: white; }
 
         /* Rota Grid Table */
         .rota-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
         .rota-table th, .rota-table td { border: 1px solid var(--border); padding: 0.65rem; text-align: center; vertical-align: middle; }
         .rota-table th { background: #0f172a; color: white; font-weight: 700; }
-        .rota-table th:first-child, .rota-table td:first-child { min-width: 130px; max-width: 160px; text-align: left; background: var(--light); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Wider Agent Column & Flex alignment */
+        .rota-table th:first-child, .rota-table td:first-child { min-width: 220px; max-width: 250px; text-align: left; background: var(--light); font-weight: 700; }
+        .agent-cell-flex { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; }
         
         .shift-pill-box { display: inline-block; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.82rem; margin: 2px; }
         .shift-pill-box.off { background: transparent; color: var(--text-muted); border: none; font-style: italic; font-weight: 500; }
         .shift-pill-box.sickness, .shift-pill-box.rdo { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
         
-        .btn-archive { background: transparent; color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; cursor: pointer; }
+        .btn-archive { background: transparent; color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }
         .btn-archive:hover { background: var(--danger); color: white; }
         
         .btn-action-primary { background: var(--primary-gradient); color: white; border: none; padding: 0.45rem 0.9rem; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
@@ -99,9 +107,19 @@
             <div class="card">
                 <div class="card-header-flex">
                     <h2>📊 Hours & Staffing Overview</h2>
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <label class="filter-label" for="weekPicker">Week Commencing:</label>
-                        <input type="date" id="weekPicker" class="calendar-input" onchange="loadRotaOverview()">
+                    
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <!-- View Mode Switcher -->
+                        <div class="view-mode-group">
+                            <button class="view-mode-btn" id="modeDay" onclick="setViewMode('day')">Day</button>
+                            <button class="view-mode-btn active" id="modeWeek" onclick="setViewMode('week')">Week</button>
+                            <button class="view-mode-btn" id="modeMonth" onclick="setViewMode('month')">Month</button>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <label class="filter-label" for="weekPicker" id="datePickerLabel">Date / Week:</label>
+                            <input type="date" id="weekPicker" class="calendar-input" onchange="loadRotaOverview()">
+                        </div>
                     </div>
                 </div>
                 
@@ -132,6 +150,7 @@
         document.getElementById("displayUserName").innerText = currentUser + " (" + currentRole + ")";
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
+        var currentViewMode = 'week'; // 'day', 'week', 'month'
         var isSuperuser = (currentRole.toLowerCase() === 'superuser');
 
         if (isSuperuser) {
@@ -149,6 +168,15 @@
             loadRotaOverview();
         });
 
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            document.getElementById("modeDay").classList.remove("active");
+            document.getElementById("modeWeek").classList.remove("active");
+            document.getElementById("modeMonth").classList.remove("active");
+            document.getElementById("mode" + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add("active");
+            loadRotaOverview();
+        }
+
         function getMonday(dStr) {
             var d = new Date(dStr);
             var day = d.getDay();
@@ -156,13 +184,28 @@
             return new Date(d.setDate(diff)).toISOString().split('T')[0];
         }
 
-        function getWeekDates(mondayStr) {
-            var monday = new Date(mondayStr);
+        function getDatesForMode(valStr) {
             var dates = [];
-            for (var i = 0; i < 6; i++) {
-                var d = new Date(monday);
-                d.setDate(monday.getDate() + i);
-                dates.push(d.toISOString().split('T')[0]);
+            var baseDate = new Date(valStr);
+
+            if (currentViewMode === 'day') {
+                dates.push(valStr);
+            } else if (currentViewMode === 'week') {
+                var mondayStr = getMonday(valStr);
+                var monday = new Date(mondayStr);
+                for (var i = 0; i < 6; i++) { // Monday to Saturday
+                    var d = new Date(monday);
+                    d.setDate(monday.getDate() + i);
+                    dates.push(d.toISOString().split('T')[0]);
+                }
+            } else if (currentViewMode === 'month') {
+                var year = baseDate.getFullYear();
+                var month = baseDate.getMonth();
+                var daysInMonth = new Date(year, month + 1, 0).getDate();
+                for (var i = 1; i <= daysInMonth; i++) {
+                    var d = new Date(year, month, i);
+                    dates.push(d.toISOString().split('T')[0]);
+                }
             }
             return dates;
         }
@@ -174,9 +217,8 @@
         }
 
         async function loadRotaOverview() {
-            var weekPickerVal = document.getElementById("weekPicker").value || new Date().toISOString().split('T')[0];
-            var monday = getMonday(weekPickerVal);
-            var weekDates = getWeekDates(monday);
+            var pickerVal = document.getElementById("weekPicker").value || new Date().toISOString().split('T')[0];
+            var weekDates = getDatesForMode(pickerVal);
 
             var client = window.supabaseClient || window.supabase;
             
@@ -213,22 +255,23 @@
                 var rotaRes = await client.from('agent_rota')
                     .select('*')
                     .gte('shift_date', weekDates[0])
-                    .lte('shift_date', weekDates[5]);
+                    .lte('shift_date', weekDates[weekDates.length - 1]);
                 shifts = rotaRes.data || [];
             }
 
-            var dayHeaders = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            
             var html = '<table class="rota-table"><thead><tr><th>Agent ID / Name</th>';
-            weekDates.forEach(function(d, idx) {
-                html += '<th>' + dayHeaders[idx] + '<br><span style="font-size:0.72rem; font-weight:400;">' + d + '</span></th>';
+            weekDates.forEach(function(d) {
+                var dObj = new Date(d);
+                var dayName = dObj.toLocaleDateString('en-US', { weekday: 'short' });
+                html += '<th>' + dayName + '<br><span style="font-size:0.72rem; font-weight:400;">' + d + '</span></th>';
             });
             html += '</tr></thead><tbody>';
 
-            var dailyHeadcount = [0, 0, 0, 0, 0, 0];
-            var dailyPaidHours = [0, 0, 0, 0, 0, 0];
-            var dailyEarlyHeadcount = [0, 0, 0, 0, 0, 0];
-            var dailyLateHeadcount = [0, 0, 0, 0, 0, 0];
+            var numCols = weekDates.length;
+            var dailyHeadcount = new Array(numCols).fill(0);
+            var dailyPaidHours = new Array(numCols).fill(0);
+            var dailyEarlyHeadcount = new Array(numCols).fill(0);
+            var dailyLateHeadcount = new Array(numCols).fill(0);
 
             var tableRowsData = [];
 
@@ -254,6 +297,7 @@
 
                         var agentWorkingEarly = false;
                         var agentWorkingLate = false;
+                        var isSunday = (new Date(dateStr).getDay() === 0);
 
                         agentDayShifts.forEach(function(s) {
                             var actType = (s.activity_type || s.shift_type || '').toLowerCase();
@@ -269,7 +313,7 @@
                                     dayInfo.totalHours += hrs;
                                     dailyPaidHours[dayIdx] += hrs;
 
-                                    if (dayIdx < 5) {
+                                    if (!isSunday) {
                                         if (sMins <= 510 && eMins > 510) {
                                             agentWorkingEarly = true;
                                         }
@@ -293,8 +337,10 @@
                 var archiveBtnHtml = isSuperuser ? '<button class="btn-archive" onclick="archiveAgent(\'' + row.agent + '\')" title="Archive Agent">Archive</button>' : '';
                 
                 html += '<tr><td>' +
+                        '<div class="agent-cell-flex">' +
                         '<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + row.agent + '</span>' +
                         archiveBtnHtml +
+                        '</div>' +
                         '</td>';
                 
                 row.days.forEach(function(day) {
@@ -310,15 +356,17 @@
                 html += '</tr>';
             });
 
-            html += '<tr style="font-weight:700; background:var(--light);"><td>EARLY HEADCOUNT (Mon-Fri 8:30 - 10:30)</td>';
+            html += '<tr style="font-weight:700; background:var(--light);"><td>EARLY HEADCOUNT (8:30 - 10:30)</td>';
             dailyEarlyHeadcount.forEach(function(val, idx) { 
-                html += '<td style="color:var(--primary);">' + (idx < 5 ? val : '-') + '</td>'; 
+                var isSun = (new Date(weekDates[idx]).getDay() === 0);
+                html += '<td style="color:var(--primary);">' + (!isSun ? val : '-') + '</td>'; 
             });
             html += '</tr>';
 
-            html += '<tr style="font-weight:700; background:var(--light);"><td>LATE HEADCOUNT (Mon-Fri 17:00 - 19:00)</td>';
+            html += '<tr style="font-weight:700; background:var(--light);"><td>LATE HEADCOUNT (17:00 - 19:00)</td>';
             dailyLateHeadcount.forEach(function(val, idx) { 
-                html += '<td style="color:var(--primary);">' + (idx < 5 ? val : '-') + '</td>'; 
+                var isSun = (new Date(weekDates[idx]).getDay() === 0);
+                html += '<td style="color:var(--primary);">' + (!isSun ? val : '-') + '</td>'; 
             });
             html += '</tr>';
 
