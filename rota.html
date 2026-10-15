@@ -58,8 +58,7 @@
         .rota-table th { background: #0f172a; color: white; font-weight: 700; }
         .rota-table td:first-child { font-weight: 700; text-align: left; background: var(--light); min-width: 160px; }
         
-        .shift-pill-box { display: inline-block; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.25rem 0.5rem; border-radius: 6px; font-weight: 700; font-size: 0.78rem; margin: 2px; }
-        .shift-pill-box.lunch { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+        .shift-pill-box { display: inline-block; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.82rem; margin: 2px; }
         .shift-pill-box.off { background: transparent; color: var(--text-muted); border: none; font-style: italic; font-weight: 500; }
         .shift-pill-box.sickness, .shift-pill-box.rdo { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
     </style>
@@ -135,14 +134,10 @@
             return dates;
         }
 
-        function timeToHours(start, end) {
-            if (!start || !end) return 0;
-            var sParts = start.split(':');
-            var eParts = end.split(':');
-            var sMins = parseInt(sParts[0]) * 60 + parseInt(sParts[1]);
-            var eMins = parseInt(eParts[0]) * 60 + parseInt(eParts[1]);
-            var diff = (eMins - sMins) / 60;
-            return diff > 0 ? diff : 0;
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            var parts = timeStr.split(':');
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
         }
 
         async function loadRotaOverview() {
@@ -152,7 +147,6 @@
 
             var client = window.supabaseClient || window.supabase;
             
-            // Fetch agents from agent_stats
             var agentNames = [
                 "Anthony", "Dave Dayao", "Donna Bernardo", "Elenita Abano", 
                 "James Igot", "Jay Dayao", "Jenny Rapanan", "Jewel Opiana", 
@@ -174,7 +168,6 @@
             }
             agentNames.sort(function(a, b) { return a.localeCompare(b); });
 
-            // Fetch shifts for the week
             var shifts = [];
             if (client) {
                 var rotaRes = await client.from('agent_rota')
@@ -192,7 +185,6 @@
             });
             html += '</tr></thead><tbody>';
 
-            // Daily summary accumulators
             var dailyHeadcount = [0, 0, 0, 0, 0, 0, 0];
             var dailyPaidHours = [0, 0, 0, 0, 0, 0, 0];
             var dailyEarlyHours = [0, 0, 0, 0, 0, 0, 0];
@@ -209,7 +201,6 @@
                     if (agentDayShifts.length === 0) {
                         html += '<td><span class="shift-pill-box off">OFF</span></td>';
                     } else {
-                        // Increment Headcount for working/scheduled agents
                         var hasWorkingShift = agentDayShifts.some(function(s) {
                             var t = (s.activity_type || s.shift_type || '').toLowerCase();
                             return t !== 'rdo' && t !== 'sickness';
@@ -218,42 +209,53 @@
                             dailyHeadcount[dayIdx]++;
                         }
 
-                        html += '<td>';
+                        // Determine overall working span for the day (min start time to max end time)
+                        var minStart = "23:59", maxEnd = "00:00";
+                        var hasSpecialStatus = null;
+
                         agentDayShifts.forEach(function(s) {
-                            var actType = s.activity_type || s.shift_type || 'Inbound';
-                            var start = s.start_time ? s.start_time.slice(0,5) : '';
-                            var end = s.end_time ? s.end_time.slice(0,5) : '';
-                            
-                            var pillClass = 'shift-pill-box';
-                            var tLower = actType.toLowerCase();
-                            if (tLower === 'lunch') pillClass += ' lunch';
-                            else if (tLower === 'sickness') pillClass += ' sickness';
-                            else if (tLower === 'rdo') pillClass += ' rdo';
+                            var actType = (s.activity_type || s.shift_type || '').toLowerCase();
+                            if (actType === 'sickness' || actType === 'rdo') {
+                                hasSpecialStatus = s.activity_type || s.shift_type;
+                            }
+                            if (s.start_time && s.start_time.slice(0,5) < minStart) {
+                                minStart = s.start_time.slice(0,5);
+                            }
+                            if (s.end_time && s.end_time.slice(0,5) > maxEnd) {
+                                maxEnd = s.end_time.slice(0,5);
+                            }
 
-                            html += '<div class="' + pillClass + '">' + start + '-' + end + ' (' + actType + ')</div>';
+                            // Calculate paid hours (excluding Lunch, Sickness, RDO)
+                            if (actType !== 'lunch' && actType !== 'sickness' && actType !== 'rdo') {
+                                var sMins = timeToMinutes(s.start_time);
+                                var eMins = timeToMinutes(s.end_time);
+                                var hrs = (eMins - sMins) / 60;
+                                if (hrs > 0) {
+                                    dailyPaidHours[dayIdx] += hrs;
 
-                            // Calculate hours (Inbound, Training, Meeting, Coaching, and Lunch are PAID)
-                            if (tLower !== 'sickness' && tLower !== 'rdo') {
-                                var hrs = timeToHours(s.start_time, s.end_time);
-                                dailyPaidHours[dayIdx] += hrs;
-
-                                // Early hours (8.30 - 10.30 window check or similar)
-                                if (start && start < "10:30" && end > "08:30") {
-                                    dailyEarlyHours[dayIdx] += Math.min(hrs, 2); 
-                                }
-                                // Late hours (17:00 - 19:00 window check)
-                                if (end && end > "17:00") {
-                                    dailyLateHours[dayIdx] += Math.max(0, timeToHours("17:00", end));
+                                    if (s.start_time.slice(0,5) < "10:30" && s.end_time.slice(0,5) > "08:30") {
+                                        dailyEarlyHours[dayIdx] += Math.min(hrs, 2);
+                                    }
+                                    if (s.end_time.slice(0,5) > "17:00") {
+                                        dailyLateHours[dayIdx] += Math.max(0, (eMins - Math.max(sMins, 1020)) / 60);
+                                    }
                                 }
                             }
                         });
+
+                        html += '<td>';
+                        if (hasSpecialStatus) {
+                            var pillCls = hasSpecialStatus.toLowerCase() === 'sickness' ? 'shift-pill-box sickness' : 'shift-pill-box rdo';
+                            html += '<div class="' + pillCls + '">' + hasSpecialStatus + '</div>';
+                        } else {
+                            html += '<div class="shift-pill-box">' + minStart + ' - ' + maxEnd + '</div>';
+                        }
                         html += '</td>';
                     }
                 });
                 html += '</tr>';
             });
 
-            // Summary rows
             html += '<tr style="font-weight:700; background:var(--light);"><td>EARLY HOURS (8:30 - 10:30)</td>';
             dailyEarlyHours.forEach(function(val) { html += '<td style="color:var(--primary);">' + val.toFixed(1) + '</td>'; });
             html += '</tr>';
