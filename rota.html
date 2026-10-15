@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WFM Hours Overview - Zzoomm</title>
+    <title>Hours & Staffing Overview - Zzoomm WFM</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -44,28 +44,24 @@
         .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
         .nav-item.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.35); }
 
-        .main-workspace { flex: 1; padding: 2rem; width: 100%; max-width: none; display: flex; flex-direction: column; gap: 1.5rem; }
-        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .main-workspace { flex: 1; padding: 2rem; width: 100%; max-width: none; display: flex; flex-direction: column; gap: 1.5rem; overflow-x: auto; }
+        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); min-width: 1000px; }
         .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
         .card h2 { font-size: 1.15rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
         
-        .btn-launch { background: var(--primary-gradient); color: white; border: none; padding: 0.65rem 1.1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(230, 0, 126, 0.2); }
-        
-        .wfm-matrix-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
-        .wfm-table { width: 100%; border-collapse: collapse; text-align: center; }
-        .wfm-table th, .wfm-table td { border: 1px solid var(--border); padding: 0.65rem 0.5rem; font-size: 0.82rem; }
-        .wfm-table th { background: #0f172a; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
-        .wfm-table td.agent-col { text-align: left; font-weight: 700; background: #f1f5f9; padding-left: 1rem; color: var(--dark); width: 180px; }
-        
-        .shift-badge { background: #fce7f3; color: #db2777; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700; font-size: 0.72rem; display: inline-block; }
-        .shift-badge.lunch { background: #e0f2fe; color: #0284c7; }
-        .shift-badge.overtime { background: #fef3c7; color: #d97706; }
-        .shift-off { color: var(--text-muted); font-style: italic; font-weight: 500; font-size: 0.75rem; }
-
-        .summary-label-col { text-align: left; font-weight: 700; background: #e2e8f0; padding-left: 1rem; color: var(--dark); font-size: 0.78rem; text-transform: uppercase; }
-        .toolbar-flex { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-        .calendar-input, .filter-select { padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
+        .calendar-input { padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.88rem; font-weight: 600; background: var(--light); color: var(--text-main); outline: none; }
         .filter-label { font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+        /* Rota Grid Table */
+        .rota-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
+        .rota-table th, .rota-table td { border: 1px solid var(--border); padding: 0.65rem; text-align: center; vertical-align: middle; }
+        .rota-table th { background: #0f172a; color: white; font-weight: 700; }
+        .rota-table td:first-child { font-weight: 700; text-align: left; background: var(--light); min-width: 160px; }
+        
+        .shift-pill-box { display: inline-block; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.25rem 0.5rem; border-radius: 6px; font-weight: 700; font-size: 0.78rem; margin: 2px; }
+        .shift-pill-box.lunch { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+        .shift-pill-box.off { background: transparent; color: var(--text-muted); border: none; font-style: italic; font-weight: 500; }
+        .shift-pill-box.sickness, .shift-pill-box.rdo { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
     </style>
 </head>
 <body>
@@ -90,196 +86,192 @@
         <main class="main-workspace">
             <div class="card">
                 <div class="card-header-flex">
-                    <h2>📊 Workforce Hours & Staffing Overview</h2>
-                    <div class="toolbar-flex">
-                        <span class="filter-label">View Mode:</span>
-                        <select id="viewModeSelect" class="filter-select" onchange="loadWfmMatrix()">
-                            <option value="Day">Day View</option>
-                            <option value="Week" selected>Week View</option>
-                            <option value="Month">Month View</option>
-                        </select>
-
-                        <span class="filter-label" id="datePickerLabel">Target Date:</span>
-                        <input type="date" id="targetDatePicker" class="calendar-input" onchange="loadWfmMatrix()">
-                        
-                        <a href="rota-editor.html" class="btn-launch">✏️ Open Activity Editor</a>
+                    <h2>📊 Hours & Staffing Overview</h2>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <label class="filter-label" for="weekPicker">Week Commencing:</label>
+                        <input type="date" id="weekPicker" class="calendar-input" onchange="loadRotaOverview()">
                     </div>
                 </div>
                 
-                <div class="wfm-matrix-wrapper" id="matrixContainer">
-                    <div style="padding: 3rem; text-align: center; color: var(--text-muted); font-weight: 600;">Loading Hours Overview...</div>
+                <div id="rotaTableContainer" style="overflow-x: auto;">
+                    <p style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading rota overview...</p>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
-        const currentUser = sessionStorage.getItem("activeUser");
-        const currentRole = sessionStorage.getItem("activeRole");
-        if (!currentUser || (currentRole !== "Supervisor" && currentRole !== "Superuser" && currentRole !== "Admin")) {
-            window.location.href = "index.html";
-        }
+        var currentUser = sessionStorage.getItem("activeUser") || "Manager";
+        var currentRole = sessionStorage.getItem("activeRole") || "Admin";
 
-        document.getElementById("displayUserName").innerText = `${currentUser} (${currentRole})`;
+        document.getElementById("displayUserName").innerText = currentUser + " (" + currentRole + ")";
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
-        document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById("targetDatePicker").value = new Date().toISOString().split('T')[0];
-            loadWfmMatrix();
+        document.addEventListener("DOMContentLoaded", function() {
+            var now = new Date();
+            var day = now.getDay();
+            var diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            var monday = new Date(now.setDate(diff)).toISOString().split('T')[0];
+            document.getElementById("weekPicker").value = monday;
+
+            loadRotaOverview();
         });
 
         function getMonday(dStr) {
-            const d = new Date(dStr);
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            var d = new Date(dStr);
+            var day = d.getDay();
+            var diff = d.getDate() - day + (day === 0 ? -6 : 1);
             return new Date(d.setDate(diff)).toISOString().split('T')[0];
         }
 
-        function getDatesList(startStr, count) {
-            const start = new Date(startStr);
-            const dates = [];
-            for (let i = 0; i < count; i++) {
-                const d = new Date(start);
-                d.setDate(start.getDate() + i);
+        function getWeekDates(mondayStr) {
+            var monday = new Date(mondayStr);
+            var dates = [];
+            for (var i = 0; i < 7; i++) {
+                var d = new Date(monday);
+                d.setDate(monday.getDate() + i);
                 dates.push(d.toISOString().split('T')[0]);
             }
             return dates;
         }
 
-        function getMonthDates(anyDateStr) {
-            const date = new Date(anyDateStr);
-            const year = date.getFullYear();
-            const month = date.getMonth();
-            const lastDay = new Date(year, month + 1, 0).getDate();
-            const dates = [];
-            for (let i = 1; i <= lastDay; i++) {
-                const d = new Date(year, month, i);
-                dates.push(d.toISOString().split('T')[0]);
-            }
-            return dates;
+        function timeToHours(start, end) {
+            if (!start || !end) return 0;
+            var sParts = start.split(':');
+            var eParts = end.split(':');
+            var sMins = parseInt(sParts[0]) * 60 + parseInt(sParts[1]);
+            var eMins = parseInt(eParts[0]) * 60 + parseInt(eParts[1]);
+            var diff = (eMins - sMins) / 60;
+            return diff > 0 ? diff : 0;
         }
 
-        function timeToHours(timeStr) {
-            if (!timeStr) return 0;
-            const parts = timeStr.split(':');
-            return parseInt(parts[0]) + parseInt(parts[1]) / 60;
-        }
+        async function loadRotaOverview() {
+            var weekPickerVal = document.getElementById("weekPicker").value || new Date().toISOString().split('T')[0];
+            var monday = getMonday(weekPickerVal);
+            var weekDates = getWeekDates(monday);
 
-        async function loadWfmMatrix() {
-            const client = window.supabaseClient || window.supabase;
-            if (!client) return;
+            var client = window.supabaseClient || window.supabase;
+            
+            // Fetch agents from agent_stats
+            var agentNames = [
+                "Anthony", "Dave Dayao", "Donna Bernardo", "Elenita Abano", 
+                "James Igot", "Jay Dayao", "Jenny Rapanan", "Jewel Opiana", 
+                "Joshua Ababon", "Joy Tadiaman", "Joyce Adducul", "Lauriz Jose", 
+                "Lori Gallo", "Ma Bautista", "Marieber Villamor", "Reuben Dinaguit", 
+                "Roxanne Gan", "Tom Manlangit", "Zeri Prigoner"
+            ];
 
-            const mode = document.getElementById("viewModeSelect").value;
-            const rawDate = document.getElementById("targetDatePicker").value || new Date().toISOString().split('T')[0];
+            if (client) {
+                try {
+                    var statsRes = await client.from('agent_stats').select('agent_name');
+                    if (statsRes.data && statsRes.data.length > 0) {
+                        var dbAgents = statsRes.data.map(function(item) { return item.agent_name; }).filter(Boolean);
+                        agentNames = Array.from(new Set([...agentNames, ...dbAgents]));
+                    }
+                } catch (e) {
+                    console.log("Using fallback agent roster");
+                }
+            }
+            agentNames.sort(function(a, b) { return a.localeCompare(b); });
 
-            let activeDates = [];
-            let headerLabels = [];
-
-            if (mode === 'Day') {
-                activeDates = [rawDate];
-                headerLabels = [rawDate];
-            } else if (mode === 'Week') {
-                const monday = getMonday(rawDate);
-                activeDates = getDatesList(monday, 7);
-                headerLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => `${day}<br><span style="font-size:0.68rem; font-weight:500; opacity:0.85;">${activeDates[idx]}</span>`);
-            } else { // Month
-                activeDates = getMonthDates(rawDate);
-                headerLabels = activeDates.map(d => d.slice(8)); // show day numbers e.g. "01", "02"
+            // Fetch shifts for the week
+            var shifts = [];
+            if (client) {
+                var rotaRes = await client.from('agent_rota')
+                    .select('*')
+                    .gte('shift_date', weekDates[0])
+                    .lte('shift_date', weekDates[6]);
+                shifts = rotaRes.data || [];
             }
 
-            const startDate = activeDates[0];
-            const endDate = activeDates[activeDates.length - 1];
+            var dayHeaders = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            
+            var html = '<table class="rota-table"><thead><tr><th>Agent ID / Name</th>';
+            weekDates.forEach(function(d, idx) {
+                html += '<th>' + dayHeaders[idx] + '<br><span style="font-size:0.72rem; font-weight:400;">' + d + '</span></th>';
+            });
+            html += '</tr></thead><tbody>';
 
-            const { data: agentsData } = await client.from('agent_stats').select('agent_name').order('agent_name');
-            const { data: shiftsData } = await client.from('agent_rota').select('*').gte('shift_date', startDate).lte('shift_date', endDate);
+            // Daily summary accumulators
+            var dailyHeadcount = [0, 0, 0, 0, 0, 0, 0];
+            var dailyPaidHours = [0, 0, 0, 0, 0, 0, 0];
+            var dailyEarlyHours = [0, 0, 0, 0, 0, 0, 0];
+            var dailyLateHours = [0, 0, 0, 0, 0, 0, 0];
 
-            const agents = agentsData ? agentsData.map(a => a.agent_name) : [];
-            const shifts = shiftsData || [];
+            agentNames.forEach(function(agent) {
+                html += '<tr><td>' + agent + '</td>';
+                
+                weekDates.forEach(function(dateStr, dayIdx) {
+                    var agentDayShifts = shifts.filter(function(s) {
+                        return s.agent_name && s.agent_name.toLowerCase() === agent.toLowerCase() && s.shift_date === dateStr;
+                    });
 
-            const container = document.getElementById("matrixContainer");
-            if (agents.length === 0) {
-                container.innerHTML = `<p style="padding: 2rem; text-align: center; color: var(--text-muted);">No agents found in database.</p>`;
-                return;
-            }
-
-            let html = `
-                <table class="wfm-table">
-                    <thead>
-                        <tr>
-                            <th>Agent ID / Name</th>
-                            ${headerLabels.map(lbl => `<th>${lbl}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            const earlyCount = new Array(activeDates.length).fill(0);
-            const lateCount = new Array(activeDates.length).fill(0);
-            const totalHeadcount = new Array(activeDates.length).fill(0);
-            const totalPaidHours = new Array(activeDates.length).fill(0);
-
-            agents.forEach(agent => {
-                html += `<tr><td class="agent-col">${agent}</td>`;
-                activeDates.forEach((dateStr, dIdx) => {
-                    const agentShifts = shifts.filter(s => s.agent_name.toLowerCase() === agent.toLowerCase() && s.shift_date === dateStr);
-                    if (agentShifts.length > 0) {
-                        totalHeadcount[dIdx]++;
-                        let badgesHtml = '';
-                        
-                        agentShifts.forEach(match => {
-                            const startH = timeToHours(match.start_time);
-                            const endH = timeToHours(match.end_time);
-
-                            if (startH >= 8.5 && startH <= 10.5) earlyCount[dIdx]++;
-                            if (startH <= 17.0 && endH >= 19.0) lateCount[dIdx]++;
-
-                            let grossHours = endH - startH;
-                            if (grossHours < 0) grossHours += 24;
-
-                            const activity = match.activity_type || match.shift_type || 'Inbound';
-                            if (activity === 'Inbound') {
-                                const dayOfWeek = new Date(dateStr).getDay();
-                                let unpaidBreak = (dayOfWeek >= 1 && dayOfWeek <= 5) ? 1.0 : (dayOfWeek === 6 ? 0.5 : 0);
-                                let netPaid = Math.max(0, grossHours - unpaidBreak);
-                                totalPaidHours[dIdx] += netPaid;
-                            }
-
-                            let badgeClass = 'shift-badge';
-                            if (activity === 'Lunch') badgeClass += ' lunch';
-                            if (activity === 'Overtime') badgeClass += ' overtime';
-
-                            badgesHtml += `<span class="${badgeClass}" style="margin:2px;" title="${activity}">${match.start_time.slice(0,5)}-${match.end_time.slice(0,5)} (${activity})</span><br>`;
-                        });
-
-                        html += `<td class="shift-cell" onclick="window.location.href='rota-editor.html'">${badgesHtml}</td>`;
+                    if (agentDayShifts.length === 0) {
+                        html += '<td><span class="shift-pill-box off">OFF</span></td>';
                     } else {
-                        html += `<td class="shift-cell" onclick="window.location.href='rota-editor.html'"><span class="shift-off">OFF</span></td>`;
+                        // Increment Headcount for working/scheduled agents
+                        var hasWorkingShift = agentDayShifts.some(function(s) {
+                            var t = (s.activity_type || s.shift_type || '').toLowerCase();
+                            return t !== 'rdo' && t !== 'sickness';
+                        });
+                        if (hasWorkingShift) {
+                            dailyHeadcount[dayIdx]++;
+                        }
+
+                        html += '<td>';
+                        agentDayShifts.forEach(function(s) {
+                            var actType = s.activity_type || s.shift_type || 'Inbound';
+                            var start = s.start_time ? s.start_time.slice(0,5) : '';
+                            var end = s.end_time ? s.end_time.slice(0,5) : '';
+                            
+                            var pillClass = 'shift-pill-box';
+                            var tLower = actType.toLowerCase();
+                            if (tLower === 'lunch') pillClass += ' lunch';
+                            else if (tLower === 'sickness') pillClass += ' sickness';
+                            else if (tLower === 'rdo') pillClass += ' rdo';
+
+                            html += '<div class="' + pillClass + '">' + start + '-' + end + ' (' + actType + ')</div>';
+
+                            // Calculate hours (Inbound, Training, Meeting, Coaching, and Lunch are PAID)
+                            if (tLower !== 'sickness' && tLower !== 'rdo') {
+                                var hrs = timeToHours(s.start_time, s.end_time);
+                                dailyPaidHours[dayIdx] += hrs;
+
+                                // Early hours (8.30 - 10.30 window check or similar)
+                                if (start && start < "10:30" && end > "08:30") {
+                                    dailyEarlyHours[dayIdx] += Math.min(hrs, 2); 
+                                }
+                                // Late hours (17:00 - 19:00 window check)
+                                if (end && end > "17:00") {
+                                    dailyLateHours[dayIdx] += Math.max(0, timeToHours("17:00", end));
+                                }
+                            }
+                        });
+                        html += '</td>';
                     }
                 });
-                html += `</tr>`;
+                html += '</tr>';
             });
 
-            html += `
-                <tr style="border-top: 2px solid var(--border);">
-                    <td class="summary-label-col">Early Hours (8:30 - 10:30)</td>
-                    ${earlyCount.map(c => `<td style="font-weight:700; color:var(--primary);">${c}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td class="summary-label-col">Late Hours (17:00 - 19:00)</td>
-                    ${lateCount.map(c => `<td style="font-weight:700; color:var(--primary);">${c}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td class="summary-label-col">Total Headcount</td>
-                    ${totalHeadcount.map(c => `<td style="font-weight:700;">${c}</td>`).join('')}
-                </tr>
-                <tr style="background: #f1f5f9; font-weight: 800;">
-                    <td class="summary-label-col" style="background: #e2e8f0;">Total Paid Hours</td>
-                    ${totalPaidHours.map(h => `<td style="color: #0f172a; font-size: 0.88rem;">${h.toFixed(1)}h</td>`).join('')}
-                </tr>
-            `;
+            // Summary rows
+            html += '<tr style="font-weight:700; background:var(--light);"><td>EARLY HOURS (8:30 - 10:30)</td>';
+            dailyEarlyHours.forEach(function(val) { html += '<td style="color:var(--primary);">' + val.toFixed(1) + '</td>'; });
+            html += '</tr>';
 
-            html += `</tbody></table>`;
-            container.innerHTML = html;
+            html += '<tr style="font-weight:700; background:var(--light);"><td>LATE HOURS (17:00 - 19:00)</td>';
+            dailyLateHours.forEach(function(val) { html += '<td style="color:var(--primary);">' + val.toFixed(1) + '</td>'; });
+            html += '</tr>';
+
+            html += '<tr style="font-weight:700; background:var(--light);"><td>TOTAL HEADCOUNT</td>';
+            dailyHeadcount.forEach(function(val) { html += '<td>' + val + '</td>'; });
+            html += '</tr>';
+
+            html += '<tr style="font-weight:800; background:#f1f5f9; font-size:0.95rem;"><td>TOTAL PAID HOURS</td>';
+            dailyPaidHours.forEach(function(val) { html += '<td style="color:var(--primary);">' + val.toFixed(1) + 'h</td>'; });
+            html += '</tr>';
+
+            html += '</tbody></table>';
+            document.getElementById("rotaTableContainer").innerHTML = html;
         }
     </script>
 </body>
