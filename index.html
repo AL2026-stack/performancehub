@@ -188,8 +188,11 @@
             <div class="nav-item" id="navQA" onclick="switchView('qaView')">📑 Completed Quality Forms</div>
             <a href="coaching.html" class="nav-item">🎯 Coaching & 1-to-1s</a>
 
-            <div class="sidebar-section-title">Sickness and Absence</div>
-            <a href="sickness.html" class="nav-item">🏥 Sickness & Absence</a>
+            <!-- Sickness & Absence (Manager / Superuser / Admin Only) -->
+            <div id="managerSidebarSection" style="display: none;">
+                <div class="sidebar-section-title">Sickness and Absence</div>
+                <a href="sickness.html" class="nav-item">🏥 Sickness & Absence</a>
+            </div>
 
             <div id="teamOpsSidebarSection" style="display: none;">
                 <div class="sidebar-section-title">Team Performance & Rankings</div>
@@ -432,8 +435,9 @@
                 document.getElementById("workingTodayDate").value = todayStr;
             }
 
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
-            const isSuperuserOnly = (currentRole === "Superuser" || currentRole === "Admin");
+            const roleLower = (currentRole || "").toLowerCase();
+            const isManagement = (roleLower === "supervisor" || roleLower === "manager" || roleLower === "superuser" || roleLower === "admin");
+            const isSuperuserOnly = (roleLower === "superuser" || roleLower === "admin");
             
             const navImportEl = document.getElementById("navImport");
             if (navImportEl) { navImportEl.style.display = isSuperuserOnly ? "flex" : "none"; }
@@ -441,10 +445,14 @@
             const teamOpsSection = document.getElementById("teamOpsSidebarSection");
             if (teamOpsSection) { teamOpsSection.style.display = isManagement ? "block" : "none"; }
 
+            const managerSidebarSection = document.getElementById("managerSidebarSection");
+            if (managerSidebarSection && isManagement) {
+                managerSidebarSection.style.display = "block";
+            }
+
             const qaFilterWrap = document.getElementById("qaAgentFilterWrap");
             if (qaFilterWrap) { qaFilterWrap.style.display = isManagement ? "flex" : "none"; }
 
-            // Conditional view for managers vs agents
             const agentRotaCard = document.getElementById("agentRotaCard");
             const managerWorkingTodayCard = document.getElementById("managerWorkingTodayCard");
 
@@ -520,7 +528,8 @@
             globalAnnouncements = data || [];
 
             const container = document.getElementById("announcementsContainer");
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            const roleLower = (currentRole || "").toLowerCase();
+            const isManagement = (roleLower === "supervisor" || roleLower === "manager" || roleLower === "superuser" || roleLower === "admin");
             
             const btnAdd = document.getElementById("btnAddAnnouncement");
             if (btnAdd) btnAdd.style.display = isManagement ? "inline-flex" : "none";
@@ -591,7 +600,6 @@
                 return;
             }
 
-            // Summarize shift counts
             const shiftCounts = {};
             data.forEach(s => {
                 const shiftKey = `${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)} (${s.shift_type})`;
@@ -680,7 +688,8 @@
             const container = document.getElementById("feedbackContainer");
             if (!container) return;
 
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            const roleLower = (currentRole || "").toLowerCase();
+            const isManagement = (roleLower === "supervisor" || roleLower === "manager" || roleLower === "superuser" || roleLower === "admin");
             const filterDropdown = document.getElementById("qaListAgentFilter");
             const statusDropdown = document.getElementById("qaStatusFilter");
 
@@ -764,7 +773,8 @@
             const badge = document.getElementById("homePendingCountBadge");
             const headerBadge = document.getElementById("headerPendingBadge");
             const headerBadgeCount = document.getElementById("pendingBadgeCount");
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            const roleLower = (currentRole || "").toLowerCase();
+            const isManagement = (roleLower === "supervisor" || roleLower === "manager" || roleLower === "superuser" || roleLower === "admin");
             
             if (!container) return;
 
@@ -818,7 +828,8 @@
             const homeValEl = document.getElementById("homeValueFilter");
             const homeVal = homeValEl ? homeValEl.value : (document.getElementById("uploadTargetDate") ? document.getElementById("uploadTargetDate").value : "");
             
-            const isManagement = (currentRole === "Supervisor" || currentRole === "Superuser" || currentRole === "Admin");
+            const roleLower = (currentRole || "").toLowerCase();
+            const isManagement = (roleLower === "supervisor" || roleLower === "manager" || roleLower === "superuser" || roleLower === "admin");
 
             const agentFilterEl = document.getElementById("agentFilter");
             const selectedAgent = (isManagement && agentFilterEl) ? agentFilterEl.value : currentUser;
