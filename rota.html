@@ -168,7 +168,7 @@
         var currentViewMode = 'week';
         var roleLower = currentRole.toLowerCase();
         var isSuperuser = (roleLower === 'superuser');
-        var isManagerOrAbove = (roleLower === 'manager' || roleLower === 'superuser' || roleLower === 'admin');
+        var isManagerOrAbove = (roleLower === 'manager' || roleLower === 'superuser' || roleLower === 'admin' || roleLower === 'supervisor');
 
         if (isManagerOrAbove) {
             document.getElementById("managerSidebarSection").style.display = "block";
@@ -268,8 +268,16 @@
                 }
             }
 
+            // Exclude archived agents
             agentNames = agentNames.filter(function(name) {
                 return !archivedAgents.includes(name);
+            });
+
+            // Exclude managers, superusers, admins, and supervisors
+            var managementNames = ["manager", "superuser", "admin", "supervisor"];
+            agentNames = agentNames.filter(function(name) {
+                var nLower = (name || "").toLowerCase().trim();
+                return !managementNames.some(function(m) { return nLower === m || nLower.includes(m); });
             });
 
             agentNames.sort(function(a, b) { return a.localeCompare(b); });
