@@ -45,7 +45,7 @@
         .nav-item.active { background: var(--primary-gradient); color: white; box-shadow: 0 4px 14px rgba(230, 0, 126, 0.35); }
 
         .main-workspace { flex: 1; padding: 2rem; width: 100%; max-width: none; display: flex; flex-direction: column; gap: 1.5rem; overflow-x: auto; }
-        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); min-width: 1000px; }
+        .card { background: var(--card-bg); padding: 1.75rem; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); min-width: 900px; }
         .card-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
         .card h2 { font-size: 1.15rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; }
         
@@ -56,13 +56,13 @@
         .rota-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
         .rota-table th, .rota-table td { border: 1px solid var(--border); padding: 0.65rem; text-align: center; vertical-align: middle; }
         .rota-table th { background: #0f172a; color: white; font-weight: 700; }
-        .rota-table td:first-child { font-weight: 700; text-align: left; background: var(--light); min-width: 220px; display: flex; justify-content: space-between; align-items: center; }
+        .rota-table th:first-child, .rota-table td:first-child { min-width: 130px; max-width: 160px; text-align: left; background: var(--light); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
         
         .shift-pill-box { display: inline-block; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 0.3rem 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.82rem; margin: 2px; }
         .shift-pill-box.off { background: transparent; color: var(--text-muted); border: none; font-style: italic; font-weight: 500; }
         .shift-pill-box.sickness, .shift-pill-box.rdo { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
         
-        .btn-archive { background: transparent; color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+        .btn-archive { background: transparent; color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.68rem; font-weight: 700; cursor: pointer; }
         .btn-archive:hover { background: var(--danger); color: white; }
         
         .btn-action-primary { background: var(--primary-gradient); color: white; border: none; padding: 0.45rem 0.9rem; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
@@ -136,7 +136,7 @@
 
         if (isSuperuser) {
             document.getElementById("superuserHeaderActions").innerHTML = 
-                '<button class="btn-action-primary" onclick="openArchiveModal()">📂 View Archived Agents</button>';
+                '<button class="btn-action-primary" onclick="openArchiveModal()">📂 Archived Agents</button>';
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -202,7 +202,6 @@
                 }
             }
 
-            // Exclude archived agents from active view
             agentNames = agentNames.filter(function(name) {
                 return !archivedAgents.includes(name);
             });
@@ -290,12 +289,11 @@
                 tableRowsData.push({ agent: agent, days: agentRowDays });
             });
 
-            // Render Table HTML (Archive button only shown for Superusers)
             tableRowsData.forEach(function(row) {
                 var archiveBtnHtml = isSuperuser ? '<button class="btn-archive" onclick="archiveAgent(\'' + row.agent + '\')" title="Archive Agent">Archive</button>' : '';
                 
                 html += '<tr><td>' +
-                        '<span>' + row.agent + '</span>' +
+                        '<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + row.agent + '</span>' +
                         archiveBtnHtml +
                         '</td>';
                 
