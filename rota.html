@@ -126,7 +126,6 @@
         function getWeekDates(mondayStr) {
             var monday = new Date(mondayStr);
             var dates = [];
-            // Generate Monday through Saturday (6 days, excluding Sunday)
             for (var i = 0; i < 6; i++) {
                 var d = new Date(monday);
                 d.setDate(monday.getDate() + i);
@@ -150,7 +149,7 @@
             
             var agentNames = [
                 "Anthony", "Dave Dayao", "Donna Bernardo", "Elenita Abano", 
-                "James Igot", "Jay Dayao", "Jenny Rapanan", "Jewel Opiana", 
+                "James Igot", "Jay Dayay", "Jenny Rapanan", "Jewel Opiana", 
                 "Joshua Ababon", "Joy Tadiaman", "Joyce Adducul", "Lauriz Jose", 
                 "Lori Gallo", "Ma Bautista", "Marieber Villamor", "Reuben Dinaguit", 
                 "Roxanne Gan", "Tom Manlangit", "Zeri Prigoner"
@@ -188,8 +187,8 @@
 
             var dailyHeadcount = [0, 0, 0, 0, 0, 0];
             var dailyPaidHours = [0, 0, 0, 0, 0, 0];
-            var dailyEarlyHours = [0, 0, 0, 0, 0, 0];
-            var dailyLateHours = [0, 0, 0, 0, 0, 0];
+            var dailyEarlyHeadcount = [0, 0, 0, 0, 0, 0];
+            var dailyLateHeadcount = [0, 0, 0, 0, 0, 0];
 
             var tableRowsData = [];
 
@@ -200,7 +199,7 @@
                         return s.agent_name && s.agent_name.toLowerCase() === agent.toLowerCase() && s.shift_date === dateStr;
                     });
 
-                    var dayInfo = { hasShift: false, specialStatus: null, totalHours: 0, shifts: agentDayShifts };
+                    var dayInfo = { hasShift: false, specialStatus: null, totalHours: 0 };
 
                     if (agentDayShifts.length > 0) {
                         var hasWorking = agentDayShifts.some(function(s) {
@@ -212,6 +211,9 @@
                             dayInfo.hasShift = true;
                             dailyHeadcount[dayIdx]++;
                         }
+
+                        var agentWorkingEarly = false;
+                        var agentWorkingLate = false;
 
                         agentDayShifts.forEach(function(s) {
                             var actType = (s.activity_type || s.shift_type || '').toLowerCase();
@@ -227,23 +229,23 @@
                                     dayInfo.totalHours += hrs;
                                     dailyPaidHours[dayIdx] += hrs;
 
-                                    // Early & Late hours apply ONLY to Monday - Friday (dayIdx 0 to 4). Saturday (dayIdx 5) is fixed shift.
+                                    // Mon - Fri (dayIdx 0 to 4) Early / Late headcount check
                                     if (dayIdx < 5) {
-                                        var earlyStart = Math.max(sMins, 510);
-                                        var earlyEnd = Math.min(eMins, 630);
-                                        if (earlyEnd > earlyStart) {
-                                            dailyEarlyHours[dayIdx] += (earlyEnd - earlyStart) / 60;
+                                        // Early window: 08:30 (510 mins) to 10:30 (630 mins)
+                                        if (sMins <= 510 && eMins > 510) {
+                                            agentWorkingEarly = true;
                                         }
-
-                                        var lateStart = Math.max(sMins, 1020);
-                                        var lateEnd = Math.min(eMins, 1140);
-                                        if (lateEnd > lateStart) {
-                                            dailyLateHours[dayIdx] += (lateEnd - lateStart) / 60;
+                                        // Late window: 17:00 (1020 mins) to 19:00 (1140 mins)
+                                        if (sMins < 1140 && eMins >= 1020) {
+                                            agentWorkingLate = true;
                                         }
                                     }
                                 }
                             }
                         });
+
+                        if (agentWorkingEarly) dailyEarlyHeadcount[dayIdx]++;
+                        if (agentWorkingLate) dailyLateHeadcount[dayIdx]++;
                     }
                     agentRowDays.push(dayInfo);
                 });
@@ -266,15 +268,15 @@
                 html += '</tr>';
             });
 
-            html += '<tr style="font-weight:700; background:var(--light);"><td>EARLY HOURS (Mon-Fri 8:30 - 10:30)</td>';
-            dailyEarlyHours.forEach(function(val, idx) { 
-                html += '<td style="color:var(--primary);">' + (idx < 5 ? val.toFixed(1) : '-') + '</td>'; 
+            html += '<tr style="font-weight:700; background:var(--light);"><td>EARLY HEADCOUNT (Mon-Fri 8:30 - 10:30)</td>';
+            dailyEarlyHeadcount.forEach(function(val, idx) { 
+                html += '<td style="color:var(--primary);">' + (idx < 5 ? val : '-') + '</td>'; 
             });
             html += '</tr>';
 
-            html += '<tr style="font-weight:700; background:var(--light);"><td>LATE HOURS (Mon-Fri 17:00 - 19:00)</td>';
-            dailyLateHours.forEach(function(val, idx) { 
-                html += '<td style="color:var(--primary);">' + (idx < 5 ? val.toFixed(1) : '-') + '</td>'; 
+            html += '<tr style="font-weight:700; background:var(--light);"><td>LATE HEADCOUNT (Mon-Fri 17:00 - 19:00)</td>';
+            dailyLateHeadcount.forEach(function(val, idx) { 
+                html += '<td style="color:var(--primary);">' + (idx < 5 ? val : '-') + '</td>'; 
             });
             html += '</tr>';
 
