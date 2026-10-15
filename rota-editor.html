@@ -260,7 +260,7 @@
         document.getElementById("displayUserAvatar").innerText = currentUser.charAt(0).toUpperCase();
 
         var roleLower = currentRole.toLowerCase();
-        var isManagerOrAbove = (roleLower === 'manager' || roleLower === 'superuser' || roleLower === 'admin');
+        var isManagerOrAbove = (roleLower === 'manager' || roleLower === 'superuser' || roleLower === 'admin' || roleLower === 'supervisor');
 
         if (isManagerOrAbove) {
             document.getElementById("managerSidebarSection").style.display = "block";
@@ -330,11 +330,11 @@
                 ];
             }
 
-            // Exclude management/superusers/admins from standard agent lists
+            // Exclude managers, superusers, admins, and supervisors strictly
             var managementNames = ["manager", "superuser", "admin", "supervisor"];
             agentNames = agentNames.filter(function(name) {
-                var nLower = name.toLowerCase();
-                return !managementNames.some(function(m) { return nLower.includes(m); });
+                var nLower = (name || "").toLowerCase().trim();
+                return !managementNames.some(function(m) { return nLower === m || nLower.includes(m); });
             });
 
             agentNames.sort(function(a, b) { return a.localeCompare(b); });
