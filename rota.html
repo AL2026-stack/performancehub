@@ -98,6 +98,10 @@
             <div class="sidebar-section-title">WFM Suite</div>
             <a href="rota.html" class="nav-item active">📊 Hours & Staffing Overview</a>
             <a href="rota-editor.html" class="nav-item">✏️ Activity Editor</a>
+            <div id="managerSidebarSection" style="display: none;">
+                <div class="sidebar-section-title">Sickness and Absence</div>
+                <a href="sickness.html" class="nav-item">📋 Sickness & Absence</a>
+            </div>
         </nav>
 
         <main class="main-workspace">
@@ -165,6 +169,10 @@
         var roleLower = currentRole.toLowerCase();
         var isSuperuser = (roleLower === 'superuser');
         var isManagerOrAbove = (roleLower === 'manager' || roleLower === 'superuser' || roleLower === 'admin');
+
+        if (isManagerOrAbove) {
+            document.getElementById("managerSidebarSection").style.display = "block";
+        }
 
         if (isSuperuser) {
             document.getElementById("superuserHeaderActions").innerHTML = 
@@ -306,7 +314,6 @@
                     if (agentDayShifts.length > 0) {
                         var hasWorking = agentDayShifts.some(function(s) {
                             var t = (s.activity_type || s.shift_type || '').toLowerCase();
-                            // Restrict sickness & rdo visibility for non-managers/non-superusers
                             if ((t === 'rdo' || t === 'sickness') && !isManagerOrAbove) {
                                 return false;
                             }
